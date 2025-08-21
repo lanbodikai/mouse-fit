@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cam Debug</title>
+  <style>
+    body{margin:0;font:14px system-ui;background:#0b0b0f;color:#e8e8f0}
+    header{padding:10px 12px;border-bottom:1px solid #1b1b24}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px}
+    video{width:100%;max-width:960px;aspect-ratio:16/9;background:#111}
+    button,select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:10px;padding:8px 12px}
+    #log{white-space:pre-wrap;background:#0e1220;border-top:1px solid #1b1b24;padding:12px}
+    #startBtn{position:fixed;right:12px;bottom:12px;display:none}
+  </style>
+</head>
+<body>
+  <header><b>Camera Debug (localhost)</b></header>
+  <div class="row">
+    <label>Camera:</label>
+    <select id="sel"></select>
+    <button id="refresh">Refresh</button>
+    <button id="start">Start</button>
+    <button id="stop">Stop</button>
+  </div>
+  <div class="row"><video id="v" playsinline autoplay muted></video></div>
+  <button id="startBtn">Tap to start camera</button>
+  <div id="log"></div>
+
+<script>
+const v = document.getElementById('v');
+const sel = document.getElementById('sel');
+const refresh = document.getElementById('refresh');
+const start = document.getElementById('start');
+const stopBtn = document.getElementById('stop');
+const logEl = document.getElementById('log');
+const startBtn = document.getElementById('startBtn');
+let stream=null;
+
+log(`Protocol: ${location.protocol}  Host: ${location.host}`);
+
+async function primePerm(){
+  try{
+    const tmp=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    tmp.getTracks().forEach(t=>t.stop());
+    log('Permission OK');
+  }catch(e){logErr(e);}
+}
+
+async function list(){
+  try{
+    const devs=await navigator.mediaDevices.enumerateDevices();
+    const cams=devs.filter(d=>d.kind==='videoinput');
+    sel.innerHTML='';
+    cams.forEach((c,i)=>{
+      const o=document.createElement('option');
+      o.value=c.deviceId; o.textContent=c.label||`Camera ${i+1}`;
+      sel.appendChild(o);
+    });
+    log(`Found ${cams.length} camera(s).`);
+  }catch(e){logErr(e);}
+}
+
+async function startCam(deviceId){
+  stopCam();
+  let constraints = deviceId? {video:{deviceId:{exact:deviceId}},audio:false}
+                            : {video:{facingMode:{ideal:'user'},width:{ideal:1280},height:{ideal:720}},audio:false};
+  try{
+    stream=await navigator.mediaDevices.getUserMedia(constraints);
+  }catch(e1){
+    log(`Exact/ideal failed: ${e1.name}. Trying default…`);
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    }catch(e2){return logErr(e2);}
+  }
+  v.srcObject=stream;
+  try{
+    await v.play();
+    startBtn.style.display='none';
+    log('Video playing.');
+  }catch(e){
+    log('Autoplay blocked; showing start button.');
+    startBtn.style.display='block';
+  }
+}
+
+function stopCam(){
+  if(stream){stream.getTracks().forEach(t=>t.stop()); stream=null;}
+}
+
+function log(m){logEl.textContent+=m+'\n'; console.log(m);}
+function logErr(e){
+  const name=e?.name||'Error', msg=e?.message||String(e);
+  log(`❌ ${name}: ${msg}`);
+  if(name==='NotAllowedError') log('Tip: Click the camera icon in the address bar and allow.');
+  if(name==='NotFoundError') log('Tip: No camera detected or OS privacy blocks it.');
+  if(name==='NotReadableError') log('Tip: Another app is using the camera (Zoom/Teams/OBS).');
+  if(name==='SecurityError') log('Tip: Use http://localhost (not file://).');
+}
+
+refresh.onclick=()=>list();
+start.onclick=()=>startCam(sel.value||null);
+stopBtn.onclick=()=>stopCam();
+startBtn.onclick=async()=>{ try{await v.play(); startBtn.style.display='none';}catch(_){} };
+
+(async()=>{
+  await primePerm();
+  await list();
+  await startCam(null);
+})();
+</script>
+</body>
+</html>
