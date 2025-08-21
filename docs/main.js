@@ -815,6 +815,32 @@ const unitVec  = v => { const L = Math.hypot(v.x, v.y) || 1; return { x: v.x / L
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
 /* ================== Recommendations ================== */
+// --- brand priority (big → medium → small) ---
+const BRAND_TIERS = {
+  big:    ["logitech", "razer"],
+  medium: ["vaxee", "lamzu", "pulsar", "zowie", "g-wolves", "endgame gear"],
+  small:  ["wlmouse", "atk", "steelseries", "ninjutso", "xtrfy", "finalmouse"]
+};
+function brandTier(brand) {
+  const b = (brand || "").toLowerCase();
+  if (BRAND_TIERS.big.includes(b)) return 3;
+  if (BRAND_TIERS.medium.includes(b)) return 2;
+  if (BRAND_TIERS.small.includes(b)) return 1;
+  return 2; // default medium if unknown
+}
+
+// robust field access to handle both mice.js styles
+function specOf(mouse) {
+  const L = mouse.length_mm ?? mouse.length;
+  const W = mouse.width_mm  ?? mouse.width;
+  const H = mouse.height_mm ?? mouse.height;
+  const WT = mouse.weight_g ?? mouse.weight ?? 999; // unknown weight → heavy
+  const shape = (mouse.shape || "").toLowerCase();   // "sym" / "ergo"
+  const hump  = (mouse.hump  || "").toLowerCase();   // "low"/"medium"/"high"
+  const brand = mouse.brand || "";
+  const tags  = mouse.tags  || [];
+  return { L, W, H, WT, shape, hump, brand, tags };
+}
 function recommend(handLenMm, handWidMm, topN = 5) {
   const grips = ["palm", "claw", "fingertip"];
   const sizeCategory = handLenMm < 170 ? "small" :
@@ -830,21 +856,67 @@ function recommend(handLenMm, handWidMm, topN = 5) {
 }
 
 function scoreMouse(mouse, grip, handLenMm, handWidMm) {
+  const { L, W, H, WT, shape, hump, brand, tags } = specOf(mouse);
+
+  // --- base fit from your original logic (kept, slightly reweighted) ---
   const idealLen = { palm: 0.68, claw: 0.62, fingertip: 0.55 }[grip] * handLenMm;
   const lenTol   = { palm: 0.08, claw: 0.09, fingertip: 0.10 }[grip] * handLenMm;
-  const scoreLen = 100 * Math.max(0, 1 - Math.abs(mouse.length_mm - idealLen) / lenTol);
+  const scoreLen = 100 * Math.max(0, 1 - Math.abs((L ?? idealLen) - idealLen) / lenTol);
 
   const idealWid = { palm: 0.92, claw: 0.82, fingertip: 0.72 }[grip] * handWidMm;
-  const widTol   = { palm: 10, claw: 12, fingertip: 14 }[grip];
-  const scoreWid = 100 * Math.max(0, 1 - Math.abs(mouse.width_mm - idealWid) / widTol);
+  const widTol   = { palm: 10,   claw: 12,   fingertip: 14   }[grip];
+  const scoreWid = 100 * Math.max(0, 1 - Math.abs((W ?? idealWid) - idealWid) / widTol);
 
-  let total = 0.5 * scoreLen + 0.35 * scoreWid;
-  if (grip === "palm" && mouse.shape === "ergo") total += 12;
-  if (grip !== "palm" && mouse.shape === "sym")  total += 8;
-  if (grip === "fingertip" && mouse.height_mm <= 38) total += 6;
-  if (mouse.tags && mouse.tags.includes(grip)) total += 4;
+  let bonus = 0;
+
+  // --- grip-specific preferences (what users actually like) ---
+  const isSym  = shape.includes("sym");
+  const isErgo = shape.includes("ergo");
+
+  if (grip === "fingertip") {
+    // small + light + low
+    if (L !== undefined) bonus += (L <= 118 ? 12 : -Math.max(0, (L - 118) * 0.8));
+    if (W !== undefined) bonus += (W <= 62 ? 6  : -Math.max(0, (W - 62) * 0.5));
+    if (H !== undefined) bonus += (H <= 38 ? 5  : -Math.max(0, (H - 38) * 1.2));
+    if (WT <= 55)        bonus += 8;
+    else if (WT <= 62)   bonus += 3;
+    else                 bonus -= 6;
+    if (isSym)           bonus += 5;  // fingertip prefers sym
+  }
+
+  if (grip === "claw") {
+    // compact-mid length; balanced height; moderate weight
+    if (L !== undefined) bonus += (L >= 116 && L <= 122) ? 6 : -Math.abs(L - 119) * 0.6;
+    if (H !== undefined) bonus += (H >= 37  && H <= 40)  ? 4 : 0;
+    if (W !== undefined) bonus += (W >= 60  && W <= 64)  ? 3 : 0;
+    if (WT <= 60)        bonus += 3;
+    if (isSym)           bonus += 2;
+    if (isErgo)          bonus += 2;
+  }
+
+  if (grip === "palm") {
+    // longer + wider + ergo; medium/high hump is fine
+    if (L !== undefined) bonus += (L >= 120 && L <= 126) ? 8 : -Math.abs(L - 123) * 0.6;
+    if (W !== undefined) bonus += (W >= 65  && W <= 70)  ? 5 : 0;
+    if (isErgo)          bonus += 6;
+    if (hump.includes("high") || hump.includes("medium")) bonus += 2;
+  }
+
+  // reward explicit tags if present
+  if (Array.isArray(tags) && tags.includes(grip)) bonus += 4;
+
+  // --- brand priority (tie breaker / slight bias) ---
+  bonus += brandTier(brand) * 2;  // big=+6, medium=+4, small=+2
+
+  // deprioritize niche/dated picks generically (example: oddballs)
+  const model = (mouse.model || "").toLowerCase();
+  if (model.includes("shroud")) bonus -= 8;   // you asked to avoid G303 Shroud in lists
+
+  // final score
+  const total = 0.45 * scoreLen + 0.30 * scoreWid + bonus;
   return { score: Math.round(total) };
 }
+
 
 /* ================== Misc ================== */
 function showToast(msg, durationMs = 2200) {
