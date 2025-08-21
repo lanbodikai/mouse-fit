@@ -61,7 +61,6 @@
       <!-- Guide boxes for hand and card placement -->
       <div class="guides" id="guides">
         <div id="handGuide" class="guide"><span class="label">Hand here</span></div>
-        <div id="cardGuide" class="guide"><span class="label">Credit card here (for scale)</span></div>
       </div>
 
       <!-- Status and notifications -->
@@ -123,5 +122,34 @@
     </button>
 
     <script type="module" src="./main.js"></script>
+    <!-- First-run tip for Measure -->
+    <div id="introMeasure" style="
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.55); z-index:10000;">
+      <div style="max-width:520px; background:#0f1320; border:1px solid #2a3442; color:#e8eef7;
+                  padding:18px 18px 14px; border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,.45)">
+        <h3 style="margin:0 0 8px; font-size:18px;">Welcome to Mouse-Fit (MVP)</h3>
+        <p style="margin:0 0 10px; line-height:1.5;">
+          Please hold a <b>credit card</b> and your <b>palm</b> side by side in view.<br>
+          After capture, drag the four aqua corners onto the card, and adjust the green/blue lines if needed.
+        </p>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button id="introMeasureOk" style="background:#0d1a21; color:#fff; border:1px solid #1f3a47;
+                  padding:8px 12px; border-radius:10px; font-weight:600; cursor:pointer">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (() => {
+      const KEY = "mousefit:intro_measure_v1";
+      const el = document.getElementById("introMeasure");
+      if (!localStorage.getItem(KEY)) el.style.display = "flex";
+      document.getElementById("introMeasureOk").onclick = () => {
+        localStorage.setItem(KEY, "1");
+        el.style.display = "none";
+      };
+    })();
+    </script>
   </body>
 </html>

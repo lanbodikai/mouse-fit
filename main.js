@@ -417,17 +417,40 @@ function capture() {
   stepPill.textContent = "Step: card";
 
   // Init card corners from cardGuide box
+  // Init card corners (works even if #cardGuide is not present)
   const rectC = canvas.getBoundingClientRect();
-  const rectG = cardGuide.getBoundingClientRect();
-  const toCanvas = (x, y) => ({
-    x: (x - rectC.left) * canvas.width  / rectC.width,
-    y: (y - rectC.top)  * canvas.height / rectC.height
+  let TL, TR, BR, BL;
+
+  const cg = document.getElementById("cardGuide");
+  if (cg) {
+    // old behavior: seed from the visible guide box
+   const rectG = cg.getBoundingClientRect();
+    const toCanvas = (x, y) => ({
+      x: (x - rectC.left) * canvas.width  / rectC.width,
+     y: (y - rectC.top)  * canvas.height / rectC.height
+    });
+    TL = toCanvas(rectG.left,  rectG.top);
+    TR = toCanvas(rectG.right, rectG.top);
+    BR = toCanvas(rectG.right, rectG.bottom);
+    BL = toCanvas(rectG.left,  rectG.bottom);
+  } else {
+    // no guide box: seed a neat card-aspect rectangle near top-right
+    const W = canvas.width, H = canvas.height;
+    const margin = Math.round(Math.min(W, H) * 0.05);
+    const boxW = Math.min(Math.round(W * 0.18), 260);
+    const boxH = Math.round(boxW * (CARD_H_MM / CARD_W_MM)); // keep ISO ID-1 aspect
+    const top = margin, right = W - margin;
+    TR = { x: right,         y: top };
+    TL = { x: right - boxW,  y: top };
+    BR = { x: right,         y: top + boxH };
+    BL = { x: right - boxW,  y: top + boxH };
+  }
+
+  // show draggable corner handles
+  [TL, TR, BR, BL].forEach((pt, i) => {
+    pEls[i].style.display = "block";
+    movePointEl(pEls[i], pt);
   });
-  const TL = toCanvas(rectG.left,  rectG.top);
-  const TR = toCanvas(rectG.right, rectG.top);
-  const BR = toCanvas(rectG.right, rectG.bottom);
-  const BL = toCanvas(rectG.left,  rectG.bottom);
-  [TL, TR, BR, BL].forEach((pt, i) => { pEls[i].style.display = "block"; movePointEl(pEls[i], pt); });
   showToast("Tip: double-click to place card corners TL → TR → BR → BL.", 2600);
 
   // Default handles for length + width within handGuide
@@ -447,7 +470,7 @@ function confirmCard() {
   }
   computeH();             // build homography from card
   computeAndStore();      // save results + snapshot
-  window.location.href = "/report.html";
+  window.location.href = "./report.html";
 }
 
 

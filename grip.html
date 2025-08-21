@@ -109,5 +109,35 @@
     </button>
 
     <script type="module" src="./grip.js"></script>
+    <!-- First-run tip for Grip Checker -->
+    <div id="introGrip" style="
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.55); z-index:10000;">
+      <div style="max-width:560px; background:#0f1320; border:1px solid #2a3442; color:#e8eef7;
+                  padding:18px 18px 14px; border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,.45)">
+       <h3 style="margin:0 0 8px; font-size:18px;">Grip cam tips</h3>
+        <ul style="margin:6px 0 12px 18px; line-height:1.5;">
+          <li>Match the requested view (Top / Right / Left) before capturing.</li>
+          <li>Hold your <b>own mouse</b> the way you normally do.</li>
+          <li>Including the mouse helps the model classify claw / fingertip / palm (or relaxed claw).</li>
+        </ul>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button id="introGripOk" style="background:#0d1a21; color:#fff; border:1px solid #1f3a47;
+                  padding:8px 12px; border-radius:10px; font-weight:600; cursor:pointer">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (() => {
+      const KEY = "mousefit:intro_grip_v1";
+      const el = document.getElementById("introGrip");
+      if (!localStorage.getItem(KEY)) el.style.display = "flex";
+      document.getElementById("introGripOk").onclick = () => {
+        localStorage.setItem(KEY, "1");
+        el.style.display = "none";
+      };
+    })();
+    </script>
   </body>
 </html>
