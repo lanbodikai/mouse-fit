@@ -1,4 +1,54 @@
 const mice = [
+  // Razer
+  { brand: "Razer", model: "Viper", length: 126.7, width: 66.2, height: 37.8, weight: 69, shape: "Symmetrical (Ambidextrous)", hump: "Low" }, // :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
+  { brand: "Razer", model: "Viper Ultimate", length: 126.7, width: 66.2, height: 37.8, weight: 74, shape: "Symmetrical (Ambidextrous)", hump: "Low" }, // :contentReference[oaicite:2]{index=2}
+  { brand: "Razer", model: "Viper V2 Pro", length: 125.0, width: 63.5, height: 43.5, weight: 60, shape: "Symmetrical", hump: "High" }, // :contentReference[oaicite:3]{index=3}:contentReference[oaicite:4]{index=4}
+  { brand: "Razer", model: "Viper Mini", length: 118.3, width: 53.5, height: 38.3, weight: 61, shape: "Symmetrical", hump: "Low" }, // :contentReference[oaicite:5]{index=5}:contentReference[oaicite:6]{index=6}
+  { brand: "Razer", model: "Viper Mini Signature Edition", length: 118.3, width: 53.5, height: 38.3, weight: 49, shape: "Symmetrical", hump: "Low" }, // :contentReference[oaicite:7]{index=7}:contentReference[oaicite:8]{index=8}
+  { brand: "Razer", model: "DeathAdder V2", length: 127.0, width: 70.0, height: 42.7, weight: 82, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:9]{index=9}:contentReference[oaicite:10]{index=10}
+  { brand: "Razer", model: "DeathAdder V3 Pro", length: 128.0, width: 68.0, height: 44.0, weight: 63, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:11]{index=11}:contentReference[oaicite:12]{index=12}
+  { brand: "Razer", model: "DeathAdder V4 Pro", length: 128.0, width: 68.0, height: 44.0, weight: 56, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:13]{index=13}
+  { brand: "Razer", model: "Orochi V2", length: 108.0, width: 60.0, height: 38.0, weight: 60, shape: "Symmetrical", hump: "Low" }, // :contentReference[oaicite:14]{index=14}:contentReference[oaicite:15]{index=15}
+  { brand: "Razer", model: "Basilisk V3 Pro", length: 130.0, width: 75.4, height: 42.5, weight: 112, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:16]{index=16}
+
+  // Logitech
+  { brand: "Logitech", model: "G Pro Wireless", length: 125.0, width: 63.5, height: 40.0, weight: 80, shape: "Symmetrical (Ambidextrous)", hump: "Medium" }, // :contentReference[oaicite:17]{index=17}:contentReference[oaicite:18]{index=18}
+  { brand: "Logitech", model: "G Pro X Superlight", length: 125.0, width: 63.5, height: 40.0, weight: 63, shape: "Symmetrical", hump: "Medium" }, // :contentReference[oaicite:19]{index=19}
+  { brand: "Logitech", model: "G Pro X Superlight 2", length: 125.0, width: 63.5, height: 43.5, weight: 60, shape: "Symmetrical", hump: "High" }, // :contentReference[oaicite:20]{index=20}
+  { brand: "Logitech", model: "G Pro X Superlight 2 DEX", length: 125.8, width: 67.7, height: 43.9, weight: 60, shape: "Symmetrical", hump: "High" }, // :contentReference[oaicite:21]{index=21}
+  { brand: "Logitech", model: "G303 Shroud Edition", length: 117.0, width: 70.0, height: 40.0, weight: 75, shape: "Symmetrical (Right-hand use)", hump: "High" }, // :contentReference[oaicite:22]{index=22}
+  { brand: "Logitech", model: "G502 Lightspeed", length: 132.0, width: 75.0, height: 40.0, weight: 114, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:23]{index=23}
+  
+  // G-Wolves
+  { brand: "G-Wolves", model: "Hati S", length: 117.0, width: 61.0, height: 40.0, weight: 49, shape: "Symmetrical", hump: "Medium" }, // :contentReference[oaicite:29]{index=29}
+  { brand: "G-Wolves", model: "Skoll", length: 125.0, width: 68.0, height: 42.0, weight: 66, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:30]{index=30}:contentReference[oaicite:31]{index=31}
+  { brand: "G-Wolves", model: "Skoll Mini", length: 117.0, width: 64.0, height: 40.0, weight: 50, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:32]{index=32}
+  { brand: "G-Wolves", model: "Hati M ACE Wireless", length: 124.0, width: 64.0, height: 39.5, weight: 63, shape: "Symmetrical (Right-hand)", hump: "Medium" },
+  { brand: "G-Wolves", model: "Hati S ACE Wireless", length: 119.0, width: 63.5, height: 36.0, weight: 56, shape: "Symmetrical (Right-hand)", hump: "Low" },
+
+  // Finalmouse
+  { brand: "Finalmouse", model: "Ultralight Air58", length: 128.0, width: 60.0, height: 40.0, weight: 58, shape: "Symmetrical (Right-hand use)", hump: "Medium" }, // :contentReference[oaicite:33]{index=33}
+  { brand: "Finalmouse", model: "Ultralight 2 Cape Town", length: 116.0, width: 53.0, height: 36.0, weight: 48, shape: "Symmetrical (Right-hand use)", hump: "Low" }, // :contentReference[oaicite:34]{index=34}:contentReference[oaicite:35]{index=35}
+  { brand: "Finalmouse", model: "Starlight-12 Small", length: 115.0, width: 60.0, height: 36.0, weight: 42, shape: "Symmetrical (Right-hand use)", hump: "Low" }, // :contentReference[oaicite:36]{index=36}:contentReference[oaicite:37]{index=37}
+  { brand: "Finalmouse", model: "Starlight-12 Medium", length: 128.0, width: 62.0, height: 37.0, weight: 47, shape: "Symmetrical (Right-hand use)", hump: "Medium" }, // :contentReference[oaicite:38]{index=38}:contentReference[oaicite:39]{index=39}
+
+  // SteelSeries
+  { brand: "SteelSeries", model: "Sensei Ten", length: 126.0, width: 68.0, height: 39.0, weight: 92, shape: "Symmetrical (Ambidextrous)", hump: "Medium" }, // :contentReference[oaicite:40]{index=40}:contentReference[oaicite:41]{index=41}
+  { brand: "SteelSeries", model: "Rival 310", length: 128.0, width: 70.0, height: 42.0, weight: 88, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:42]{index=42}
+  { brand: "SteelSeries", model: "Rival 600", length: 131.0, width: 69.0, height: 44.0, weight: 96, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:43]{index=43}:contentReference[oaicite:44]{index=44}
+  { brand: "SteelSeries", model: "Prime Wireless", length: 125.3, width: 67.9, height: 42.4, weight: 80, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:45]{index=45}
+  { brand: "SteelSeries", model: "Aerox 3 Wireless", length: 120.0, width: 67.0, height: 38.0, weight: 68, shape: "Symmetrical (Right-hand use)", hump: "Low" }, // :contentReference[oaicite:46]{index=46}
+
+  // Xtrfy
+  { brand: "Xtrfy", model: "M4", length: 120.0, width: 68.0, height: 39.0, weight: 69, shape: "Ergonomic (Right-hand)", hump: "Medium" }, // :contentReference[oaicite:47]{index=47}
+  { brand: "Xtrfy", model: "MZ1", length: 111.0, width: 58.5, height: 36.5, weight: 56, shape: "Symmetrical", hump: "Low" }, // :contentReference[oaicite:48]{index=48}
+  { brand: "Xtrfy", model: "M8 Wireless", length: 118.0, width: 60.5, height: 38.5, weight: 55, shape: "Symmetrical", hump: "Low" }, // :contentReference[oaicite:49]{index=49}
+
+  // Ninjutso
+  { brand: "Ninjutso", model: "Origin One X", length: 121.4, width: 58.0, height: 39.9, weight: 65, shape: "Ergonomic (Right-hand)", hump: "High" }, // :contentReference[oaicite:50]{index=50}
+  { brand: "Ninjutso", model: "Katana Superlight", length: 125.0, width: 60.0, height: 39.2, weight: 60, shape: "Symmetrical (Right-hand use)", hump: "Medium" }, // :contentReference[oaicite:51]{index=51}
+  { brand: "Ninjutso", model: "Sora V2", length: 119.2, width: 59.0, height: 37.3, weight: 40, shape: "Symmetrical (Right-hand)", hump: "Low" },
+
   // Pulsar
   { brand: "Pulsar", model: "Xlite v4", length: 122.0, width: 66.0, height: 43.0, weight: 54, shape: "Ergonomic (Right-hand)", hump: "Center" },
   { brand: "Pulsar", model: "Xlite v4 Mini", length: 115.6, width: 63.4, height: 40.7, weight: 52, shape: "Ergonomic (Right-hand)", hump: "Center" },

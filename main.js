@@ -677,6 +677,17 @@ function computeAndStore() {
   } else {
     localStorage.removeItem("mousefit:recs");
   }
+    // --- start a fresh session & clear any old grip artifacts ---
+  const sess = String(Date.now());
+  localStorage.setItem("mousefit:session", sess);
+  [
+    "mousefit:grip_view_top",
+    "mousefit:grip_view_right",
+    "mousefit:grip_view_left",
+    "mousefit:grip_result",
+    "mousefit:grip_pref",
+    "mousefit:grip_done_session"
+  ].forEach(k => localStorage.removeItem(k));
 }
 
 /* ================== Drawing (frozen) ================== */

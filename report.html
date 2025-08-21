@@ -32,6 +32,25 @@
       ul { list-style: disc; margin: 4px 0 16px 20px; }
       li { margin-bottom: 4px; line-height: 1.4; }
       .note { font-size: 13px; color: var(--sub); margin-top: 4px; }
+
+      /* Grip checker button + status */
+      .btn-link {
+        display:inline-block; background:#0d1a21; color:#fff;
+        border:1px solid #1f3a47; padding:10px 14px; border-radius:12px;
+        font-weight:600; text-decoration:none;
+      }
+      .btn-link:hover { filter:brightness(1.05); }
+
+      .pill { padding:4px 10px; border-radius:999px; background:#0f1524;
+              border:1px solid #2a2f40; font-size:12px; color:#cfe9f6; }
+
+      #gripBox { display:flex; gap:12px; align-items:center; margin:10px 0 14px; }
+
+      /* (optional) thumbnails of the 3 grip views you captured */
+      .grip-thumbs { display:flex; gap:8px; margin-top:4px; }
+      .grip-thumbs img { width:84px; height:56px; object-fit:cover;
+                         border-radius:8px; border:1px solid #2a2f40; background:#0b0b0f; }
+
     </style>
   </head>
   <body>
@@ -47,6 +66,18 @@
         <p><strong>Suggested grip style(s):</strong> <span id="suggestedGrip"></span></p>
       </div>
     </div>
+    
+      <div id="gripBox">
+        <a href="/grip.html" class="btn-link">Open Grip Checker</a>
+        <span id="gripPill" class="pill">Grip: not checked</span>
+      </div>
+
+      <!-- (optional) show the 3 captured views when available -->
+      <div id="gripThumbs" class="grip-thumbs" style="display:none;">
+        <img id="gripTop"   alt="Top view">
+        <img id="gripRight" alt="Right view">
+        <img id="gripLeft"  alt="Left view">
+      </div>
 
     <h2>Recommended Mice</h2>
     <p class="note">Top picks for each grip style, sorted by compatibility:</p>
@@ -98,24 +129,99 @@
         }
 
         // Populate recommendation lists for each grip category
-        for (const grip of ["palm", "claw", "fingertip"]) {
-          const listEl = document.getElementById("list" + grip.charAt(0).toUpperCase() + grip.slice(1));
-          const topMice = rec.top[grip] || [];
-          topMice.forEach(mouse => {
-            const li = document.createElement("li");
-            // Provide mouse details: name, weight, dimensions, shape, and suggested grip
-            const currentGrip = grip.charAt(0).toUpperCase() + grip.slice(1);
-            li.textContent = `${mouse.brand} ${mouse.model} — ${mouse.weight_g} g — ${mouse.width_mm} mm wide, ${mouse.height_mm} mm tall — ${mouse.shape} (${currentGrip} grip)`;
-            listEl.appendChild(li);
-          });
-          if (topMice.length === 0) {
-            // If no recommendations available (just in case), show a placeholder
+        // === Populate recommendation lists, filtered by detected grip preference ===
+        const ulPalm = document.getElementById("listPalm");
+        const ulClaw = document.getElementById("listClaw");
+        const ulTip  = document.getElementById("listFingertip");
+
+        // helper to hide the <h3> above any UL we suppress
+        function hideHeading(ul) {
+          const h = ul && ul.previousElementSibling;
+          if (h && /^H\d$/.test(h.tagName)) h.style.display = "none";
+        }
+
+        // helper to render items (keeps your existing line format)
+        function addItems(ul, arr, label) {
+          ul.innerHTML = "";
+          if (!arr || !arr.length) {
             const li = document.createElement("li");
             li.textContent = "No data available";
-            listEl.appendChild(li);
-          }
+            ul.appendChild(li);
+            return;
+          } 
+          arr.forEach(mouse => {
+            const li = document.createElement("li");
+            // tweak this line if you want a different display string
+            li.textContent =
+              `${mouse.brand} ${mouse.model} — ${mouse.weight_g} g — ` +
+              `${mouse.length_mm}×${mouse.width_mm}×${mouse.height_mm} mm — ` +
+              `${mouse.shape} (${label} grip)`;
+            ul.appendChild(li);
+          });
+        }
+
+        let palmList = (rec.top && rec.top.palm) || [];
+        let clawList = (rec.top && rec.top.claw) || [];
+        let tipList  = (rec.top && rec.top.fingertip) || [];
+
+        // read preference saved by grip.js (e.g., { grip:"claw", relaxed:true })
+        const pref = JSON.parse(localStorage.getItem("mousefit:grip_pref") || "{}");
+        const handLenMm = Number(measure.len_mm || 0);
+
+        // relaxed claw → bias to slightly larger claw mice (length >= ~64% of hand length)
+        if (pref.grip === "claw" && pref.relaxed && handLenMm) {
+          const minLen = 0.64 * handLenMm;
+          const getLen = m => Number(m.length_mm ?? m.length ?? 0);
+          const larger = clawList.filter(m => getLen(m) >= minLen);
+          if (larger.length) clawList = larger;  // keep original if filter would empty the list
+        }
+
+        // show only the preferred grip’s list; hide the others (and their headings)
+        if (pref.grip === "palm") {
+          addItems(ulPalm, palmList, "Palm");
+          ulClaw.innerHTML = ""; ulTip.innerHTML = "";
+          hideHeading(ulClaw); hideHeading(ulTip);
+        } else if (pref.grip === "claw") {
+          addItems(ulClaw, clawList, pref.relaxed ? "Claw (relaxed bias)" : "Claw");
+          ulPalm.innerHTML = ""; ulTip.innerHTML = "";
+          hideHeading(ulPalm); hideHeading(ulTip);
+        } else if (pref.grip === "fingertip") {
+          addItems(ulTip, tipList, "Fingertip");
+          ulPalm.innerHTML = ""; ulClaw.innerHTML = "";
+          hideHeading(ulPalm); hideHeading(ulClaw);
+        } else {
+        // no pref → show all three as before
+          addItems(ulPalm, palmList, "Palm");
+          addItems(ulClaw, clawList, "Claw");
+          addItems(ulTip,  tipList,  "Fingertip");
         }
       }
+        /* === Grip result/status pulled from Grip Checker === */
+        (function showGrip() {
+          const pill = document.getElementById("gripPill");
+          if (!pill) return;
+
+       // show thumbnails if the 3-angle captures exist
+            const topB64   = localStorage.getItem("mousefit:grip_view_top");
+            const rightB64 = localStorage.getItem("mousefit:grip_view_right");
+            const leftB64  = localStorage.getItem("mousefit:grip_view_left");
+          if (topB64 || rightB64 || leftB64) {
+            const box = document.getElementById("gripThumbs");
+          if (box) box.style.display = "flex";
+          if (topB64)   document.getElementById("gripTop").src   = topB64;
+          if (rightB64) document.getElementById("gripRight").src = rightB64;
+          if (leftB64)  document.getElementById("gripLeft").src  = leftB64;
+        }
+
+      // read the AI (or local heuristic) result saved by grip.js
+          try {
+            const r = JSON.parse(localStorage.getItem("mousefit:grip_result") || "{}");
+            const grip = (r.grip || r.local_guess?.grip || "").toLowerCase();
+            const conf = Math.round(100 * (r.confidence ?? r.local_guess?.confidence ?? 0));
+          if (grip) pill.textContent = conf ? `Grip: ${grip} (${conf}%)` : `Grip: ${grip}`;
+          }  catch { /* ignore */ }
+        })();
+
     </script>
   </body>
 </html>
