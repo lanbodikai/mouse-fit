@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mouse Fit — Measurement Report</title>
+    <link rel="stylesheet" href="src/neon.css">
     <style>
       :root { --bg: #0b0b0f; --fg: #e8e8f0; --sub: #a8a8b3; }
       body { margin: 0; padding: 20px; font-family: system-ui, Segoe UI, Inter, Arial; background: var(--bg); color: var(--fg); }
@@ -50,7 +51,7 @@
       .grip-thumbs { display:flex; gap:8px; margin-top:4px; }
       .grip-thumbs img { width:84px; height:56px; object-fit:cover;
                          border-radius:8px; border:1px solid #2a2f40; background:#0b0b0f; }
-
+        
     </style>
   </head>
   <body>
@@ -69,6 +70,8 @@
     
       <div id="gripBox">
         <a href="./grip.html" class="btn-link">Open Grip Checker</a>
+        <button id="redoBtn">Redo test</button>
+        <button id="askAI" class="btn-link">Ask MouseFit AI</button>
         <span id="gripPill" class="pill">Grip: not checked</span>
       </div>
 
@@ -223,5 +226,35 @@
         })();
 
     </script>
+    <script>
+  (function wireAskAI(){
+    const btn = document.getElementById('askAI');
+    if (!btn) return;
+
+    btn.onclick = () => {
+      // read measurement from localStorage
+      let lenCm = "", widCm = "", grip = "";
+      try {
+        const m = JSON.parse(localStorage.getItem("mousefit:measure") || "{}");
+        if (m.len_mm) lenCm = (m.len_mm / 10).toFixed(1);
+        if (m.wid_mm) widCm = (m.wid_mm / 10).toFixed(1);
+      } catch {}
+
+      // optional grip if present
+      grip = localStorage.getItem("gripGuess")
+          || localStorage.getItem("mousefit:grip")
+          || "";
+
+      // build query string for ai.html
+      const params = new URLSearchParams();
+      if (lenCm) params.set("len", lenCm);
+      if (widCm) params.set("wid", widCm);
+      if (grip)  params.set("grip", grip.toLowerCase());
+
+      // go to the AI page with prefilled values
+      window.location.href = "./ai.html?" + params.toString();
+    };
+  })();
+</script>
   </body>
 </html>
