@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mouse-Fit — Grip Checker</title>
+    <link rel="stylesheet" href="/neon.css" />
+  </head>
+  <body>
+    <nav class="mf-nav">
+      <a class="brand" href="/">MF</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/#projects">Projects</a>
+        <a href="/htmls/about.html">About the author</a>
+        <a href="/htmls/mouse-db.html">Mouse-Database <span class="soon">soon</span></a>
+      </div>
+      <div class="nav-cta">
+        <a class="pill" href="/htmls/measure.html">Quick Start</a>
+      </div>
+    </nav>
+
+    <header class="mf-page-hero">
+      <h1>Grip Checker</h1>
+      <p>MediaPipe landmarks → palm / claw / fingertip (incl. relaxed claw).</p>
+    </header>
+
+    <div class="wrap">
+      <video id="cam" playsinline autoplay muted></video>
+      <canvas id="frame"></canvas>
+
+      <div class="gripGuide"><span class="label" id="guideLabel">Step 1/3 — TOP view</span></div>
+
+      <div id="status" class="badge">Live</div>
+      <div id="toast" class="toast"></div>
+      <div id="countdown" class="countdown">5</div>
+
+      <div class="hud">
+        <div class="row" style="gap:12px; margin-bottom:6px;">
+          <label>Camera:</label>
+          <select id="cameraSelect"></select>
+          <button id="refreshCams">Refresh</button>
+          <span id="camName" class="pill">—</span>
+          <span id="skelState" class="pill">Skeleton: On</span>
+          <button id="toggleSkel">Turn off skeleton</button>
+          <span class="step-pill" id="stepPill">Step: live</span>
+          <span class="step-pill" id="viewPill">View: Top</span>
+        </div>
+
+        <div id="hint" class="hint">
+          Capture 3 angles: <b>Top</b>, <b>Right</b>, <b>Left</b>. Hold your own mouse in your natural grip inside the dashed box.
+        </div>
+
+        <div class="thumbs">
+          <img id="thumbTop"   alt="Top"   title="Top">
+          <img id="thumbRight" alt="Right" title="Right">
+          <img id="thumbLeft"  alt="Left"  title="Left">
+        </div>
+
+        <div class="row" id="liveBtns">
+          <button id="timer" class="primary">Capture in 5 Seconds (Space)</button>
+          <button id="snap">Capture now</button>
+        </div>
+
+        <div class="row" id="frozenBtns" style="display:none; gap:8px;">
+          <button id="accept">Use This Angle</button>
+          <button id="retake">Retake</button>
+          <button id="retakeAll">Retake all (clear)</button>
+          <button id="classify" disabled>Classify Grip</button>
+          <a id="gotoReport" class="btn-link" href="/htmls/report.html" style="display:none;">Go to Report</a>
+          <span id="resultPill" class="pill">Result: —</span>
+        </div>
+      </div>
+    </div>
+
+    <button id="startCamBtn" class="mf-fab">Tap to start camera</button>
+    <script type="module" src="/js/grip.js"></script>
+
+    <!-- first-run tip -->
+    <div id="introGrip" class="mf-modal" style="display:none">
+      <div class="mf-modal-card">
+        <h3>Grip cam tips</h3>
+        <ul>
+          <li>Match the requested view (Top / Right / Left) before capturing.</li>
+          <li>Hold your <b>own mouse</b> the way you normally do.</li>
+          <li>Including the mouse helps the model classify claw / fingertip / palm (or relaxed claw).</li>
+        </ul>
+        <div class="mf-modal-actions">
+          <button id="introGripOk" class="pill">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const KEY = "mousefit:intro_grip_v1";
+        const el = document.getElementById("introGrip");
+        if (!localStorage.getItem(KEY)) el.style.display = "flex";
+        document.getElementById("introGripOk").onclick = () => {
+          localStorage.setItem(KEY, "1");
+          el.style.display = "none";
+        };
+      })();
+    </script>
+  </body>
+</html>
