@@ -1,109 +1,311 @@
 <!doctype html>
 <html lang="en">
-  
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mouse-Fit — Home</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mouse-Fit</title>
 
-  <!-- Load the shared neon theme -->
-  <!-- If this is on GitHub Pages under /mouse-fit/, use: /mouse-fit/src/neon.css -->
-  <link rel="stylesheet" href="src/neon.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
 
-  <style>
-    body{ margin:0; font-family: system-ui, Inter, Segoe UI, Arial; }
+<style>
+/* ============ THEME ============ */
+:root{
+  --deep:#05060a; --ink:#071022; --roy:#0a1c3a;
+  --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.07);
+  --neon:linear-gradient(90deg,#7c3aed 0%,#22d3ee 50%,#a78bfa 100%);
+  --shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22);
+}
+html,body{
+  height:100%;
+  background:
+    radial-gradient(1150px 620px at 90% 6%, rgba(48,124,255,.18), transparent 60%),
+    radial-gradient(1100px 560px at 10% 115%, rgba(24,160,240,.18), transparent 65%),
+    linear-gradient(135deg,var(--deep) 0%,var(--ink) 58%,var(--roy) 100%);
+  background-attachment:fixed;
+  color:var(--fg);
+  font-family:Lexend, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+a{color:inherit;text-decoration:none}
 
-    /* top nav */
-    .nav{
-      max-width:1100px; margin:0 auto; padding:14px 20px;
-      display:flex; justify-content:space-between; align-items:center;
-    }
-    .brand{ font-weight:800; letter-spacing:.2px; }
-    .links a{ color:var(--fg); text-decoration:none; margin-left:16px; opacity:.9; }
-    .links a:hover{ opacity:1; }
+/* ============ NAV ============ */
+.nav{
+  position:sticky; top:0; z-index:40;
+  background:linear-gradient(180deg, rgba(10,15,25,.85), rgba(10,15,25,.55));
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(10px);
+}
+.nav-inner{
+  max-width:1200px; height:68px; margin:auto; padding:0 18px;
+  display:flex; align-items:center; gap:18px;
+}
+.brand{display:flex; align-items:center; gap:10px; font-weight:700;}
+.brand .logo{
+  width:72px; height:28px; border-radius:8px;
+  background:var(--neon); box-shadow:var(--shadow); display:grid; place-items:center;
+  font-size:.78rem; letter-spacing:.06em; color:#fff;
+}
+.links{display:flex; gap:18px; margin-left:8px}
+.links a{opacity:.86}
+.links a:hover{opacity:1}
 
-    /* hero section */
-    .hero{
-      max-width:1100px; margin:34px auto; padding:0 20px;
-      display:grid; grid-template-columns:1.2fr .8fr; gap:28px; align-items:center;
-    }
-    @media(max-width:920px){ .hero{ grid-template-columns:1fr; } }
+.nav-spacer{flex:1}
 
-    .headline{
-      font-size:clamp(28px,4vw,48px); line-height:1.05; margin:0 0 14px;
-    }
-    .grad{
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip:text; background-clip:text; color:transparent;
-    }
-    .sub{ color:var(--sub); font-size:15px; margin:0 0 18px; }
+.search{
+  display:flex; align-items:center; gap:8px; padding:8px 12px;
+  border-radius:999px; border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.04);
+}
+.search input{
+  width:140px; border:0; outline:0; background:transparent; color:#e9eeff; font:inherit; font-size:.95rem;
+}
+.search .icon{opacity:.8}
 
-    .cta{ display:flex; gap:12px; flex-wrap:wrap; }
-    .stats{ display:flex; gap:16px; flex-wrap:wrap; margin-top:20px; }
-    .stat{ padding:10px 14px; }
+.reg-btn{
+  margin-left:10px; padding:10px 16px; border-radius:999px; font-weight:700;
+  background:var(--neon); color:#fff; border:1px solid transparent; box-shadow:var(--shadow);
+}
 
-    /* right-side visual */
-    .phone{ aspect-ratio: 4/3; border-radius:16px; overflow:hidden; }
-    .phone .placeholder{
-      width:100%; height:100%;
-      background:
-        radial-gradient(240px 160px at 70% 20%, rgba(125,211,252,.18), transparent 40%),
-        radial-gradient(220px 140px at 20% 70%, rgba(192,132,252,.20), transparent 40%),
-        #0a0f1c;
-    }
+/* ============ HERO ============ */
+.hero{
+  max-width:1200px; margin:28px auto 0; padding:24px 20px 64px;
+  display:grid; grid-template-columns:1.1fr .9fr; gap:28px; align-items:stretch; position:relative;
+}
+.card{
+  background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:22px; padding:36px 32px;
+  box-shadow:0 30px 80px rgba(0,0,0,.45);
+}
+.eyebrow{opacity:.9; font-weight:700; letter-spacing:.12em; text-transform:uppercase; font-size:.75rem}
+.h1{
+  font-weight:700; font-size:clamp(32px,5.8vw,56px); line-height:1.06; letter-spacing:-.02em;
+  background:linear-gradient(90deg,#cfd7ff 0%,#fff 60%); -webkit-background-clip:text; background-clip:text; color:transparent;
+  margin:8px 0 10px;
+}
+.lead{color:var(--sub); margin-top:10px; font-size:1rem; line-height:1.6}
+.cta{display:flex; gap:12px; flex-wrap:wrap; margin-top:20px}
+.btn{padding:12px 18px; border-radius:14px; background:var(--neon); color:#fff; font-weight:700; box-shadow:var(--shadow); border:1px solid transparent}
+.btn.ghost{background:transparent; border-color:#2a3348}
 
-    /* info card */
-    .info{ max-width:1100px; margin:24px auto; padding:24px; }
-    .info .k{ font-weight:700; margin-bottom:8px; }
-    .info .v{ color:var(--sub); }
-  </style>
+.media{
+  border:1px solid var(--border); border-radius:22px; overflow:hidden;
+  background: radial-gradient(160deg, rgba(139,92,246,.10), rgba(34,211,238,.08));
+  box-shadow: inset 0 0 80px rgba(0,0,0,.35), 0 20px 60px rgba(0,0,0,.35);
+  position:relative; min-height:320px; isolation:isolate;
+}
+#hero-art{
+  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+  opacity:.9; mix-blend-mode:screen; filter:saturate(1.1) brightness(1.06) contrast(1.04); transform:scale(1.02);
+}
+.media::after{content:""; position:absolute; inset:0; background:radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(5,6,10,.38) 100%)}
+.cue-wrap{position:absolute; left:50%; transform:translateX(-50%); bottom:8px; display:flex; pointer-events:none}
+.cue{pointer-events:auto; width:44px;height:44px; display:grid;place-items:center; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.06)}
+.chev{width:18px;height:18px; fill:none; stroke:#c7c9ff; stroke-width:2.5}
+
+/* ============ SECTION 2 — Neon card carousel ============ */
+.section{min-height:100vh; display:grid; place-items:center; padding:40px 20px}
+.carousel{width:min(1200px,95vw); display:grid; grid-template-rows:auto 1fr}
+.carousel h2{text-align:center; font-weight:700; letter-spacing:.06em; margin-bottom:18px}
+.track{position:relative; overflow:hidden; padding:20px 0 30px}
+.row{display:flex; gap:22px; will-change:transform; transition:transform .45s cubic-bezier(.2,.65,.25,1)}
+.card3{
+  position:relative; flex:0 0 260px; height:360px; border-radius:20px; overflow:hidden;
+  border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(180deg, rgba(139,92,246,.16), rgba(33,161,210,.14));
+  box-shadow:0 12px 40px rgba(0,0,0,.35);
+  transform-origin:center; transform:scale(.86); opacity:.65; transition:transform .45s, opacity .45s, box-shadow .45s;
+  cursor:pointer;
+}
+.card3.active{transform:scale(1); opacity:1; box-shadow:0 0 40px rgba(124,58,237,.35), 0 0 60px rgba(34,211,238,.22)}
+.card3 img{
+  position:absolute; inset:0; width:100%; height:60%; object-fit:cover; mix-blend-mode:screen; opacity:.95;
+  filter:saturate(1.1) brightness(1.04);
+}
+.card3 .meta{
+  position:absolute; left:0; right:0; bottom:0; padding:18px;
+  color:#e9eeff; display:grid; gap:8px;
+  background:linear-gradient(180deg, transparent 0%, rgba(6,8,14,.65) 40%, rgba(6,8,14,.86) 100%);
+}
+.meta .title{font-weight:700}
+.meta .desc{font-size:.9rem; color:#c8d3f3}
+.meta .go{justify-self:start; margin-top:6px; padding:8px 12px; border-radius:12px; background:var(--neon); color:#fff; font-weight:700; border:1px solid transparent}
+
+/* arrows */
+.ctrls{display:flex; justify-content:center; gap:12px; margin-top:8px}
+.arrow{
+  width:38px;height:38px;border-radius:999px;border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.05);
+  display:grid;place-items:center; cursor:pointer;
+}
+.arrow svg{width:18px;height:18px; stroke:#dfe6ff; stroke-width:2; fill:none}
+
+@media (max-width:980px){ .hero{grid-template-columns:1fr} }
+
+/* image placeholder (if file missing) */
+.placeholder{
+  background: radial-gradient(120% 120% at 30% 20%, #7c3aed55, transparent 60%), radial-gradient(120% 120% at 70% 80%, #22d3ee55, transparent 60%), #0c1020;
+}
+</style>
 </head>
 <body>
 
-  <nav class="nav">
-    <div class="brand">Mouse-Fit</div>
+<!-- NAV (updated items) -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand"><div class="logo">MF</div> Mouse-Fit</div>
+
     <div class="links">
-      <a href="./measure.html">Camera Measure</a>
-      <a href="./ai.html">MouseFit AI</a>
-      <a href="./report.html">Report</a>
-      <a href="https://github.com/lanbodikai/mouse-fit" target="_blank" rel="noopener">GitHub</a>
-    </div>
-  </nav>
-
-  <section class="hero">
-    <div class="glass card" style="padding:22px;">
-      <h1 class="headline">
-        Discover your perfect mouse with
-        <span class="grad">precision hand-fit</span> & <span class="grad">AI suggestions</span>.
-      </h1>
-      <p class="sub">
-        Camera-based hand measurement (mm-accurate) + grip analysis + a curated, explainable recommender.
-        No logins. Runs locally.
-      </p>
-      <div class="cta">
-        <a class="btn btn-primary" href="./measure.html">Start Mouse Checker</a>
-        <a class="btn" href="./ai.html">Open MouseFit AI</a>
-      </div>
-
-      <div class="stats">
-        <div class="glass card stat"><b>MediaPipe</b> Hand Landmarker</div>
-        <div class="glass card stat"><b>Credit-card</b> homography</div>
-        <div class="glass card stat"><b>Ollama</b> + Llama&nbsp;3.2</div>
-      </div>
+      <a href="index.html">Home</a>
+      <a href="#projects">Projects</a>
+      <a href="about.html">About the author</a>
+      <a href="#" onclick="event.preventDefault();">Mouse-Database (coming soon)</a>
     </div>
 
-    <div class="glass card phone">
-      <!-- You can replace this with a real screenshot later -->
-      <div class="placeholder"></div>
+    <div class="nav-spacer"></div>
+    <div class="search"><span class="icon">🔍</span><input placeholder="Search" /></div>
+    <a class="reg-btn" href="#">Register</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <section class="card">
+    <div class="eyebrow">Hand-size • Grip Intelligence</div>
+    <h1 class="h1">Discover your perfect mouse<br/>with precision &amp; neon speed.</h1>
+    <p class="lead">
+      Camera-based hand measurement (mm-accurate) + grip analysis + a curated, explainable recommender.
+      Runs locally with <b>Ollama</b> + <b>Llama&nbsp;3.2</b>. No accounts. No uploads.
+    </p>
+    <div class="cta">
+      <a class="btn" href="measure.html">Quick Start</a>
+      <a class="btn ghost" href="grip.html">Grip Checker</a>
     </div>
   </section>
 
-  <section class="glass card info">
-    <div class="k">Flow</div>
-    <div class="v">Live → Freeze → Refine → Report. Draggable handles, fingertip & palm auto-snap, then mm-accurate conversion.</div>
-  </section>
+  <aside class="media" aria-hidden="true">
+    <!-- swap filename if yours differs -->
+    <img id="hero-art" src="133a2677ca2fa401c81130b0154158e6.jpg"
+         onerror="this.classList.add('placeholder'); this.removeAttribute('src');" alt="">
+  </aside>
 
+  <div class="cue-wrap">
+    <button id="cue" class="cue" title="Scroll">
+      <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- CAROUSEL -->
+<section id="projects" class="section">
+  <div class="carousel">
+    <h2>Projects</h2>
+
+    <div class="track">
+      <div id="row" class="row">
+        <!-- Card 0 -->
+        <a class="card3" data-link="measure.html" title="Hand Measure">
+          <img src="772f9cf4f60f80c49a61860b38c06c2d.jpg"
+               onerror="this.classList.add('placeholder'); this.removeAttribute('src');" alt="">
+          <div class="meta">
+            <div class="title">Hand Measure</div>
+            <div class="desc">Credit-card homography → mm-accurate hand length &amp; palm width.</div>
+            <span class="go">Open</span>
+          </div>
+        </a>
+
+        <!-- Card 1 -->
+        <a class="card3" data-link="grip.html" title="Grip Checker">
+          <img src="133a2677ca2fa401c81130b0154158e6.jpg"
+               onerror="this.classList.add('placeholder'); this.removeAttribute('src');" alt="">
+          <div class="meta">
+            <div class="title">Grip Checker</div>
+            <div class="desc">Landmarks → palm / claw / fingertip (incl. relaxed claw).</div>
+            <span class="go">Open</span>
+          </div>
+        </a>
+
+        <!-- Card 2 -->
+        <a class="card3" data-link="ai.html" title="AI Mouse-Finder">
+          <img src="772f9cf4f60f80c49a61860b38c06c2d.jpg"
+               onerror="this.classList.add('placeholder'); this.removeAttribute('src');" alt="">
+          <div class="meta">
+            <div class="title">AI Mouse-Finder</div>
+            <div class="desc">Local LLM suggestions with short, explainable reasoning.</div>
+            <span class="go">Open</span>
+          </div>
+        </a>
+
+        <!-- Card 3 -->
+        <a class="card3" data-link="#" title="Mouse-Database (Soon)">
+          <img src="133a2677ca2fa401c81130b0154158e6.jpg"
+               onerror="this.classList.add('placeholder'); this.removeAttribute('src');" alt="">
+          <div class="meta">
+            <div class="title">Mouse-Database</div>
+            <div class="desc">Spec browser &amp; comparison. (Coming soon)</div>
+            <span class="go">Soon</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="ctrls">
+      <button class="arrow" id="prev" aria-label="Previous">
+        <svg viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></svg>
+      </button>
+      <button class="arrow" id="next" aria-label="Next">
+        <svg viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+</section>
+
+<script>
+/* Scroll cue → go to Projects */
+document.getElementById('cue')?.addEventListener('click',()=>{
+  document.getElementById('projects')?.scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+/* Carousel logic (center focus, click side to center, auto-loop) */
+(function(){
+  const row = document.getElementById('row');
+  const cards = [...row.querySelectorAll('.card3')];
+  let i = 0, paused = false;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function layout(){
+    const cardW = cards[0].getBoundingClientRect().width + 22; // width + gap
+    const viewport = row.parentElement.getBoundingClientRect().width;
+    const offset = (viewport/2) - (cardW/2);
+    row.style.transform = `translateX(${offset - i*cardW}px)`;
+    cards.forEach((c,idx)=> c.classList.toggle('active', idx===i));
+  }
+
+  function go(n){ i=(n+cards.length)%cards.length; layout(); }
+
+  // Click card → center; click "Open" → follow link
+  cards.forEach((c,idx)=>{
+    c.addEventListener('click', (e)=>{
+      const goBtn = e.target.closest('.go');
+      if (goBtn) {
+        const link = c.getAttribute('data-link')||'#';
+        if (link && link !== '#') location.href = link;
+        e.stopPropagation();
+        return;
+      }
+      go(idx);
+    });
+  });
+
+  // Controls + auto
+  document.getElementById('prev').onclick=()=>{ paused=true; go(i-1); };
+  document.getElementById('next').onclick=()=>{ paused=true; go(i+1); };
+  let timer=null;
+  function start(){ if(reduce) return; stop(); timer=setInterval(()=>{ if(!paused) go(i+1); }, 3000); }
+  function stop(){ if(timer) clearInterval(timer); timer=null; }
+  row.addEventListener('mouseenter', ()=>paused=true);
+  row.addEventListener('mouseleave', ()=>paused=false);
+  document.addEventListener('visibilitychange', ()=>{ paused=document.hidden; });
+
+  window.addEventListener('resize', layout);
+  go(0); start();
+})();
+</script>
 </body>
 </html>
-

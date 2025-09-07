@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mouse-Fit</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/neon.css" />
+    <!-- Vite will inject compiled JS; CSS comes from src/neon.css (imported in main.jsx) -->
+  </head>
+  <body>
+    <!-- NAVBAR -->
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="brand logo" href="/">
+          <span class="logo-pill">MF</span>
+          <span class="brand-text">Mouse-Fit</span>
+        </a>
+
+        <div class="nav-links">
+          <a class="nav-link is-active" href="/">Home</a>
+          <a class="nav-link" href="#projects">Projects</a>
+          <a class="nav-link" href="/about.html">About the author</a>
+          <a class="nav-link disabled" href="#" title="Coming soon">Mouse-Database</a>
+        </div>
+
+        <div class="nav-cta">
+          <div class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/></svg>
+            <input placeholder="Search" />
+          </div>
+          <a class="btn-grad" href="#" onclick="alert('Register flow coming soon')">Register</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="hero">
+      <section class="card hero-left">
+        <div class="eyebrow">Hand-size • Grip Intelligence</div>
+        <h1 class="h1">
+          Discover your perfect mouse<br/>with precision &amp; neon speed.
+        </h1>
+        <p class="lead">
+          Camera-based hand measurement (mm-accurate) + grip analysis + a curated, explainable recommender.
+          Runs locally with <b>Ollama</b> + <b>Llama&nbsp;3.2</b>. No accounts. No uploads.
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn-grad lg" href="/measure.html">Quick Start</a>
+          <a class="btn-dim lg" href="/grip.html">Grip Checker</a>
+        </div>
+      </section>
+
+      <aside class="card hero-right" aria-hidden="true">
+        <!-- Put an image in public/img/hero.jpg (or change the src) -->
+        <img class="hero-art" src="/img/hero.jpg" alt="">
+      </aside>
+
+      <button id="cue" class="cue" title="Scroll">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </header>
+
+    <!-- PROJECTS (React mounts here) -->
+    <section id="projects" class="section">
+      <div class="section-inner">
+        <h2 class="section-title">Projects</h2>
+
+        <!-- React island mounts into this div (see src/main.jsx) -->
+        <div id="projects-react"></div>
+      </div>
+    </section>
+
+    <!-- Footer (simple) -->
+    <footer class="foot">
+      <div class="foot-inner">
+        <span>© <span id="y"></span> Mouse-Fit</span>
+        <span class="muted">All local, no uploads.</span>
+      </div>
+    </footer>
+
+    <!-- Smooth scroll cue -->
+    <script type="module">
+      document.getElementById('y').textContent = new Date().getFullYear();
+      document.getElementById('cue')?.addEventListener('click',()=>{
+        document.getElementById('projects')?.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+      // Highlight "Projects" link when that section is in view
+      const linkProjects = document.querySelector('.nav-link[href="#projects"]');
+      const obs = new IntersectionObserver(([e])=>{
+        linkProjects?.classList.toggle('is-active', e.isIntersecting);
+      }, { threshold: .3 });
+      const sec = document.getElementById('projects'); if (sec) obs.observe(sec);
+    </script>
+
+    <!-- Vite entry -->
+    <div id="root-vite"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
