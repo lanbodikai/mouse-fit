@@ -1,189 +1,337 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mouse-Fit — Measurement Report</title>
-    <link rel="stylesheet" href="/neon.css" />
-  </head>
-  <body>
-    <nav class="mf-nav">
-      <a class="brand" href="/">MF</a>
-      <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/#projects">Projects</a>
-        <a href="/htmls/about.html">About the author</a>
-        <a href="/htmls/mouse-db.html">Mouse-Database <span class="soon">soon</span></a>
-      </div>
-      <div class="nav-cta">
-        <a class="pill" href="/htmls/ai.html">Mouse-Finder AI</a>
-      </div>
-    </nav>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mouse-Fit — Measurement Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;700&display=swap" rel="stylesheet" />
 
-    <main class="mf-report">
-      <h1>Your Hand Measurement Report</h1>
+<style>
+:root{
+  --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.10);
+  --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:Lexend, system-ui, Arial;
+  background:
+    radial-gradient(1100px 560px at 90% 6%,rgba(48,124,255,.18),transparent 60%),
+    linear-gradient(135deg,#05060a,#071022 58%,#0a1c3a 100%);
+  color:var(--fg);
+}
 
-      <div class="result-container">
-        <img id="snapshot" alt="Hand snapshot" />
-        <div id="measurements">
-          <p><strong>Hand length:</strong> <span id="handLength"></span> cm</p>
-          <p><strong>Palm width:</strong> <span id="handWidth"></span> cm</p>
-          <p><strong>Hand size category:</strong> <span id="handSize"></span></p>
-          <p><strong>Suggested grip style(s):</strong> <span id="suggestedGrip"></span></p>
-        </div>
-      </div>
+/* ===== ultra-thin neon page frame ===== */
+.page-frame{
+  position:fixed; inset:6px; pointer-events:none; z-index:1000;
+  border-radius:16px;
+  border:1px solid rgba(167,139,250,.35);
+  box-shadow:inset 0 0 0 1px rgba(34,211,238,.18), 0 0 18px rgba(124,58,237,.18);
+}
 
-      <div id="gripBox" class="mf-report-actions">
-        <a href="/htmls/grip.html" class="pill">Open Grip Checker</a>
-        <button id="redoBtn">Redo test</button>
-        <button id="askAI" class="pill">Ask MouseFit AI</button>
-        <span id="gripPill" class="pill">Grip: not checked</span>
-      </div>
+/* ===== NAV (same as your Measure/Grip) ===== */
+nav{position:sticky;top:0;z-index:40;background:linear-gradient(180deg,rgba(10,15,25,.85),rgba(10,15,25,.55));border-bottom:1px solid var(--border);backdrop-filter:blur(10px)}
+.nav-inner{max-width:1200px;height:64px;margin:auto;display:flex;align-items:center;gap:18px;padding:0 18px}
+.brand{display:flex;gap:10px;align-items:center;font-weight:700}
+.logo{width:72px;height:28px;border-radius:8px;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));color:#fff;display:grid;place-items:center;font-size:.78rem;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
+.links{display:flex;gap:16px;list-style:none;margin:0 0 0 8px;padding:0}
+.links a{color:#dfe6ff;opacity:.85;text-decoration:none;padding:10px 12px;border-radius:10px}
+.links a:hover{opacity:1;background:rgba(255,255,255,.04)}
+.links a[aria-current="page"]{opacity:1;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.nav-spacer{flex:1}
+.search{display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05)}
+.search input{width:140px;border:0;background:transparent;color:#e9eeff;outline:0}
+.reg-btn{margin-left:10px;padding:10px 16px;border-radius:999px;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));color:#fff;font-weight:700;border:1px solid transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
 
-      <div id="gripThumbs" class="grip-thumbs" style="display:none;">
-        <img id="gripTop"   alt="Top view">
-        <img id="gripRight" alt="Right view">
-        <img id="gripLeft"  alt="Left view">
-      </div>
+/* ===== HERO layout ===== */
+.hero{
+  max-width:1200px; margin:24px auto 0; padding:0 20px;
+  display:grid; grid-template-columns: minmax(280px,520px) 1fr; gap:28px; align-items:center;
+  position:relative;
+}
+@media (max-width:980px){ .hero{grid-template-columns:1fr; gap:18px} }
 
-      <h2>Recommended Mice</h2>
-      <p class="note">Top picks for each grip style, sorted by compatibility:</p>
-      <h3>Palm Grip Recommendations</h3>
-      <ul id="listPalm"></ul>
-      <h3>Claw Grip Recommendations</h3>
-      <ul id="listClaw"></ul>
-      <h3>Fingertip Grip Recommendations</h3>
-      <ul id="listFingertip"></ul>
-    </main>
+.blob{
+  aspect-ratio: 4/3; border-radius:18px; position:relative; overflow:hidden;
+  border:1px solid rgba(255,255,255,.08);
+  background:
+    radial-gradient(120% 120% at 20% 10%, rgba(124,58,237,.45), transparent 40%),
+    radial-gradient(80% 80% at 80% 20%, rgba(34,211,238,.35), transparent 45%),
+    radial-gradient(100% 120% at 60% 80%, rgba(167,139,250,.35), transparent 55%),
+    #0b0f1c;
+  box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 0 60px rgba(255,255,255,.05);
+}
+.blob::after{
+  content:""; position:absolute; inset:0;
+  background: radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,.12), transparent 55%);
+  mix-blend-mode: screen; pointer-events:none;
+}
 
-    <!-- your original report scripts (unchanged, just works) -->
-    <script>
-      const measure = JSON.parse(localStorage.getItem("mousefit:measure") || "{}");
-      const rec = JSON.parse(localStorage.getItem("mousefit:recs") || "{}");
-      if (!measure.len_cm) {
-        document.body.innerHTML = "<p class='mf-empty'>No measurement data found. Please return to the main page to measure your hand.</p>";
-      } else {
-        const snapshotData = localStorage.getItem("mousefit:snapshot");
-        if (snapshotData) document.getElementById("snapshot").src = snapshotData;
-        else document.getElementById("snapshot").style.display = "none";
+/* snapshot sits above blob, blurred until reveal */
+#snapshot{
+  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+  display:block; transition:filter .3s ease, opacity .3s ease;
+}
 
-        document.getElementById("handLength").textContent = measure.len_cm;
-        document.getElementById("handWidth").textContent = measure.wid_cm;
-        document.getElementById("handSize").textContent = rec.size;
+/* Right text block */
+.report-copy{ position:relative; padding:8px 6px 8px 6px }
+.h1{ font-size:28px; margin:8px 0 8px }
+.kicker{ letter-spacing:.16em; font-size:12px; opacity:.9; color:#cfe1ff; margin-bottom:8px }
+.ghost{
+  position:absolute; right:6px; top:-6px; font-size:96px; line-height:1;
+  color:transparent; -webkit-text-stroke:1px rgba(255,255,255,.06);
+  text-stroke:1px rgba(255,255,255,.06); pointer-events:none; user-select:none;
+}
+.stats{
+  margin-top:8px; display:grid; gap:6px;
+  filter:blur(12px); transition:filter .25s ease, opacity .25s ease;
+}
+.stats .row{ display:flex; gap:10px; align-items:center; font-size:14px }
+.pill{padding:6px 10px;border-radius:999px;background:#0f1524;border:1px solid #2a2f40;font-size:12px;color:#cfe9f6}
 
-        const size = rec.size;
-        let gripSuggestion = "";
-        if (size === "small") {
-          gripSuggestion = "You might find a claw grip comfortable, though palm is also a versatile choice.";
-        } else if (size === "medium") {
-          gripSuggestion = "Palm grip is a versatile choice; experiment with claw or fingertip based on preference.";
-        } else if (size === "large" || size === "xlarge") {
-          gripSuggestion = "Fingertip can feel natural; palm grip may also be comfortable.";
-        } else gripSuggestion = "Any grip style can work — choose what feels most natural.";
-        document.getElementById("suggestedGrip").textContent = gripSuggestion;
+/* Grip thumbs (hidden until we have images; also blurred until reveal) */
+.grip-thumbs{display:none; gap:10px; margin-top:12px}
+.grip-thumbs img{width:84px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #2a2f40;background:#0b0b0f;transition:filter .25s ease}
 
-        const ulPalm = document.getElementById("listPalm");
-        const ulClaw = document.getElementById("listClaw");
-        const ulTip  = document.getElementById("listFingertip");
+/* Action buttons — all neon */
+.btn{background:#101626;color:var(--fg);border:1px solid #223049;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.btn.neon{background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));border-color:transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
+.btn.neon:hover{filter:brightness(1.05)}
+.reveal-bar{ display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap }
 
-        function hideHeading(ul) {
-          const h = ul && ul.previousElementSibling;
-          if (h && /^H\d$/.test(h.tagName)) h.style.display = "none";
-        }
-        function addItems(ul, arr, label) {
-          ul.innerHTML = "";
-          if (!arr || !arr.length) {
-            const li = document.createElement("li");
-            li.textContent = "No data available";
-            ul.appendChild(li);
-            return;
-          }
-          arr.forEach(mouse => {
-            const li = document.createElement("li");
-            li.textContent =
-              `${mouse.brand} ${mouse.model} — ${mouse.weight_g} g — ` +
-              `${mouse.length_mm}×${mouse.width_mm}×${mouse.height_mm} mm — ` +
-              `${mouse.shape} (${label} grip)`;
-            ul.appendChild(li);
-          });
-        }
+/* Recommendations list */
+.section{ max-width:1200px; margin:26px auto 90px; padding:0 20px }
+.section .title{ font-size:18px; margin:0 0 6px }
+.section .note{ font-size:13px; color:var(--sub); margin-bottom:12px }
+.list{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:10px }
+.card{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(167,139,250,.18);
+  border-radius:14px;
+  box-shadow:inset 0 0 0 1px rgba(34,211,238,.10), 0 0 22px rgba(124,58,237,.08);
+  padding:12px;
+  font-size:14px;
+}
 
-        let palmList = (rec.top && rec.top.palm) || [];
-        let clawList = (rec.top && rec.top.claw) || [];
-        let tipList  = (rec.top && rec.top.fingertip) || [];
+/* Conceal behavior (blur) controlled by [data-revealed] on <body> */
+body[data-revealed="false"] #snapshot{ filter:blur(18px) saturate(.9) opacity(.95) }
+body[data-revealed="true"]  #snapshot{ filter:none }
+body[data-revealed="false"] .stats,
+body[data-revealed="false"] .grip-thumbs img{ filter:blur(12px) }
+body[data-revealed="true"]  .stats,
+body[data-revealed="true"]  .grip-thumbs img{ filter:none }
 
-        const pref = JSON.parse(localStorage.getItem("mousefit:grip_pref") || "{}");
-        const handLenMm = Number(measure.len_mm || 0);
+/* tiny helper for empty state */
+.empty{opacity:.8;font-size:14px}
+</style>
+</head>
+<body data-revealed="false">
 
-        if (pref.grip === "claw" && pref.relaxed && handLenMm) {
-          const minLen = 0.64 * handLenMm;
-          const getLen = m => Number(m.length_mm ?? m.length ?? 0);
-          const larger = clawList.filter(m => getLen(m) >= minLen);
-          if (larger.length) clawList = larger;
-        }
+<div class="page-frame" aria-hidden="true"></div>
 
-        if (pref.grip === "palm") {
-          addItems(ulPalm, palmList, "Palm");
-          ulClaw.innerHTML = ""; ulTip.innerHTML = "";
-          hideHeading(ulClaw); hideHeading(ulTip);
-        } else if (pref.grip === "claw") {
-          addItems(ulClaw, clawList, pref.relaxed ? "Claw (relaxed bias)" : "Claw");
-          ulPalm.innerHTML = ""; ulTip.innerHTML = "";
-          hideHeading(ulPalm); hideHeading(ulTip);
-        } else if (pref.grip === "fingertip") {
-          addItems(ulTip, tipList, "Fingertip");
-          ulPalm.innerHTML = ""; ulClaw.innerHTML = "";
-          hideHeading(ulPalm); hideHeading(ulClaw);
-        } else {
-          addItems(ulPalm, palmList, "Palm");
-          addItems(ulClaw, clawList, "Claw");
-          addItems(ulTip,  tipList,  "Fingertip");
-        }
-      }
+<nav>
+  <div class="nav-inner">
+    <a class="brand" href="/index.html"><span class="logo">MF</span><span class="brand-text">Mouse-Fit</span></a>
+    <ul class="links">
+      <li><a href="/index.html">Home</a></li>
+      <li><a href="/htmls/measure.html">Measure</a></li>
+      <li><a href="/htmls/grip.html">Grip</a></li>
+      <li><a href="/htmls/ai.html">AI</a></li>
+      <li><a href="/htmls/report.html" aria-current="page">Report</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="search"><span>🔍</span><input placeholder="Search" /></div>
+    <a class="reg-btn" href="#">Register</a>
+  </div>
+</nav>
 
-      (function showGrip() {
-        const pill = document.getElementById("gripPill");
-        if (!pill) return;
+<!-- HERO -->
+<section class="hero">
+  <!-- Left: neon blob with snapshot on top -->
+  <div class="blob">
+    <img id="snapshot" alt="Hand snapshot">
+  </div>
 
-        const topB64   = localStorage.getItem("mousefit:grip_view_top");
-        const rightB64 = localStorage.getItem("mousefit:grip_view_right");
-        const leftB64  = localStorage.getItem("mousefit:grip_view_left");
-        if (topB64 || rightB64 || leftB64) {
-          const box = document.getElementById("gripThumbs");
-          if (box) box.style.display = "flex";
-          if (topB64)   document.getElementById("gripTop").src   = topB64;
-          if (rightB64) document.getElementById("gripRight").src = rightB64;
-          if (leftB64)  document.getElementById("gripLeft").src  = leftB64;
-        }
+  <!-- Right: clean text block -->
+  <div class="report-copy">
+    <div class="ghost">REPORT</div>
+    <div class="kicker">YOUR RESULTS</div>
+    <div class="h1">Hand measurement & grip insight</div>
 
-        try {
-          const r = JSON.parse(localStorage.getItem("mousefit:grip_result") || "{}");
-          const grip = (r.grip || r.local_guess?.grip || "").toLowerCase();
-          const conf = Math.round(100 * (r.confidence ?? r.local_guess?.confidence ?? 0));
-          if (grip) pill.textContent = conf ? `Grip: ${grip} (${conf}%)` : `Grip: ${grip}`;
-        } catch {}
-      })();
+    <div class="stats" id="measurements">
+      <div class="row"><strong>Hand length:</strong> <span id="handLength">—</span> cm</div>
+      <div class="row"><strong>Palm width:</strong> <span id="handWidth">—</span> cm</div>
+      <div class="row"><strong>Hand size category:</strong> <span id="handSize">—</span></div>
+      <div class="row"><strong>Suggested grip style(s):</strong> <span id="suggestedGrip">—</span></div>
+      <div class="row"><span id="gripPill" class="pill">Grip: not checked</span></div>
+    </div>
 
-      (function wireAskAI(){
-        const btn = document.getElementById('askAI');
-        if (!btn) return;
-        btn.onclick = () => {
-          let lenCm = "", widCm = "", grip = "";
-          try {
-            const m = JSON.parse(localStorage.getItem("mousefit:measure") || "{}");
-            if (m.len_mm) lenCm = (m.len_mm / 10).toFixed(1);
-            if (m.wid_mm) widCm = (m.wid_mm / 10).toFixed(1);
-          } catch {}
-          grip = localStorage.getItem("gripGuess")
-              || localStorage.getItem("mousefit:grip")
-              || "";
-          const params = new URLSearchParams();
-          if (lenCm) params.set("len", lenCm);
-          if (widCm) params.set("wid", widCm);
-          if (grip)  params.set("grip", grip.toLowerCase());
-          window.location.href = "/htmls/ai.html?" + params.toString();
-        };
-      })();
-    </script>
-  </body>
+    <div id="gripThumbs" class="grip-thumbs">
+      <img id="gripTop"   alt="Top view">
+      <img id="gripRight" alt="Right view">
+      <img id="gripLeft"  alt="Left view">
+    </div>
+
+    <div class="reveal-bar">
+      <button id="toggleReveal" class="btn neon">Reveal measurements</button>
+      <a href="./grip.html" class="btn neon">Open Grip Checker</a>
+      <button id="redoBtn" class="btn neon" onclick="location.href='measure.html'">Redo test</button>
+      <button id="askAI" class="btn neon">Ask MouseFit AI</button>
+    </div>
+  </div>
+</section>
+
+<!-- Recommendations -->
+<section class="section">
+  <div class="title">Recommended Mice</div>
+  <div class="note">Top picks for each grip style, sorted by compatibility.</div>
+
+  <div class="title" style="font-size:16px;margin-top:10px">Palm Grip</div>
+  <div id="listPalm" class="list empty">Loading…</div>
+
+  <div class="title" style="font-size:16px;margin-top:16px">Claw Grip</div>
+  <div id="listClaw" class="list empty">Loading…</div>
+
+  <div class="title" style="font-size:16px;margin-top:16px">Fingertip Grip</div>
+  <div id="listFingertip" class="list empty">Loading…</div>
+</section>
+
+<script>
+/* ============================================================
+   STORAGE: keep data by default. Only clear if you open with
+   /report.html?fresh=1  (useful for debugging a clean slate)
+============================================================ */
+(() => {
+  const params = new URLSearchParams(location.search);
+  if (params.get('fresh') !== '1') return;
+  try {
+    for (const k of Object.keys(localStorage))
+      if (k.startsWith('mousefit:') || k.startsWith('mf:')) localStorage.removeItem(k);
+    for (const k of Object.keys(sessionStorage))
+      if (k.startsWith('mousefit:') || k.startsWith('mf:')) sessionStorage.removeItem(k);
+  } catch {}
+})();
+
+/* ============================================================
+   COMPAT SHIM: read either mousefit:* or mf:* keys and normalize
+============================================================ */
+function getFirst(keys){ for (const k of keys){ const v=localStorage.getItem(k); if(v!=null && v!=="") return v; } return null; }
+function getJSON(keys){ const raw=getFirst(keys); if(!raw) return null; try{return JSON.parse(raw);}catch{return null;} }
+function setIfMissing(dst,src){ const v=localStorage.getItem(src); if(v && !localStorage.getItem(dst)) localStorage.setItem(dst,v); }
+setIfMissing('mousefit:measure','mf:measure');
+setIfMissing('mousefit:recs','mf:recs');
+setIfMissing('mousefit:snapshot','mf:snapshot');
+setIfMissing('mousefit:grip_view_top','mf:grip_view_top');
+setIfMissing('mousefit:grip_view_right','mf:grip_view_right');
+setIfMissing('mousefit:grip_view_left','mf:grip_view_left');
+setIfMissing('mousefit:grip_result','mf:grip_result');
+
+function normalizeMeasure(m){
+  if(!m) return {};
+  const len_mm = m.len_mm ?? m.length_mm ?? (m.len_cm ? Math.round(Number(m.len_cm)*10) : undefined);
+  const wid_mm = m.wid_mm ?? m.width_mm ?? (m.wid_cm ? Math.round(Number(m.wid_cm)*10) : undefined);
+  const out = { ...m };
+  if(len_mm!=null){ out.len_mm=Number(len_mm); out.len_cm=(Number(len_mm)/10).toFixed(1); }
+  if(wid_mm!=null){ out.wid_mm=Number(wid_mm); out.wid_cm=(Number(wid_mm)/10).toFixed(1); }
+  return out;
+}
+
+const MF = {
+  measure: normalizeMeasure(getJSON(['mousefit:measure','mf:measure'])),
+  recs:    getJSON(['mousefit:recs','mf:recs']) || {},
+  snapshot:getFirst(['mousefit:snapshot','mf:snapshot']),
+  grips: {
+    top:   getFirst(['mousefit:grip_view_top','mf:grip_view_top']),
+    right: getFirst(['mousefit:grip_view_right','mf:grip_view_right']),
+    left:  getFirst(['mousefit:grip_view_left','mf:grip_view_left']),
+    result:getJSON(['mousefit:grip_result','mf:grip_result']) || {}
+  }
+};
+console.log('[MF:report] loaded', MF);
+
+/* ============================================================
+   REVEAL / HIDE (blur by default)
+============================================================ */
+const toggleBtn = document.getElementById('toggleReveal');
+const setReveal = (flag) => {
+  document.body.setAttribute('data-revealed', flag ? 'true' : 'false');
+  toggleBtn.textContent = flag ? 'Hide measurements' : 'Reveal measurements';
+};
+toggleBtn.addEventListener('click', () => setReveal(document.body.getAttribute('data-revealed')!=='true'));
+
+/* ============================================================
+   RENDER SNAPSHOT + NUMBERS + GRIP
+============================================================ */
+(function render(){
+  // snapshot
+  const img = document.getElementById('snapshot');
+  if (MF.snapshot) img.src = MF.snapshot; else img.style.opacity = '0';
+
+  // numbers
+  const m = MF.measure || {};
+  if (m.len_cm) document.getElementById('handLength').textContent = m.len_cm;
+  if (m.wid_cm) document.getElementById('handWidth').textContent  = m.wid_cm;
+
+  const rec = MF.recs || {};
+  if (rec.size) document.getElementById('handSize').textContent = rec.size;
+  let gripSuggestion = "";
+  const size = rec.size;
+  if (size === "small") gripSuggestion = "Claw often works well for small hands; palm can also be comfy.";
+  else if (size === "medium") gripSuggestion = "Palm is versatile; try claw or fingertip based on preference.";
+  else if (size === "large" || size === "xlarge") gripSuggestion = "Fingertip may feel natural; palm can still be comfortable.";
+  else gripSuggestion = "Any grip style can work — pick what feels most natural.";
+  document.getElementById('suggestedGrip').textContent = gripSuggestion;
+
+  // thumbs
+  if (MF.grips.top || MF.grips.right || MF.grips.left){
+    const box = document.getElementById('gripThumbs'); box.style.display = 'flex';
+    if (MF.grips.top)   document.getElementById('gripTop').src   = MF.grips.top;
+    if (MF.grips.right) document.getElementById('gripRight').src = MF.grips.right;
+    if (MF.grips.left)  document.getElementById('gripLeft').src  = MF.grips.left;
+  }
+  const r = MF.grips.result || {};
+  const grip = (r.grip || r.local_guess?.grip || "").toLowerCase();
+  const conf = Math.round(100 * (r.confidence ?? r.local_guess?.confidence ?? 0));
+  if (grip) document.getElementById('gripPill').textContent = conf ? `Grip: ${grip} (${conf}%)` : `Grip: ${grip}`;
+})();
+
+/* ============================================================
+   RENDER RECOMMENDATIONS
+============================================================ */
+(function renderRecs(){
+  function renderList(el, arr){
+    el.classList.remove('empty');
+    el.innerHTML = "";
+    if (!arr || !arr.length){
+      el.innerHTML = "<div class='card'>No data available</div>";
+      return;
+    }
+    for (const m of arr){
+      const div = document.createElement('div');
+      div.className = 'card';
+      const len = m.length_mm ?? m.length ?? "—";
+      const wid = m.width_mm ?? m.width ?? "—";
+      const ht  = m.height_mm ?? m.height ?? "—";
+      div.textContent = `${m.brand} ${m.model} — ${m.weight_g ?? "—"} g — ${len}×${wid}×${ht} mm — ${m.shape ?? "—"}`;
+      el.appendChild(div);
+    }
+  }
+  const rec = MF.recs || {};
+  renderList(document.getElementById('listPalm'), (rec.top&&rec.top.palm)||[]);
+  renderList(document.getElementById('listClaw'), (rec.top&&rec.top.claw)||[]);
+  renderList(document.getElementById('listFingertip'), (rec.top&&rec.top.fingertip)||[]);
+})();
+
+/* ============================================================
+   Ask AI: forward values to ai.html
+============================================================ */
+document.getElementById('askAI')?.addEventListener('click', ()=>{
+  let lenCm="", widCm="", grip="";
+  try { const m = MF.measure; if(m?.len_mm) lenCm=(m.len_mm/10).toFixed(1); if(m?.wid_mm) widCm=(m.wid_mm/10).toFixed(1);} catch{}
+  grip = localStorage.getItem("gripGuess") || localStorage.getItem("mousefit:grip") || "";
+  const params=new URLSearchParams(); if(lenCm) params.set("len",lenCm); if(widCm) params.set("wid",widCm); if(grip) params.set("grip", grip.toLowerCase());
+  location.href="./ai.html?"+params.toString();
+});
+</script>
+</body>
 </html>

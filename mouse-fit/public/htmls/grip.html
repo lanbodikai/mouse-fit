@@ -1,106 +1,176 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mouse-Fit — Grip Checker</title>
-    <link rel="stylesheet" href="public/neon.css" />
-  </head>
-  <body>
-    <nav class="mf-nav">
-      <a class="brand" href="/">MF</a>
-      <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/#projects">Projects</a>
-        <a href="/htmls/about.html">About the author</a>
-        <a href="/htmls/mouse-db.html">Mouse-Database <span class="soon">soon</span></a>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Mouse-Fit — Grip Checker</title>
+
+<link rel="stylesheet" href="/neon.css" />
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;700&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.10);
+  --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:Lexend, system-ui, Arial;
+  background:
+    radial-gradient(1100px 560px at 90% 6%,rgba(48,124,255,.18),transparent 60%),
+    linear-gradient(135deg,#05060a,#071022 58%,#0a1c3a 100%);
+  color:var(--fg);
+}
+
+/* neon page frame */
+.page-frame{
+  position:fixed; inset:6px; pointer-events:none; z-index:1000;
+  border-radius:16px;
+  border:1px solid rgba(167,139,250,.35);
+  box-shadow:inset 0 0 0 1px rgba(34,211,238,.18), 0 0 18px rgba(124,58,237,.18);
+}
+
+/* NAV (same as measure) */
+nav{position:sticky;top:0;z-index:40;background:linear-gradient(180deg,rgba(10,15,25,.85),rgba(10,15,25,.55));border-bottom:1px solid var(--border);backdrop-filter:blur(10px)}
+.nav-inner{max-width:1200px;height:64px;margin:auto;display:flex;align-items:center;gap:18px;padding:0 18px}
+.brand{display:flex;gap:10px;align-items:center;font-weight:700}
+.brand .brand-text{letter-spacing:.2px}
+.logo{width:72px;height:28px;border-radius:8px;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));color:#fff;display:grid;place-items:center;font-size:.78rem;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
+.links{display:flex;gap:16px;list-style:none;margin:0 0 0 8px;padding:0}
+.links a{color:#dfe6ff;opacity:.85;text-decoration:none;padding:10px 12px;border-radius:10px}
+.links a:hover{opacity:1;background:rgba(255,255,255,.04)}
+.links a[aria-current="page"]{opacity:1;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.nav-spacer{flex:1}
+.search{display:flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05)}
+.search input{width:140px;border:0;background:transparent;color:#e9eeff;outline:0}
+.reg-btn{margin-left:10px;padding:10px 16px;border-radius:999px;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));color:#fff;font-weight:700;border:1px solid transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
+
+/* stage */
+.wrap{position:relative;height:100dvh;padding-top:6px}
+video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+canvas#frame{z-index:1} video{z-index:0}
+.gripGuide{position:absolute;left:6vw;right:6vw;top:10vh;bottom:26vh;border:3px dashed rgba(255,255,255,0.65);border-radius:14px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2}
+.label{position:absolute;top:-14px;left:14px;background:#0b1224;border:1px solid #263041;color:#cfe9f6;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px}
+
+/* badges */
+.badge{position:absolute;right:10px;top:10px;background:#0e1424;border:1px solid #263041;color:#9fcde2;font-size:12px;padding:4px 8px;border-radius:999px;z-index:6}
+.toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#0e1424;border:1px solid #2a3442;color:#cdd8e4;padding:8px 12px;border-radius:10px;font-size:13px;display:none;z-index:7}
+.countdown{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);font-size:22vmin;font-weight:900;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.6);pointer-events:none;z-index:8}
+
+/* bottom neon control dock */
+.control-dock{
+  position:absolute; left:0; right:0; bottom:0; z-index:5;
+  padding:14px 12px 16px;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(10,15,25,.55) 30%, rgba(10,15,25,.80) 100%);
+}
+.panel{
+  max-width:1200px; margin:0 auto;
+  border:1px solid rgba(167,139,250,.25);
+  background:rgba(255,255,255,.05);
+  backdrop-filter: blur(8px);
+  border-radius:14px;
+  box-shadow:inset 0 0 0 1px rgba(34,211,238,.12), 0 0 24px rgba(124,58,237,.16);
+  padding:12px;
+}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-top:8px}
+.btn-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.meta{display:flex;gap:10px;align-items:center;justify-content:flex-end}
+.pill{padding:4px 10px;border-radius:999px;background:#0f1524;border:1px solid #2a2f40;font-size:12px;color:#cfe9f6}
+
+button,.btn-link{background:#101626;color:var(--fg);border:1px solid #223049;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none}
+button.primary{background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));border-color:transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
+select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:10px;padding:8px}
+.hint{font-size:14px;color:var(--sub);margin:6px 0 2px}
+.thumbs{display:flex;gap:10px;margin-top:6px;align-items:center}
+.thumbs img{width:72px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #2a2f40;background:#0b0b0f}
+@media (max-width:720px){ .btn-group{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))} }
+</style>
+</head>
+<body>
+
+<div class="page-frame" aria-hidden="true"></div>
+
+<nav>
+  <div class="nav-inner">
+    <a class="brand" href="/index.html"><span class="logo">MF</span><span class="brand-text">Mouse-Fit</span></a>
+    <ul class="links">
+      <li><a href="/index.html">Home</a></li>
+      <li><a href="/htmls/measure.html">Measure</a></li>
+      <li><a href="/htmls/grip.html" aria-current="page">Grip</a></li>
+      <li><a href="/htmls/ai.html">AI</a></li>
+      <li><a href="/htmls/report.html">Report</a></li>
+    </ul>
+    <div class="nav-spacer"></div>
+    <div class="search"><span>🔍</span><input placeholder="Search" /></div>
+    <a class="reg-btn" href="#">Register</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <video id="cam" playsinline autoplay muted></video>
+  <canvas id="frame"></canvas>
+
+  <div class="gripGuide"><span class="label" id="guideLabel">Step 1/3 — TOP view</span></div>
+
+  <div id="status" class="badge">Live</div>
+  <div id="toast" class="toast"></div>
+  <div id="countdown" class="countdown">5</div>
+
+  <!-- Bottom neon control dock -->
+  <div class="control-dock">
+    <div class="panel">
+      <div class="row" style="gap:12px; margin-bottom:6px;">
+        <label>Camera:</label>
+        <select id="cameraSelect"></select>
+        <button id="refreshCams">Refresh</button>
+        <span id="camName" class="pill">—</span>
       </div>
-      <div class="nav-cta">
-        <a class="pill" href="/htmls/measure.html">Quick Start</a>
+
+      <div id="hint" class="hint">
+        Capture 3 angles: <b>Top</b>, <b>Right</b>, <b>Left</b>. Hold your own mouse in your natural grip inside the dashed box.
       </div>
-    </nav>
 
-    <header class="mf-page-hero">
-      <h1>Grip Checker</h1>
-      <p>MediaPipe landmarks → palm / claw / fingertip (incl. relaxed claw).</p>
-    </header>
+      <div class="thumbs">
+        <img id="thumbTop"   alt="Top"   title="Top">
+        <img id="thumbRight" alt="Right" title="Right">
+        <img id="thumbLeft"  alt="Left"  title="Left">
+      </div>
 
-    <div class="wrap">
-      <video id="cam" playsinline autoplay muted></video>
-      <canvas id="frame"></canvas>
-
-      <div class="gripGuide"><span class="label" id="guideLabel">Step 1/3 — TOP view</span></div>
-
-      <div id="status" class="badge">Live</div>
-      <div id="toast" class="toast"></div>
-      <div id="countdown" class="countdown">5</div>
-
-      <div class="hud">
-        <div class="row" style="gap:12px; margin-bottom:6px;">
-          <label>Camera:</label>
-          <select id="cameraSelect"></select>
-          <button id="refreshCams">Refresh</button>
-          <span id="camName" class="pill">—</span>
-          <span id="skelState" class="pill">Skeleton: On</span>
-          <button id="toggleSkel">Turn off skeleton</button>
-          <span class="step-pill" id="stepPill">Step: live</span>
-          <span class="step-pill" id="viewPill">View: Top</span>
-        </div>
-
-        <div id="hint" class="hint">
-          Capture 3 angles: <b>Top</b>, <b>Right</b>, <b>Left</b>. Hold your own mouse in your natural grip inside the dashed box.
-        </div>
-
-        <div class="thumbs">
-          <img id="thumbTop"   alt="Top"   title="Top">
-          <img id="thumbRight" alt="Right" title="Right">
-          <img id="thumbLeft"  alt="Left"  title="Left">
-        </div>
-
-        <div class="row" id="liveBtns">
+      <!-- LIVE -->
+      <div class="toolbar" id="liveBtns">
+        <div class="btn-group">
           <button id="timer" class="primary">Capture in 5 Seconds (Space)</button>
           <button id="snap">Capture now</button>
+          <button id="toggleSkel">Turn off skeleton</button>
+          <button id="retakeAll">Retake all (clear)</button>
         </div>
+        <div class="meta">
+          <span id="skelState" class="pill">Skeleton: On</span>
+          <span id="stepPill" class="pill">Step: live</span>
+          <span id="viewPill" class="pill">View: Top</span>
+        </div>
+      </div>
 
-        <div class="row" id="frozenBtns" style="display:none; gap:8px;">
+      <!-- FROZEN -->
+      <div class="toolbar" id="frozenBtns" style="display:none;">
+        <div class="btn-group">
           <button id="accept">Use This Angle</button>
           <button id="retake">Retake</button>
-          <button id="retakeAll">Retake all (clear)</button>
           <button id="classify" disabled>Classify Grip</button>
-          <a id="gotoReport" class="btn-link" href="/htmls/report.html" style="display:none;">Go to Report</a>
+          <a id="gotoReport" class="btn-link" href="./report.html">Go to Report</a>
+        </div>
+        <div class="meta">
           <span id="resultPill" class="pill">Result: —</span>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
-    <button id="startCamBtn" class="mf-fab">Tap to start camera</button>
-    <script type="module" src="/js/grip.js"></script>
+<button id="startCamBtn" style="position:fixed; inset:auto 12px 12px auto; z-index:9999; background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3)); color:#fff; border:0; padding:10px 14px; border-radius:12px; display:none;">Tap to start camera</button>
 
-    <!-- first-run tip -->
-    <div id="introGrip" class="mf-modal" style="display:none">
-      <div class="mf-modal-card">
-        <h3>Grip cam tips</h3>
-        <ul>
-          <li>Match the requested view (Top / Right / Left) before capturing.</li>
-          <li>Hold your <b>own mouse</b> the way you normally do.</li>
-          <li>Including the mouse helps the model classify claw / fingertip / palm (or relaxed claw).</li>
-        </ul>
-        <div class="mf-modal-actions">
-          <button id="introGripOk" class="pill">Got it</button>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      (() => {
-        const KEY = "mousefit:intro_grip_v1";
-        const el = document.getElementById("introGrip");
-        if (!localStorage.getItem(KEY)) el.style.display = "flex";
-        document.getElementById("introGripOk").onclick = () => {
-          localStorage.setItem(KEY, "1");
-          el.style.display = "none";
-        };
-      })();
-    </script>
-  </body>
+<script type="module" src="../js/grip.js"></script>
+</body>
 </html>
