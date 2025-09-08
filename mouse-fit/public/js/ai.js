@@ -1,4 +1,4 @@
-// public/js/ai.js
+// public/htmls/js/ai.js
 const $ = (q) => document.querySelector(q);
 const messagesEl = $("#messages");
 const inputEl = $("#prompt");
@@ -17,6 +17,8 @@ function renderMsg(role, content) {
   messagesEl.appendChild(wrap);
 }
 
+function persist() { localStorage.setItem(LS_KEY, JSON.stringify(history.slice(-50))); }
+
 function push(role, content) {
   const m = { role, content };
   history.push(m);
@@ -24,8 +26,6 @@ function push(role, content) {
   persist();
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
-
-function persist() { localStorage.setItem(LS_KEY, JSON.stringify(history.slice(-50))); }
 
 function boot() {
   if (history.length === 0) {
@@ -74,7 +74,7 @@ async function send() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: history.map(m => ({ role: m.role, content: m.content })) })
     });
-    if (!resp.ok || !resp.body) throw new Error(await resp.text() || "Network error");
+    if (!resp.ok || !resp.body) throw new Error((await resp.text().catch(() => "")) || "Network error");
 
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
