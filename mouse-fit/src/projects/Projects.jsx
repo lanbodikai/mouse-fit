@@ -6,19 +6,19 @@ const items = [
   {
     title: "Hand Measure",
     tag: "Open",
-    href: "/measure.html",
+    href: "/htmls/measure.html",
     img: "/projects/measure.jpg",
   },
   {
     title: "Grip Checker",
     tag: "Open",
-    href: "/grip.html",
+    href: "/htmls/grip.html",
     img: "/projects/grip.jpg",
   },
   {
     title: "AI Mouse-Finder",
     tag: "Open",
-    href: "/ai.html",
+    href: "/htmls/ai.html",
     img: "/projects/ai.jpg",
   },
   {
