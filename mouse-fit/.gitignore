@@ -1,7 +1,7 @@
 # secrets
 .env
-.env.*        # any other env files
-*.key
+.env.local
+
 
 # dependencies / builds
 node_modules/

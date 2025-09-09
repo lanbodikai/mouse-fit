@@ -1,4 +1,6 @@
-// public/htmls/js/ai.js
+// public/js/ai.js  (drop-in)
+// Works with /api/chat served by your Node proxy (server/groq-proxy.mjs).
+
 const $ = (q) => document.querySelector(q);
 const messagesEl = $("#messages");
 const inputEl = $("#prompt");
@@ -9,15 +11,26 @@ const LS_KEY = "mousefit:ai_history";
 let history = [];
 try { history = JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch {}
 
-function renderMsg(role, content) {
-  const wrap = document.createElement("div");
-  wrap.className = `msg ${role}`;
-  wrap.innerHTML = `<div class="role">${role === "user" ? "You" : "Assistant"}</div><div class="text"></div>`;
-  wrap.querySelector(".text").textContent = content;
-  messagesEl.appendChild(wrap);
+function persist() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(history)); } catch {}
 }
 
-function persist() { localStorage.setItem(LS_KEY, JSON.stringify(history.slice(-50))); }
+function el(tag, cls) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  return n;
+}
+
+function renderMsg(role, content) {
+  const wrap = el("div", `msg ${role}`);
+  const roleEl = el("div", "role");
+  roleEl.textContent = role === "user" ? "You" : "Assistant";
+  const textEl = el("div", "text");
+  textEl.textContent = content;
+  wrap.appendChild(roleEl);
+  wrap.appendChild(textEl);
+  messagesEl.appendChild(wrap);
+}
 
 function push(role, content) {
   const m = { role, content };
@@ -35,59 +48,103 @@ function boot() {
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 }
-boot();
 
-clearBtn?.addEventListener("click", () => {
-  history = [];
-  localStorage.removeItem(LS_KEY);
-  messagesEl.innerHTML = "";
-  push("assistant", "Chat cleared. How can I help?");
-});
+async function sendToServer(messages, opts = {}) {
+  // Relative path works locally (Vite proxy -> http://localhost:3000)
+  // and in production (same origin: https://mousefit.pro/api/chat).
+  const r = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages,
+      ...(opts.model ? { model: opts.model } : {}),
+      ...(opts.temperature != null ? { temperature: opts.temperature } : {}),
+    }),
+  });
 
-sendBtn?.addEventListener("click", send);
-inputEl?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
-});
+  if (!r.ok) {
+    let err = "Request failed";
+    try {
+      const body = await r.json();
+      err = body?.error || err;
+    } catch (_) {}
+    throw new Error(err);
+  }
 
-async function send() {
-  const text = inputEl.value.trim();
-  if (!text) return;
-  inputEl.value = "";
+  // Support both streaming plaintext and JSON `{ reply }`
+  const ctype = r.headers.get("content-type") || "";
+  const canStream = r.body && !ctype.includes("application/json");
 
-  // user message
-  push("user", text);
+  if (canStream) {
+    const wrap = el("div", "msg assistant");
+    const roleEl = el("div", "role");
+    roleEl.textContent = "Assistant";
+    const textEl = el("div", "text");
+    wrap.appendChild(roleEl);
+    wrap.appendChild(textEl);
+    messagesEl.appendChild(wrap);
 
-  // streaming placeholder
-  const placeholder = { role: "assistant", content: "" };
-  history.push(placeholder);
-  const bubble = document.createElement("div");
-  bubble.className = "msg assistant";
-  bubble.innerHTML = `<div class="role">Assistant</div><div class="text" id="__stream"></div>`;
-  messagesEl.appendChild(bubble);
-  const streamEl = $("#__stream");
+    const placeholder = { role: "assistant", content: "" };
+    history.push(placeholder); // update as chunks arrive
 
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-
-  try {
-    const resp = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: history.map(m => ({ role: m.role, content: m.content })) })
-    });
-    if (!resp.ok || !resp.body) throw new Error((await resp.text().catch(() => "")) || "Network error");
-
-    const reader = resp.body.getReader();
+    const reader = r.body.getReader();
     const decoder = new TextDecoder();
+
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
       const chunk = decoder.decode(value, { stream: true });
-      streamEl.textContent += chunk;
+      textEl.textContent += chunk;
       placeholder.content += chunk;
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
+
     persist();
-  } catch (err) {
-    streamEl.textContent = `(error) ${err.message || err}`;
+    return placeholder.content;
+  } else {
+    const data = await r.json();
+    return data?.reply ?? "";
   }
 }
+
+async function onSend() {
+  const text = (inputEl.value || "").trim();
+  if (!text) return;
+
+  inputEl.value = "";
+  push("user", text);
+
+  // Build message list with a short window so we don't send giant histories
+  const windowSize = 12;
+  const recent = history.slice(-windowSize);
+
+  try {
+    const reply = await sendToServer(recent, { temperature: 0.6 });
+    // If non-stream path, display the assistant reply now:
+    if (reply && (history.length === 0 || history[history.length - 1].role !== "assistant" || history[history.length - 1].content !== reply)) {
+      push("assistant", reply);
+    }
+  } catch (e) {
+    push("assistant", `(error) ${e.message || String(e)}`);
+  }
+}
+
+function onKeydown(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    onSend();
+  }
+}
+
+function onClear() {
+  history = [];
+  persist();
+  messagesEl.innerHTML = "";
+  push("assistant", "Chat cleared. What would you like to ask next?");
+}
+
+sendBtn?.addEventListener("click", onSend);
+inputEl?.addEventListener("keydown", onKeydown);
+clearBtn?.addEventListener("click", onClear);
+
+boot();
