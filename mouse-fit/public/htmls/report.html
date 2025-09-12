@@ -176,7 +176,27 @@ body[data-revealed="true"]  .grip-thumbs img{ filter:none }
       <button id="toggleReveal" class="btn neon">Reveal measurements</button>
       <a href="./grip.html" class="btn neon">Open Grip Checker</a>
       <button id="redoBtn" class="btn neon" onclick="location.href='measure.html'">Redo test</button>
-      <button id="askAI" class="btn neon">Ask MouseFit AI</button>
+      <button id="askAI" class="btn neon">MouseFit AI</button>
+      <!-- Somewhere inside your existing report.html, near your other buttons -->
+<div class="controls">
+  <!-- your existing buttons ... -->
+<button class="btn" id="btn-view-ai-report">View AI Report</button>
+<script>
+  (function () {
+    const btn = document.getElementById("btn-view-ai-report");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const seed = {
+        profile: (window.MOUSEFIT && window.MOUSEFIT.profile) || {},
+        candidates: (window.MOUSEFIT && window.MOUSEFIT.candidates) || []
+      };
+      try { localStorage.setItem("mousefit.reportSeed", JSON.stringify(seed)); } catch {}
+      // ⬇️ point to the file you placed under public/htmls/
+      window.location.href = "/htmls/ai-report.html";
+    });
+  })();
+</script>
+
     </div>
   </div>
 </section>
@@ -333,5 +353,119 @@ document.getElementById('askAI')?.addEventListener('click', ()=>{
   location.href="./ai.html?"+params.toString();
 });
 </script>
+
+<script>
+(() => {
+  // ------- helpers -------
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+  // read mm from text like "14.1 cm", "141 mm"
+  const numMm = (txt) => {
+    const t = String(txt||"").toLowerCase();
+    // prefer mm if present
+    let m = t.match(/(\d+(?:\.\d+)?)\s*mm\b/);
+    if (m) return +m[1];
+    // else cm → mm
+    m = t.match(/(\d+(?:\.\d+)?)\s*cm\b/);
+    if (m) return Math.round(+m[1] * 10) / 10 * 10; // keep 1 dec, then *10 to mm
+    // bare number fallback (assume mm if >=30, else cm)
+    m = t.match(/(\d+(?:\.\d+)?)/);
+    if (!m) return undefined;
+    const v = +m[1];
+    return v >= 30 ? v : Math.round(v * 10) / 10 * 10;
+  };
+
+  // try multiple obvious spots without changing your DOM
+  function extractProfileFromPage() {
+    const profile = {};
+
+    // A) direct numeric inputs if present
+    const lenInput = $('input[name="length_mm"], #length_mm, input[id*="handLen"], input[id*="length"]');
+    const widInput = $('input[name="width_mm"],  #width_mm,  input[id*="handWid"], input[id*="width"]');
+    if (lenInput && lenInput.value) profile.length_mm = +lenInput.value;
+    if (widInput && widInput.value) profile.width_mm  = +widInput.value;
+
+    // B) visible labels / stats like "Hand length: 14.1 cm"
+    if (profile.length_mm == null) {
+      const n = $('#hand-length, .hand-length, [data-hand-length]');
+      if (n) profile.length_mm = numMm(n.textContent);
+      else {
+        // scan a few candidates
+        for (const el of $$('.stat, .chip, .metric, .row, [aria-label], [data-label]')) {
+          if (/hand\s*length/i.test(el.textContent)) { profile.length_mm = numMm(el.textContent); break; }
+        }
+      }
+    }
+    if (profile.width_mm == null) {
+      const n = $('#hand-width, .hand-width, [data-hand-width]');
+      if (n) profile.width_mm = numMm(n.textContent);
+      else {
+        for (const el of $$('.stat, .chip, .metric, .row, [aria-label], [data-label]')) {
+          if (/hand\s*width|palm\s*width/i.test(el.textContent)) { profile.width_mm = numMm(el.textContent); break; }
+        }
+      }
+    }
+
+    // C) grip style: checked radio/select/chip or text like "Grip: claw"
+    const gripNode =
+      $('input[name="grip"]:checked, select[name="grip"], .grip-chip.is-active, [data-grip].is-active') ||
+      $('#grip, .grip, [data-grip]');
+    if (gripNode) {
+      const val = (gripNode.value || gripNode.getAttribute('data-grip') || gripNode.textContent || '').toLowerCase();
+      const m = val.match(/\b(claw|palm|fingertip|finger\s*tip)\b/);
+      if (m) profile.grip = m[1].replace(/\s+/g,'');
+    } else {
+      // scan chips/buttons for an active state
+      for (const el of $$('.chip, .btn, [data-grip]')) {
+        const txt = (el.getAttribute('data-grip') || el.textContent || '').toLowerCase();
+        if (/active|selected|current/.test(el.className) && /(claw|palm|finger)/.test(txt)) {
+          profile.grip = txt.includes('finger') ? 'fingertip' : (txt.includes('claw')?'claw':(txt.includes('palm')?'palm':undefined));
+          break;
+        }
+      }
+    }
+
+    // D) fallback to any global your page already exposes
+    if ((!profile.length_mm || !profile.width_mm) && window.MOUSEFIT?.profile) {
+      profile.length_mm = profile.length_mm ?? window.MOUSEFIT.profile.length_mm;
+      profile.width_mm  = profile.width_mm  ?? window.MOUSEFIT.profile.width_mm;
+    }
+    if (!profile.grip && window.MOUSEFIT?.profile?.grip) profile.grip = window.MOUSEFIT.profile.grip;
+
+    return profile;
+  }
+
+  async function handleViewAIReportClick() {
+    const profile = extractProfileFromPage();
+    // keep any existing candidates stored by other flows, but we only need profile here
+    let seed = {};
+    try { seed = JSON.parse(localStorage.getItem('mousefit.reportSeed') || '{}'); } catch {}
+    seed.profile = profile || {};
+    try { localStorage.setItem('mousefit.reportSeed', JSON.stringify(seed)); } catch {}
+
+    // go to your AI page (adjust path if needed)
+    window.location.href = "/htmls/ai-report.html";
+  }
+
+  const btn = document.getElementById("btn-view-ai-report");
+  if (btn) btn.addEventListener("click", handleViewAIReportClick);
+
+  // Optional: keep profile fresh if user changes fields
+  const watch = () => {
+    const profile = extractProfileFromPage();
+    let seed = {};
+    try { seed = JSON.parse(localStorage.getItem('mousefit.reportSeed') || '{}'); } catch {}
+    seed.profile = profile || {};
+    try { localStorage.setItem('mousefit.reportSeed', JSON.stringify(seed)); } catch {}
+  };
+  // update when inputs change (if present)
+  for (const el of $$('input[name="length_mm"], #length_mm, input[name="width_mm"], #width_mm, input[name="grip"], select[name="grip"]')) {
+    el.addEventListener('change', watch);
+    el.addEventListener('input', watch);
+  }
+})();
+</script>
+
 </body>
 </html>

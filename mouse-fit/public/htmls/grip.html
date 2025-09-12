@@ -172,5 +172,12 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
 <button id="startCamBtn" style="position:fixed; inset:auto 12px 12px auto; z-index:9999; background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3)); color:#fff; border:0; padding:10px 14px; border-radius:12px; display:none;">Tap to start camera</button>
 
 <script type="module" src="../js/grip.js"></script>
+<script type="module">
+  window.finishGrip = (grip /* "palm"|"claw"|"fingertip" */) => {
+    sessionStorage.setItem("mf:grip", grip);
+    location.href = "/htmls/report.html";
+  };
+</script>
+
 </body>
 </html>

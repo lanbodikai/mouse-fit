@@ -1,0 +1,27 @@
+// src/lib/aiClient.js
+export async function askGroq(userText, opts = {}) {
+  const base = import.meta.env.VITE_API_BASE || "";
+  const url = `${base}/api/chat`;
+
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: [{ role: "user", content: userText }],
+      ...(opts.model ? { model: opts.model } : {}),
+      ...(opts.temperature != null ? { temperature: opts.temperature } : {}),
+    }),
+  });
+
+  if (!r.ok) {
+    let msg = "Request failed";
+    try {
+      const err = await r.json();
+      msg = err?.error || msg;
+    } catch (_) {}
+    throw new Error(msg);
+  }
+
+  const data = await r.json();
+  return data.reply || "";
+}

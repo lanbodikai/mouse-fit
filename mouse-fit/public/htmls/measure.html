@@ -198,5 +198,16 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
 
 <!-- Correct script path from /public/htmls/ -->
 <script type="module" src="../js/main.js"></script>
+<!-- ...your existing UI... -->
+<script type="module">
+  // Call this when your measurement completes:
+  window.finishMeasurement = (length_mm, width_mm) => {
+    sessionStorage.setItem("mf:length_mm", String(length_mm));
+    sessionStorage.setItem("mf:width_mm",  String(width_mm));
+    sessionStorage.removeItem("mf:grip");
+    location.href = "/htmls/report.html";
+  };
+</script>
+
 </body>
 </html>
