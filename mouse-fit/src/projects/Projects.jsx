@@ -2,10 +2,10 @@
 import React, { useEffect, useRef } from "react";
 
 const items = [
-  { title: "Hand Measure",      subtitle: "by Mouse-Fit Labs",  tag: "Open",        href: "/htmls/measure.html", img: "/projects/measure.jpg" },
-  { title: "Grip Checker",      subtitle: "by Junkai Zhao",     tag: "Open",        href: "/htmls/grip.html",    img: "/projects/grip.jpg"    },
-  { title: "AI Mouse-Finder",   subtitle: "LLM-powered picks",  tag: "Open",        href: "/htmls/ai.html",      img: "/projects/ai.jpg"      },
-  { title: "Rapid Trigger Tweak", subtitle: "keyboard tuning kit", tag: "Coming soon", href: "#",                  img: "/projects/rapid.jpg",  disabled: true },
+  { title: "Hand Measure",      subtitle: "Dimension Checker",  tag: "Open",        href: "/htmls/measure.html", img: "/projects/measure.png" },
+  { title: "Grip Checker",      subtitle: "Gripstyle Indentifier",     tag: "Open",        href: "/htmls/grip.html",    img: "/projects/grip.png"    },
+  { title: "AI Mouse-Finder",   subtitle: "AI powered picks",  tag: "Open",        href: "/htmls/ai.html",      img: "/projects/ai.png"      },
+  { title: "Rapid Trigger Tweak", subtitle: "RT keyboard tuning", tag: "Coming soon", href: "#",                  img: "/projects/rapid.png",  disabled: true },
 ];
 
 export default function Projects() {
@@ -29,7 +29,7 @@ export default function Projects() {
 
   return (
     <section className="proj-section">
-      <h2 className="proj-title">PROJECTS</h2>
+      <h2 className="proj-title">Mouse-fit X RT-finder</h2>
 
       <div className="carousel-wrap" ref={scrollerRef}>
         <div className="fade-left" aria-hidden />

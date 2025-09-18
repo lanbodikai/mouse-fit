@@ -1,18 +1,18 @@
 /* ===== BASE THEME ===== */
 :root{
-  --deep:#05060a;   /* near-black */
-  --ink:#071022;    /* deep navy */
-  --roy:#0a1c3a;    /* royal navy */
+  --deep:#3a029a;   /* near-black */
+  --ink:#094c8e;    /* deep navy */
+  --roy:#000418;    /* royal navy */
   --fg:#e8ecff; --muted:#9aa6ba; --border:rgba(255,255,255,.07);
-  --vio:#7c3aed; --cya:#22d3ee;
-  --grad: linear-gradient(90deg, #7c3aed 0%, #22d3ee 100%);
+  --vio:#7c3aed; --cya:#0655a4;
+  --grad: linear-gradient(90deg, #7c3aed 0%, #0655a4 100%);
 }
 *{box-sizing:border-box}
 html,body{
   height:100%;
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
   background:
-    radial-gradient(1000px 520px at 50% 115%, rgba(30,120,220,.22), transparent 65%),
+    radial-gradient(1000px 520px at 50% 115%, rgba(11, 47, 88, 0.22), transparent 65%),
     radial-gradient(900px 520px at 92% 8%,    rgba(50,140,255,.18), transparent 60%),
     linear-gradient(135deg, var(--deep) 0%, var(--ink) 52%, var(--roy) 100%);
   background-attachment:fixed;
@@ -82,7 +82,7 @@ img{max-width:100%;display:block}
 .proj-card{
   width: 280px; height: 360px; border-radius: 22px; overflow:hidden;
   background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
-  position: relative; cursor: pointer; transition: transform .35s, filter .35s, box-shadow .35s, opacity .35s;
+  position: relative; cursor: pointer; transition: transform .35s, filter .35s, box-shadow 0.s, opacity .35s;
   filter: saturate(.9) brightness(.92);
 }
 .proj-card img{ width:100%; height:66%; object-fit:cover; display:block }
@@ -112,7 +112,7 @@ img{max-width:100%;display:block}
 /* Pull the whole carousel in from edges */
 .carousel-wrap{
   position: relative;
-  max-width: 1200px;         /* overall width cap */
+  max-width: 2000px;         /* overall width cap */
   margin: 0 auto;
   padding: 0 28px;           /* side gutters so it’s not flush with viewport */
   isolation: isolate;
@@ -235,7 +235,7 @@ img{max-width:100%;display:block}
 .proj-card.mf-fullimg .thumb{ position:absolute; inset:0; z-index:0; background:transparent !important; }
 .proj-card.mf-fullimg .thumb img{
   width:100%; height:100%; object-fit:cover; display:block;
-  filter:saturate(1.08) brightness(1.04);
+  filter:saturate(1.2) brightness(1.2);
   mix-blend-mode:normal; /* avoid dark edge halo on click */
 }
 
@@ -248,12 +248,12 @@ img{max-width:100%;display:block}
 
   background:
     linear-gradient(180deg,
-      rgba(10,14,25,0) 0%,
+      rgba(10,14,25,0) 8%,
       rgba(10,14,25,var(--ribbon-v1)) 16%,
       rgba(10,14,25,var(--ribbon-v2)) 38%,
       rgba(10,14,25,var(--ribbon-v3)) 58%),
     linear-gradient(90deg,
-      rgba(124,58,237,var(--ribbon-h1)) 0%,
+      rgba(124,58,237,var(--ribbon-h1)) 20%,
       rgba(34,211,238,var(--ribbon-h2)) 100%);
   backdrop-filter: blur(8px) saturate(130%);
   -webkit-backdrop-filter: blur(8px) saturate(130%);
@@ -286,9 +286,9 @@ img{max-width:100%;display:block}
   white-space:nowrap;
 }
 .mf-tag.is-open{
-  color:#fff;
-  background:linear-gradient(90deg,#7c3aed 0%, #22d3ee 100%);
-  box-shadow:0 0 14px rgba(124,58,237,.28), 0 0 18px rgba(34,211,238,.16);
+  color:#cfe4ff;
+  background:rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10);
 }
 .mf-tag.is-soon{
   color:#cfe4ff;
@@ -297,11 +297,11 @@ img{max-width:100%;display:block}
 }
 
 /* Interactions: hover & press (JS can toggle .is-press for touch/mouse) */
-.proj-card.mf-fullimg:hover .thumb img{ filter:saturate(1.12) brightness(1.06); }
+.proj-card.mf-fullimg:hover .thumb img{ filter:saturate(1.2) brightness(1.2); }
 .proj-card.mf-fullimg:hover .mf-ribbon-neon{
   background:
     linear-gradient(180deg,
-      rgba(10,14,25,0) 0%,
+      rgba(10,14,25,0) 8%,
       rgba(10,14,25,calc(var(--ribbon-v1) + .02)) 16%,
       rgba(10,14,25,calc(var(--ribbon-v2) + .03)) 38%,
       rgba(10,14,25,calc(var(--ribbon-v3) + .03)) 58%),
@@ -311,7 +311,7 @@ img{max-width:100%;display:block}
 }
 .proj-card.mf-fullimg:active,
 .proj-card.mf-fullimg.is-press{
-  transform:scale(1.04);
+  transform:scale(1.2);
   box-shadow:0 10px 40px rgba(0,0,0,.35), 0 0 32px rgba(124,58,237,.35), 0 0 42px rgba(34,211,238,.22);
   border-color:rgba(255,255,255,.18);
   filter:saturate(1.06) brightness(1.04);
