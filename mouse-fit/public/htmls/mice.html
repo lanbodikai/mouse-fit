@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MouseFit • Mouse Database</title>
+    <!-- Global theme -->
+    <link rel="stylesheet" href="/neon.css" />
+
+    <style>
+      /* Page shell */
+      .page { max-width: 1100px; margin: 0 auto; padding: 16px; }
+      .layout { display:grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
+      @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+
+      /* Toolbar + controls */
+      .toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+      .btn { border:1px solid var(--line); background:var(--bg-2); color:var(--fg); padding:10px 12px; border-radius:12px; cursor:pointer; }
+      .btn:hover { filter: brightness(1.1); }
+
+      /* Grid of mouse “bubbles” */
+      .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 16px; }
+      .pill { display:flex; flex-direction:column; gap:8px; padding:14px; border-radius:16px; text-align:left; cursor:pointer; transition: transform .08s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease; }
+      .pill h3 { margin:0; font-size: 16px; letter-spacing: .2px; }
+      .specs { display:flex; flex-wrap:wrap; gap:8px; }
+
+      /* Chips: keep light accents readable on light pill */
+      .chip {
+        padding: 6px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        border: 1px solid transparent;
+        line-height: 1;
+        white-space: nowrap;
+        color: #111;
+        background: rgba(255,255,255,.65);
+      }
+      .chip--weight { border-color: rgba(0,160,255,.35); box-shadow: inset 0 0 0 999px rgba(0,180,255,.18); }
+      .chip--dim    { border-color: rgba(140,110,255,.35); box-shadow: inset 0 0 0 999px rgba(160,120,255,.18); }
+      .chip--shape  { border-color: rgba(40,200,140,.35); box-shadow: inset 0 0 0 999px rgba(60,230,160,.18); }
+      .chip--sensor { border-color: rgba(255,170,60,.35); box-shadow: inset 0 0 0 999px rgba(255,180,60,.18); }
+      .chip--price  { border-color: rgba(255,110,140,.35); box-shadow: inset 0 0 0 999px rgba(255,90,120,.18); }
+
+      /* Details card (solid white) */
+      #details.card {
+        background: #ffffff;
+        color: #111111;
+        border: 1px solid #d8d8d8;
+        box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      }
+      #details h2, #details strong { color: #000; }
+      #details .muted { color: #444; }
+
+      /* === FINAL OVERRIDES: bubbles + search default 50% white, 100% on interaction === */
+      .page .grid .pill {
+        background: rgba(255,255,255,.50);
+        color: #111;
+        border: 1px solid rgba(0,0,0,.08);
+      }
+      .page .grid .pill:hover,
+      .page .grid .pill:focus-visible,
+      .page .grid .pill:active {
+        background: #ffffff;
+        border-color: rgba(0,0,0,.12);
+        box-shadow: 0 6px 20px rgba(0,0,0,.25);
+        transform: translateY(-2px);
+        outline: none;
+      }
+
+      .toolbar input[type="text"] {
+        flex:1; min-width: 240px; padding:10px 12px; border-radius:12px;
+        background: rgba(255,255,255,.50);
+        color: #111;
+        border: 1px solid rgba(0,0,0,.08);
+        transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+      }
+      .toolbar input[type="text"]:hover,
+      .toolbar input[type="text"]:focus {
+        background: #ffffff;
+        border-color: rgba(0,0,0,.15);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0,0,0,.05);
+      }
+
+      .muted { opacity:.7; }
+      .card { border:1px solid var(--line); border-radius:16px; background:var(--bg-1); padding:16px; }
+      /* Toolbar text colors */
+.page .toolbar input[type="text"]{
+  color: #111;                     /* typed text */
+  -webkit-text-fill-color: #111;   /* Safari/WebKit */
+  caret-color: #111;               /* caret */
+}
+/* Placeholder colors (all states + Safari) */
+.page .toolbar input[type="text"]::placeholder{ color: rgba(17,17,17,.60); opacity: 1; }
+.page .toolbar input[type="text"]::-webkit-input-placeholder{ color: rgba(17,17,17,.60); }
+.page .toolbar input[type="text"]::-moz-placeholder{ color: rgba(17,17,17,.60); }
+.page .toolbar input[type="text"]:-ms-input-placeholder{ color: rgba(17,17,17,.60); }
+.page .toolbar input[type="text"]::-ms-input-placeholder{ color: rgba(17,17,17,.60); }
+
+/* Optional: change the Clear button text color too */
+.page .toolbar .btn{
+  color: #111;
+}
+
+/* If you also want darker text while focused */
+.page .toolbar input[type="text"]:focus{
+  color: #000;
+  -webkit-text-fill-color: #000;
+}
+
+    </style>
+  </head>
+
+  <body>
+    <header class="nav">
+      <div class="nav-inner">
+        <a class="brand" href="/">MouseFit</a>
+        <nav class="links">
+          <a href="/htmls/measure.html">Hand Measure</a>
+          <a href="/htmls/grip.html">Grip</a>
+          <a href="/htmls/report.html">Report</a>
+          <a class="active" href="/htmls/mice.html">Mouse Database</a>
+          <a href="/htmls/ai.html">AI Agent</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page layout">
+      <section>
+        <div class="toolbar">
+          <input id="q" type="text" placeholder="Filter by brand/name/specs (e.g., 'claw <70g small')" />
+          <button id="clear" class="btn">Clear</button>
+        </div>
+        <div id="grid" class="grid" aria-live="polite"></div>
+      </section>
+
+      <aside>
+        <div id="details" class="card">
+          <h2 style="margin-top:0">Details</h2>
+          <p class="muted">Pick a mouse to see full specs. All data is local from mice.js.</p>
+          <div id="detailContent"></div>
+        </div>
+      </aside>
+    </main>
+
+    <script type="module" src="/js/mice-page.js"></script>
+  </body>
+</html>

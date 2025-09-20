@@ -1,11 +1,11 @@
 /* ===== BASE THEME ===== */
 :root{
-  --deep:#3a029a;   /* near-black */
-  --ink:#094c8e;    /* deep navy */
-  --roy:#000418;    /* royal navy */
+  --deep:#000000;   /* near-black */
+  --ink:#7c3aed;    /* deep navy */
+  --roy:#061545;    /* royal navy */
   --fg:#e8ecff; --muted:#9aa6ba; --border:rgba(255,255,255,.07);
-  --vio:#7c3aed; --cya:#0655a4;
-  --grad: linear-gradient(90deg, #7c3aed 0%, #0655a4 100%);
+  --vio:#7c3aed; --cya:#22d3ee;
+  --grad: linear-gradient(90deg, #7c3aed 0%, #22d3ee 100%);
 }
 *{box-sizing:border-box}
 html,body{
@@ -82,7 +82,7 @@ img{max-width:100%;display:block}
 .proj-card{
   width: 280px; height: 360px; border-radius: 22px; overflow:hidden;
   background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
-  position: relative; cursor: pointer; transition: transform .35s, filter .35s, box-shadow 0.s, opacity .35s;
+  position: relative; cursor: pointer; transition: transform .35s, filter .35s, box-shadow .35s, opacity .35s;
   filter: saturate(.9) brightness(.92);
 }
 .proj-card img{ width:100%; height:66%; object-fit:cover; display:block }
@@ -112,7 +112,7 @@ img{max-width:100%;display:block}
 /* Pull the whole carousel in from edges */
 .carousel-wrap{
   position: relative;
-  max-width: 2000px;         /* overall width cap */
+  max-width: 1200px;         /* overall width cap */
   margin: 0 auto;
   padding: 0 28px;           /* side gutters so it’s not flush with viewport */
   isolation: isolate;
@@ -235,7 +235,7 @@ img{max-width:100%;display:block}
 .proj-card.mf-fullimg .thumb{ position:absolute; inset:0; z-index:0; background:transparent !important; }
 .proj-card.mf-fullimg .thumb img{
   width:100%; height:100%; object-fit:cover; display:block;
-  filter:saturate(1.2) brightness(1.2);
+  filter:saturate(1.08) brightness(1.04);
   mix-blend-mode:normal; /* avoid dark edge halo on click */
 }
 
@@ -301,7 +301,7 @@ img{max-width:100%;display:block}
 .proj-card.mf-fullimg:hover .mf-ribbon-neon{
   background:
     linear-gradient(180deg,
-      rgba(10,14,25,0) 8%,
+      rgba(10,14,25,0) 15%,
       rgba(10,14,25,calc(var(--ribbon-v1) + .02)) 16%,
       rgba(10,14,25,calc(var(--ribbon-v2) + .03)) 38%,
       rgba(10,14,25,calc(var(--ribbon-v3) + .03)) 58%),
@@ -323,4 +323,109 @@ img{max-width:100%;display:block}
     0 0 0 2px rgba(12,16,28,1),
     0 0 0 4px rgba(124,58,237,.55),
     0 0 28px rgba(34,211,238,.22);
+}
+
+/* ==== GLOBAL NAVBAR (shared across React + static pages) ==== */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(9,10,24,.75), rgba(9,10,24,.25) 60%, transparent);
+  border-bottom: 1px solid var(--line-dim);
+}
+.nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.brand {
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-decoration: none;
+  color: var(--fg);
+}
+.links {
+  margin-left: auto;            /* brand left, links right */
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.links a {
+  text-decoration: none;
+  color: var(--fg-dim);
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: filter .12s ease, background .12s ease, color .12s ease, border-color .12s ease;
+}
+.links a:hover {
+  filter: brightness(1.12);
+  background: rgba(255,255,255,.05);
+}
+.links a.active {
+  color: var(--fg);
+  background: rgba(255,255,255,.06);
+  border-color: var(--line);
+}
+.links a:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.35);
+  background: rgba(255,255,255,.08);
+}
+main, .page { scroll-margin-top: 64px; } /* content not hidden under sticky nav */
+/* === MouseFit: variable shims so theme tokens resolve === */
+:root{
+  /* shims to match the inline styles on mice.html */
+  --line: rgba(255,255,255,.10);
+  --line-dim: rgba(255,255,255,.07);
+  --bg-1: rgba(255,255,255,.03);
+  --bg-2: rgba(255,255,255,.06);
+  --fg-dim: #c7cfe9;
+}
+
+/* === MouseFit: enforce white semi-transparent “bubbles” on mice page === */
+/* extra specificity beats earlier .pill rules without needing !important */
+.page .grid .pill {
+  background: rgba(255,255,255,.50);
+  color: #111;
+  border: 1px solid rgba(0,0,0,.08);
+  transition: background .12s ease, border-color .12s ease, box-shadow .12s ease, transform .08s ease;
+}
+.page .grid .pill:hover,
+.page .grid .pill:focus-visible,
+.page .grid .pill:active {
+  background: #ffffff;              /* 100% white when touched */
+  border-color: rgba(0,0,0,.12);
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  outline: none;
+}
+
+/* search bubble to match */
+.page .toolbar input[type="text"]{
+  background: rgba(255,255,255,.50);
+  color: #111;
+  border: 1px solid rgba(0,0,0,.08);
+  transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+.page .toolbar input[type="text"]:hover,
+.page .toolbar input[type="text"]:focus{
+  background: #ffffff;
+  border-color: rgba(0,0,0,.15);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,0,0,.05);
+}
+.grid .pill h3 > :first-child,
+.grid .pill h3 .muted,
+.grid .pill h3 a,
+.grid .pill h3 a:link,
+.grid .pill h3 a:visited {
+  color: #5153e4 !important;   /* pick your accent (e.g., var(--vio)) */
+  font-weight: 700;
+  opacity: 1 !important;        /* defeat .muted opacity */
+  filter: none;
 }
