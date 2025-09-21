@@ -1,21 +1,5 @@
 const links = [
-  {
-    href: '/index.html',
-    label: 'Home',
-    isActive: ({ path, hash }) => {
-      const onHome = path === '/' || path.endsWith('/index.html');
-      return onHome && hash !== '#projects';
-    },
-  },
-  {
-    href: '/index.html#projects',
-    label: 'Projects',
-    attrs: { 'data-link': 'projects' },
-    isActive: ({ path, hash }) => {
-      const onHome = path === '/' || path.endsWith('/index.html');
-      return onHome && hash === '#projects';
-    },
-  },
+    { href: '/htmls/ai.html', label: 'AI' },
   { href: '/htmls/measure.html', label: 'Measure' },
   { href: '/htmls/grip.html', label: 'Grip' },
   {
@@ -24,7 +8,6 @@ const links = [
     isActive: ({ path }) =>
       path.endsWith('/htmls/mice.html') || path.endsWith('/htmls/mouse-db.html'),
   },
-  { href: '/htmls/ai.html', label: 'AI' },
   { href: '/htmls/report.html', label: 'Report' },
 ];
 
@@ -51,8 +34,6 @@ const buildNav = () => {
         </svg>
         <input type="search" placeholder="Search" aria-label="Search" />
       </label>
-
-      <a class="reg-btn" href="#" data-action="register">Register</a>
     </div>
   `;
 

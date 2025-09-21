@@ -7,51 +7,93 @@
 
 <link rel="stylesheet" href="/neon.css" />
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;700&display=swap" rel="stylesheet" />
+<script src="/js/nav.js" defer></script>
 
 <style>
 :root{
-  --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.10);
+  --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.10);
   --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
+
+  /* Stage position knobs (match Measure) */
+  --stage-offset-y: 40px;   /* raise stage up; tweak 0–100px */
+  --stage-offset-x: 100px;  /* shift stage left; increase for more */
 }
 *{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0; font-family:Lexend, system-ui, Arial;
-  color:var(--fg);
+
+/* Lock page scrolling like Measure */
+html,body{height:100%; overflow:hidden; overscroll-behavior:none;}
+body{margin:0; font-family:Lexend, system-ui, Arial; color:var(--fg);}
+
+/* Optional: hide global page frame (same as your Measure) */
+.page-frame{ display:none !important; }
+
+/* ===== Layout ===== */
+.wrap{
+  position:relative;
+  height:100dvh;
+  padding:16px;
+  display:grid;
+  place-items:center;   /* centers the stage before offsets */
 }
 
-/* neon page frame */
-.page-frame{
-  position:fixed; inset:6px; pointer-events:none; z-index:1000;
-  border-radius:16px;
-  border:1px solid rgba(167,139,250,.35);
-  box-shadow:inset 0 0 0 1px rgba(34,211,238,.18), 0 0 18px rgba(124,58,237,.18);
+/* ===== Bounded capture area (neon frame) ===== */
+.stage{
+  position:relative;
+  width:min(1000px, 88vw);         /* size knob */
+  max-height:calc(100dvh - 100px); /* keep within viewport */
+  aspect-ratio:16 / 9;
+  border-radius:18px;
+  translate: calc(-1 * var(--stage-offset-x)) calc(-1 * var(--stage-offset-y));
+  overflow:hidden;
+
+  /* Thicker neon border/glow like your Measure */
+  border:2px solid rgba(167,139,250,.55);
+  box-shadow:
+    inset 0 0 0 2px rgba(34,211,238,.22),
+    0 16px 50px rgba(12,20,35,.60),
+    0 0 34px rgba(124,58,237,.28);
 }
-/* stage */
-.wrap{position:relative;height:100dvh;padding-top:6px}
-video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-canvas#frame{z-index:1} video{z-index:0}
-.gripGuide{position:absolute;left:6vw;right:6vw;top:10vh;bottom:26vh;border:3px dashed rgba(255,255,255,0.65);border-radius:14px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2}
-.label{position:absolute;top:-14px;left:14px;background:#0b1224;border:1px solid #263041;color:#cfe9f6;font-size:12px;font-weight:700;padding:3px 8px;border-radius:999px}
 
-/* badges */
-.badge{position:absolute;right:10px;top:10px;background:#0e1424;border:1px solid #263041;color:#9fcde2;font-size:12px;padding:4px 8px;border-radius:999px;z-index:6}
-.toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#0e1424;border:1px solid #2a3442;color:#cdd8e4;padding:8px 12px;border-radius:10px;font-size:13px;display:none;z-index:7}
-.countdown{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);font-size:22vmin;font-weight:900;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.6);pointer-events:none;z-index:8}
+/* Media fills only the stage */
+.stage > video,
+.stage > canvas{
+  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+}
+canvas#frame{z-index:1} .stage > video{z-index:0}
 
-/* bottom neon control dock */
+/* ===== Guide (taller like your last screenshot) ===== */
+.stage .gripGuide{
+  position:absolute; left:4%; right:4%; top:4%; bottom:4%;
+  border:3px dashed rgba(255,255,255,0.65);
+  border-radius:14px;
+  background:rgba(255,255,255,0.06);
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none; z-index:2;
+}
+.stage .label{
+  position:absolute; top:-14px; left:14px;
+  background:#0b1224; border:1px solid #263041;
+  color:#cfe9f6; font-size:12px; font-weight:700;
+  padding:3px 8px; border-radius:999px;
+}
+
+/* Badges / overlays */
+.stage .badge{ position:absolute; right:10px; top:10px; background:#0e1424; border:1px solid #263041; color:#9fcde2; font-size:12px; padding:4px 8px; border-radius:999px; z-index:6 }
+.stage .toast{ position:absolute; top:12px; left:50%; transform:translateX(-50%); background:#0e1424; border:1px solid #2a3442; color:#cdd8e4; padding:8px 12px; border-radius:10px; font-size:13px; display:none; z-index:7 }
+.stage .countdown{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); font-size:22vmin; font-weight:900; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.6); pointer-events:none; z-index:8 }
+
+/* ===== Side control panel (fixed & draggable) ===== */
 .control-dock{
-  position:absolute; left:0; right:0; bottom:0; z-index:5;
-  padding:14px 12px 16px;
-  background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(10,15,25,.55) 30%, rgba(10,15,25,.80) 100%);
+  position:fixed; top:50%; right:16px; transform:translateY(-50%);
+  z-index:5; padding:0; background:none;
 }
 .panel{
-  max-width:1200px; margin:0 auto;
+  width:360px; max-height:min(84vh, 720px); overflow:auto;
   border:1px solid rgba(167,139,250,.25);
   background:rgba(255,255,255,.05);
   backdrop-filter: blur(8px);
   border-radius:14px;
-  box-shadow:inset 0 0 0 1px rgba(34,211,238,.12), 0 0 24px rgba(124,58,237,.16);
+  box-shadow: inset 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(0,0,0,.35);
   padding:12px;
 }
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -60,34 +102,133 @@ canvas#frame{z-index:1} video{z-index:0}
 .meta{display:flex;gap:10px;align-items:center;justify-content:flex-end}
 .pill{padding:4px 10px;border-radius:999px;background:#0f1524;border:1px solid #2a2f40;font-size:12px;color:#cfe9f6}
 
-button,.btn-link{background:#101626;color:var(--fg);border:1px solid #223049;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none}
+button,.btn-link{background:#101626;color:#eaf0ff;border:1px solid #223049;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none}
 button.primary{background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));border-color:transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
 select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:10px;padding:8px}
-.hint{font-size:14px;color:var(--sub);margin:6px 0 2px}
+.hint{font-size:14px;color:#a6b0c8;margin:6px 0 2px}
 .thumbs{display:flex;gap:10px;margin-top:6px;align-items:center}
 .thumbs img{width:72px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #2a2f40;background:#0b0b0f}
-@media (max-width:720px){ .btn-group{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))} }
+.thumb{
+  position: relative;
+  width: 72px; height: 48px;
+  border-radius: 8px;
+  border: 1px solid #2a2f40;
+  background: #fff;                 /* white background */
+  overflow: hidden;
+  display: grid; place-items: center;
+}
+.thumb img{
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: none;                     /* hidden until we have a real image */
+}
+.thumb span{
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-weight: 800; color: #0b0b0f;  /* dark text on white */
+  letter-spacing: .02em;
+}
+.thumb.has-img img{ display:block; }
+.thumb.has-img span{ display:none; }
+/* Transparent/frosted helper box */
+/* Guide box */
+.coach{
+  position: fixed;
+  top: 96px;            /* start near the top */
+  left: 24px;           /* start on the LEFT */
+  width: 360px;
+  padding: 0 12px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(167,139,250,.30);
+  background:
+    radial-gradient(140% 120% at 0% 0%, rgba(124,58,237,.18), rgba(34,211,238,.10) 55%, rgba(0,0,0,0) 60%),
+    rgba(255,255,255,.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    inset 0 0 0 1px rgba(34,211,238,.12),
+    0 8px 30px rgba(0,0,0,.35);
+  color: var(--fg);
+  z-index: 60;
+}
+.coach.hidden{ display:none; }
+
+/* Title/drag bar */
+.coach-bar{
+  height: 36px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 8px 0 12px;
+  margin: 8px 0 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(255,255,255,.10);
+  cursor: move;              /* drag handle */
+  user-select: none;
+}
+.coach-bar strong{ font-size: 14px; letter-spacing: .02em; color: #e7ecff; }
+
+/* Close (X) */
+.coach-close{
+  width: 28px; height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.12);
+  color: #fff; font-weight: 800; line-height: 1;
+  display: grid; place-items: center;
+  cursor: pointer;
+}
+.coach-close:hover{ background: rgba(255,255,255,.18); }
+
+.coach-content p{ margin: 6px 2px; color: #cfd6ee; line-height: 1.35; }
+
+
+
+/* Draggable handle */
+.dock-handle{
+  cursor:move; height:22px; margin:-4px -4px 8px -4px;
+  border-radius:10px; background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; color:#cfe9f6; letter-spacing:.02em;
+}
+.dock-handle::after{ content:"Drag me"; opacity:.85; }
+.control-dock.dragging, .control-dock .panel.dragging{ user-select:none; }
+.control-dock.dragging .panel{
+  box-shadow: inset 0 0 0 1px rgba(34,211,238,.22), 0 8px 30px rgba(0,0,0,.45), 0 0 0 3px rgba(124,58,237,.18);
+}
+
+/* (Optional) small-screen bottom dock fallback:
+@media (max-width:1024px){
+  .control-dock{ left:0; right:0; bottom:0; top:auto; transform:none; padding:14px 12px 16px;
+    background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(10,15,25,.55) 30%, rgba(10,15,25,.80) 100%); }
+  .panel{ width:min(1200px,96vw); max-height:none; margin:0 auto; }
+}
+*/
 </style>
-<script src="/js/nav.js" defer></script>
 </head>
 <body>
+  
 
 <div class="page-frame" aria-hidden="true"></div>
 
-
 <div class="wrap">
-  <video id="cam" playsinline autoplay muted></video>
-  <canvas id="frame"></canvas>
+  <!-- Bounded stage so grip.js keeps working identically -->
+  <div class="stage">
+    <video id="cam" playsinline autoplay muted></video>
+    <canvas id="frame"></canvas>
 
-  <div class="gripGuide"><span class="label" id="guideLabel">Step 1/3 — TOP view</span></div>
+    <div class="gripGuide"><span class="label" id="guideLabel">Step 1/3 — TOP view</span></div>
 
-  <div id="status" class="badge">Live</div>
-  <div id="toast" class="toast"></div>
-  <div id="countdown" class="countdown">5</div>
+    <div id="status" class="badge">Live</div>
+    <div id="toast" class="toast"></div>
+    <div id="countdown" class="countdown">5</div>
+  </div>
 
-  <!-- Bottom neon control dock -->
+  <!-- Side, draggable control dock -->
   <div class="control-dock">
     <div class="panel">
+      <div class="dock-handle"></div>
+
       <div class="row" style="gap:12px; margin-bottom:6px;">
         <label>Camera:</label>
         <select id="cameraSelect"></select>
@@ -99,11 +240,11 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
         Capture 3 angles: <b>Top</b>, <b>Right</b>, <b>Left</b>. Hold your own mouse in your natural grip inside the dashed box.
       </div>
 
-      <div class="thumbs">
-        <img id="thumbTop"   alt="Top"   title="Top">
-        <img id="thumbRight" alt="Right" title="Right">
-        <img id="thumbLeft"  alt="Left"  title="Left">
-      </div>
+<div class="thumbs">
+  <div class="thumb"><img id="thumbTop"   alt="Top"><span>Top</span></div>
+  <div class="thumb"><img id="thumbRight" alt="Right"><span>Right</span></div>
+  <div class="thumb"><img id="thumbLeft"  alt="Left"><span>Left</span></div>
+</div>
 
       <!-- LIVE -->
       <div class="toolbar" id="liveBtns">
@@ -114,12 +255,10 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
           <button id="retakeAll">Retake all (clear)</button>
         </div>
         <div class="meta">
-          <span id="skelState" class="pill">Skeleton: On</span>
-          <span id="stepPill" class="pill">Step: live</span>
           <span id="viewPill" class="pill">View: Top</span>
         </div>
       </div>
-
+      
       <!-- FROZEN -->
       <div class="toolbar" id="frozenBtns" style="display:none;">
         <div class="btn-group">
@@ -137,8 +276,169 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
 </div>
 
 <button id="startCamBtn" style="position:fixed; inset:auto 12px 12px auto; z-index:9999; background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3)); color:#fff; border:0; padding:10px 14px; border-radius:12px; display:none;">Tap to start camera</button>
+<div class="coach" id="coach" data-key="mf:coach:measure" role="dialog" aria-live="polite">
+  <div class="coach-bar" aria-label="Drag handle">
+    <strong>Guide</strong>
+    <button class="coach-close" aria-label="Dismiss">×</button>
+  </div>
+  <div class="coach-content">
+    <p>1) Position your hand (and card) inside the dotted box.</p>
+    <p>2) Press <b>Space</b> for a 5-second timer or use <b>Capture now</b>.</p>
+    <p>3) Refine points if needed, then <b>Confirm</b>.</p>
+  </div>
+</div>
+<script>
+(() => {
+  const box = document.getElementById('coach');
+  if (!box) return;
+  const key = box.dataset.key || 'mf:coach';
+  const handle = box.querySelector('.coach-bar');
+  const closeBtn = box.querySelector('.coach-close');
+
+  // Restore hidden state
+  if (localStorage.getItem(key + ':hide') === '1') box.classList.add('hidden');
+
+  // Restore position if saved
+  const saved = localStorage.getItem(key + ':pos');
+  if (saved) {
+    const { left, top } = JSON.parse(saved);
+    box.style.left = left; box.style.top = top;
+  }
+
+  // Close + persist hidden
+  closeBtn?.addEventListener('click', () => {
+    box.classList.add('hidden');
+    localStorage.setItem(key + ':hide', '1');
+  });
+
+  // Dragging (mouse + touch), constrained to viewport
+  let dragging = false, grabDX = 0, grabDY = 0, w = 0, h = 0;
+
+  const pt = (e) => (e.touches?.[0]) ? { x:e.touches[0].clientX, y:e.touches[0].clientY }
+                                      : { x:e.clientX,            y:e.clientY };
+
+  function start(e){
+    const r = box.getBoundingClientRect();
+    const p = pt(e);
+    dragging = true;
+    w = r.width; h = r.height;
+    grabDX = p.x - r.left; grabDY = p.y - r.top;
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', end);
+    document.addEventListener('touchmove', move, { passive:false });
+    document.addEventListener('touchend', end);
+    e.preventDefault?.();
+  }
+
+  function move(e){
+    if (!dragging) return;
+    const p = pt(e), vw = window.innerWidth, vh = window.innerHeight;
+    let x = p.x - grabDX, y = p.y - grabDY;
+    const pad = 8;
+    x = Math.max(pad, Math.min(vw - w - pad, x));
+    y = Math.max(pad, Math.min(vh - h - pad, y));
+    box.style.left = `${x}px`;
+    box.style.top  = `${y}px`;
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function end(){
+    if (!dragging) return;
+    dragging = false;
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', end);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', end);
+    localStorage.setItem(key + ':pos', JSON.stringify({ left: box.style.left, top: box.style.top }));
+  }
+
+  handle.addEventListener('mousedown', start);
+  handle.addEventListener('touchstart', start, { passive:false });
+})();
+</script>
+
+
+<!-- App wiring -->
+ <script>
+['thumbTop','thumbRight','thumbLeft'].forEach(id => {
+  const img = document.getElementById(id);
+  const box = img?.closest('.thumb');
+  if (!img || !box) return;
+
+  const showIfLoaded = () => {
+    if (img.currentSrc && img.naturalWidth > 0) box.classList.add('has-img');
+  };
+  img.addEventListener('load', showIfLoaded);
+  img.addEventListener('error', () => box.classList.remove('has-img'));
+
+  // in case src was set before this script runs
+  if (img.complete) showIfLoaded();
+});
+</script>
 
 <script type="module" src="../js/grip.js"></script>
+
+<!-- Draggable dock logic (separate key so it doesn't clash with Measure) -->
+<script type="module">
+(() => {
+  const dock  = document.querySelector('.control-dock');
+  const panel = dock?.querySelector('.panel');
+  if (!dock || !panel) return;
+
+  const handle = panel.querySelector('.dock-handle');
+  const KEY = 'mf:dock-pos-grip';
+
+  // restore saved position
+  const saved = localStorage.getItem(KEY);
+  if (saved) {
+    const pos = JSON.parse(saved);
+    dock.style.left   = pos.left;
+    dock.style.top    = pos.top;
+    dock.style.right  = 'auto';
+    dock.style.bottom = 'auto';
+    dock.style.transform = 'none';
+  }
+
+  let dragging = false, grabDX = 0, grabDY = 0, dockW = 0, dockH = 0;
+  const pt = (e) => (e.touches?.[0]) ? { x:e.touches[0].clientX, y:e.touches[0].clientY } : { x:e.clientX, y:e.clientY };
+
+  function start(e){
+    const p = pt(e), r = dock.getBoundingClientRect();
+    dragging = true;
+    grabDX = p.x - r.left; grabDY = p.y - r.top; dockW = r.width; dockH = r.height;
+
+    dock.style.left = `${r.left}px`; dock.style.top = `${r.top}px`;
+    dock.style.right = 'auto'; dock.style.bottom = 'auto'; dock.style.transform = 'none';
+
+    dock.classList.add('dragging'); panel.classList.add('dragging');
+    e.preventDefault?.();
+  }
+  function move(e){
+    if (!dragging) return;
+    const p = pt(e); const vw = innerWidth; const vh = innerHeight;
+    let x = p.x - grabDX, y = p.y - grabDY;
+    x = Math.max(8, Math.min(vw - dockW - 8, x));
+    y = Math.max(8, Math.min(vh - dockH - 8, y));
+    dock.style.left = `${x}px`; dock.style.top = `${y}px`;
+    if (e.cancelable) e.preventDefault();
+  }
+  function end(){
+    if (!dragging) return;
+    dragging = false;
+    dock.classList.remove('dragging'); panel.classList.remove('dragging');
+    localStorage.setItem(KEY, JSON.stringify({ left:dock.style.left, top:dock.style.top }));
+  }
+
+  handle.addEventListener('mousedown', start);
+  addEventListener('mousemove', move);
+  addEventListener('mouseup', end);
+
+  handle.addEventListener('touchstart', start, { passive:false });
+  addEventListener('touchmove', move, { passive:false });
+  addEventListener('touchend', end);
+})();
+</script>
+
 <script type="module">
   window.finishGrip = (grip /* "palm"|"claw"|"fingertip" */) => {
     sessionStorage.setItem("mf:grip", grip);
