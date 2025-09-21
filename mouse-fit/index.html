@@ -13,6 +13,35 @@
     <!-- Vite will inject compiled JS; CSS comes from src/neon.css (imported in main.jsx) -->
   </head>
   <body>
+    <style>
+/* make sure the left card sits above artwork */
+
+/* button row */
+.hero-actions{ margin-top:18px; display:flex; gap:12px; flex-wrap:wrap; }
+
+/* button base */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  text-decoration:none; color:#eaf0ff; font-weight:700;
+  border-radius:12px; border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06); padding:12px 16px;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);
+}
+.btn:hover{ filter:brightness(1.06); }
+.btn.lg{ padding:14px 18px; font-size:16px; }
+
+/* variants */
+.btn.neon{
+  border-color:transparent;
+  background:linear-gradient(90deg,#7c3aed,#22d3ee,#a78bfa);
+  box-shadow:0 0 18px rgba(124,58,237,.35), 0 0 28px rgba(34,211,238,.22);
+}
+.btn.outline{
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.20);
+}
+</style>
+
 
     <!-- HERO -->
     <header class="hero">
@@ -27,9 +56,10 @@
         </p>
 
         <div class="hero-actions">
-          <a class="btn-grad lg" href="/htmls/measure.html">Quick Start</a>
-          <a class="btn-dim lg" href="/htmls/grip.html">Grip Checker</a>
-        </div>
+  <a class="btn neon lg" href="/htmls/measure.html">Quick Start</a>
+  <a class="btn outline lg" href="/htmls/ai.html">MouseFit AI</a>
+</div>
+
       </section>
 
       <aside class="card hero-right" aria-hidden="true">

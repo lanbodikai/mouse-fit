@@ -3,7 +3,6 @@
 // Mix of in-page sections and external pages:
 const navItems = [
   // type: 'section' => anchor within index.html
-  { type: 'section', id: 'home',     label: 'Home' },
     {
     href: '/index.html#projects',
     label: 'Projects',
