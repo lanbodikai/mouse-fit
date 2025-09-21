@@ -20,7 +20,10 @@
 *{box-sizing:border-box}
 
 /* lock the page (no scrolling) */
-html,body{ height:100%; overflow:hidden; overscroll-behavior:none; }
+html,body{ height:100%; overflow:hidden; overscroll-behavior:none;
+  background:
+    radial-gradient(140% 120% at 20% -10%, #0c1022 0%, #0a0d1f 35%, rgba(0,0,0,0) 60%) fixed,
+    linear-gradient(180deg, #0a0f1e 0%, #12102a 55%, #1a1240 100%) fixed !important; }
 body{ margin:0; font-family:Lexend, system-ui, Arial; color:var(--fg); }
 
 /* remove the thin neon page frame/borders entirely */
@@ -93,7 +96,8 @@ body{ margin:0; font-family:Lexend, system-ui, Arial; color:var(--fg); }
 .panel{
   width:360px; max-height:min(84vh, 720px); overflow:auto;
   border:1px solid rgba(167,139,250,.25);
-  background:rgba(255,255,255,.05);
+  background:    linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.28)),
+    rgba(9,12,22,.84) !important;      
   backdrop-filter: blur(8px);
   border-radius:14px;
   box-shadow: inset 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(0,0,0,.35);
@@ -103,6 +107,20 @@ body{ margin:0; font-family:Lexend, system-ui, Arial; color:var(--fg); }
 .toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-top:8px}
 .btn-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
 .meta{display:flex;gap:10px;align-items:center;justify-content:flex-end}
+/* Stack the meta pills vertically (both live & frozen toolbars) */
+.panel .toolbar .meta{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch;      /* make each pill full width */
+  gap: 10px;
+}
+
+/* Make the pills look like neat rows */
+.panel .toolbar .meta .pill{
+  width: 100%;
+  text-align: center;
+}
+
 .pill{padding:4px 10px;border-radius:999px;background:#0f1524;border:1px solid #2a2f40;font-size:12px;color:#cfe9f6}
 
 button{background:#101626;color:var(--fg);border:1px solid #223049;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
@@ -119,8 +137,8 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
   border-radius: 16px;
   border: 1px solid rgba(167,139,250,.30);
   background:
-    radial-gradient(140% 120% at 0% 0%, rgba(124,58,237,.18), rgba(34,211,238,.10) 55%, rgba(0,0,0,0) 60%),
-    rgba(255,255,255,.06);
+      linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.28)),
+    rgba(9,12,22,.84) !important;      
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow:
@@ -241,7 +259,11 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
           <button id="toggleSkel">Turn off skeleton</button>
           <button id="reset">Reset (Esc)</button>
         </div>
-        <div class="meta"><span id="step" class="pill">Step: live</span></div>
+        <div class="meta">
+  <span id="skelState" class="pill">Skeleton: On</span>
+  <span id="stepPill"  class="pill">Step: live</span>
+  <span id="viewPill"  class="pill">View: Top</span>
+</div>
       </div>
 
       <!-- REFINE -->
@@ -266,9 +288,11 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
     <button class="coach-close" aria-label="Dismiss">×</button>
   </div>
   <div class="coach-content">
-    <p>1) Position your hand (and card) inside the dotted box.</p>
+    <p>1) Position your hand (and card) inside the dotted box<br/>(Card in hand is suggested)</p>
     <p>2) Press <b>Space</b> for a 5-second timer or use <b>Capture now</b>.</p>
-    <p>3) Refine points if needed, then <b>Confirm</b>.</p>
+    <p>3) Snap Fingertips, Hand Width <br/><b>(Manual adjustment is suggested)</b>.</p>
+    <p>4) <b>Double click on the edge of the card for four corners</b><br/>(Top Left,TR,BR,BL).</p>
+    <p>5) <b>Continue</b>.</p>
   </div>
 </div>
 
@@ -280,33 +304,30 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
   const handle = box.querySelector('.coach-bar');
   const closeBtn = box.querySelector('.coach-close');
 
-  // Restore hidden state
-  if (localStorage.getItem(key + ':hide') === '1') box.classList.add('hidden');
+  /* Always show on page load */
+  box.classList.remove('hidden');
+  // If you previously stored a hide flag, clear it (safe no-op otherwise)
+  localStorage.removeItem(key + ':hide');
 
-  // Restore position if saved
+  /* Restore position (keep this so users can drag it where they like) */
   const saved = localStorage.getItem(key + ':pos');
   if (saved) {
     const { left, top } = JSON.parse(saved);
     box.style.left = left; box.style.top = top;
   }
 
-  // Close + persist hidden
+  /* Close WITHOUT persistence (it will show again next visit) */
   closeBtn?.addEventListener('click', () => {
     box.classList.add('hidden');
-    localStorage.setItem(key + ':hide', '1');
   });
 
-  // Dragging (mouse + touch), constrained to viewport
+  /* Dragging (unchanged) */
   let dragging = false, grabDX = 0, grabDY = 0, w = 0, h = 0;
-
-  const pt = (e) => (e.touches?.[0]) ? { x:e.touches[0].clientX, y:e.touches[0].clientY }
-                                      : { x:e.clientX,            y:e.clientY };
+  const pt = (e) => (e.touches?.[0]) ? { x:e.touches[0].clientX, y:e.touches[0].clientY } : { x:e.clientX, y:e.clientY };
 
   function start(e){
-    const r = box.getBoundingClientRect();
-    const p = pt(e);
-    dragging = true;
-    w = r.width; h = r.height;
+    const r = box.getBoundingClientRect(), p = pt(e);
+    dragging = true; w = r.width; h = r.height;
     grabDX = p.x - r.left; grabDY = p.y - r.top;
     document.addEventListener('mousemove', move);
     document.addEventListener('mouseup', end);
@@ -314,19 +335,15 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
     document.addEventListener('touchend', end);
     e.preventDefault?.();
   }
-
   function move(e){
     if (!dragging) return;
-    const p = pt(e), vw = window.innerWidth, vh = window.innerHeight;
+    const p = pt(e), vw = innerWidth, vh = innerHeight, pad = 8;
     let x = p.x - grabDX, y = p.y - grabDY;
-    const pad = 8;
     x = Math.max(pad, Math.min(vw - w - pad, x));
     y = Math.max(pad, Math.min(vh - h - pad, y));
-    box.style.left = `${x}px`;
-    box.style.top  = `${y}px`;
+    box.style.left = `${x}px`; box.style.top = `${y}px`;
     if (e.cancelable) e.preventDefault();
   }
-
   function end(){
     if (!dragging) return;
     dragging = false;
@@ -341,6 +358,7 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
   handle.addEventListener('touchstart', start, { passive:false });
 })();
 </script>
+
 
 
 <!-- app wiring -->

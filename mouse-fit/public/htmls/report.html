@@ -12,13 +12,17 @@
   --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{height:100%;
+  background:
+    radial-gradient(140% 120% at 20% -10%, #0c1022 0%, #0a0d1f 35%, rgba(0,0,0,0) 60%) fixed,
+    linear-gradient(180deg, #0a0f1e 0%, #12102a 55%, #1a1240 100%) fixed !important; }
 body{
   margin:0; font-family:Lexend, system-ui, Arial;
   background:
-    radial-gradient(1100px 560px at 90% 6%,rgba(48,124,255,.18),transparent 60%),
+    radial-gradient(1100px 560px at 90% 6%,rgba(255, 48, 210, 0.18),transparent 60%),
     linear-gradient(135deg,#05060a,#071022 58%,#0a1c3a 100%);
   color:var(--fg);
+  
 }
 
 /* ===== ultra-thin neon page frame ===== */
@@ -127,6 +131,29 @@ body[data-revealed="true"]  .grip-thumbs img{ filter:none }
 .bg-tip::before  { background: linear-gradient(135deg, rgba(214,31,105,1), rgba(255,139,197,1)); }
 </style>
 <script src="/js/nav.js" defer></script>
+<script>
+function readK(key){
+  return sessionStorage.getItem(key) || localStorage.getItem(key.replace(/^mf:/,'mousefit:')) || null;
+}
+const grip  = readK('mf:grip');
+const result= JSON.parse(readK('mf:grip_result') || '{"grip":"unknown","confidence":0}');
+const top   = readK('mf:grip_view_top');
+const right = readK('mf:grip_view_right');
+const left  = readK('mf:grip_view_left');
+
+// Example: paint into <img id="rTop"> etc.
+window.addEventListener('DOMContentLoaded', () => {
+  const pct = Math.round((result.confidence || 0)*100);
+  const label = document.getElementById('gripLabel');
+  if (label) label.textContent = `${result.grip || grip || 'unknown'} (${pct}%)`;
+
+  const s = id => document.getElementById(id);
+  if (top && s('rTop'))   s('rTop').src   = top;
+  if (right && s('rRight')) s('rRight').src = right;
+  if (left && s('rLeft')) s('rLeft').src  = left;
+});
+</script>
+
 </head>
 <body data-revealed="false">
 
@@ -605,7 +632,6 @@ document.getElementById("btn-copy")?.addEventListener("click", async ()=>{
 });
 
 // auto-run once
-generateReport();
 </script>
 
 </body>

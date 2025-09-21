@@ -26,8 +26,9 @@ const acceptBtn    = document.getElementById("accept");
 const retakeBtn    = document.getElementById("retake");
 const classifyBtn  = document.getElementById("classify");
 const toggleSkel   = document.getElementById("toggleSkel");
-const skelState    = document.getElementById("skelState");
-const stepPill     = document.getElementById("stepPill");
+
+const skelState    = document.getElementById("skelState"); // may be null in your HTML
+const stepPill     = document.getElementById("stepPill");  // may be null in your HTML
 const viewPill     = document.getElementById("viewPill");
 const resultPill   = document.getElementById("resultPill");
 const guideLabel   = document.getElementById("guideLabel");
@@ -39,6 +40,26 @@ const thumbLeft    = document.getElementById("thumbLeft");
 const retakeAllBtn = document.getElementById("retakeAll");
 const gotoReport   = document.getElementById("gotoReport");
 
+/* ================== helpers (storage + safe text) ================== */
+// Write to BOTH storages and BOTH key families for compatibility
+function saveGripKV(key, value){
+  // sessionStorage preferred by some report.html builds
+  sessionStorage.setItem(key, value);
+  // mirror to localStorage with mousefit: namespace
+  localStorage.setItem(key.replace(/^mf:/, "mousefit:"), value);
+}
+function getGripKV(key){
+  // prefer fresh sessionStorage, fall back to localStorage
+  return sessionStorage.getItem(key) ||
+         localStorage.getItem(key.replace(/^mf:/, "mousefit:")) || null;
+}
+function clearGripK(keys){
+  keys.forEach(k => {
+    sessionStorage.removeItem(k);
+    localStorage.removeItem(k.replace(/^mf:/, "mousefit:"));
+  });
+}
+const setText = (el, txt) => { if (el) el.textContent = txt; };
 
 /* ================== state ================== */
 let stream = null, currentDeviceId = null;
@@ -49,7 +70,7 @@ let countdownTimer = null;
 let isFrozen = false;
 
 let currentView = 0; // 0=Top, 1=Right, 2=Left
-let shots = { top:null, right:null, left:null }; // base64 strings
+let shots = { top:null, right:null, left:null }; // data URLs
 
 /* ================== boot ================== */
 (async function boot() {
@@ -60,7 +81,17 @@ let shots = { top:null, right:null, left:null }; // base64 strings
   if (skeletonLive) await startSkeleton();
   updateViewUI();
   updateSkeletonUI();
-    // If opened with ?fresh=1, clear any old grip shots/results
+
+  // Restore shots from previous session (either storage)
+  const sTop   = getGripKV("mf:grip_view_top");
+  const sRight = getGripKV("mf:grip_view_right");
+  const sLeft  = getGripKV("mf:grip_view_left");
+  if (sTop)   { shots.top   = sTop;   if (thumbTop)   thumbTop.src   = sTop; }
+  if (sRight) { shots.right = sRight; if (thumbRight) thumbRight.src = sRight; }
+  if (sLeft)  { shots.left  = sLeft;  if (thumbLeft)  thumbLeft.src  = sLeft; }
+  updateClassifyEnabled();
+
+  // ?fresh=1 clears old shots/results (optional)
   if (new URLSearchParams(location.search).get("fresh") === "1") {
     clearAllShots();
   }
@@ -93,9 +124,14 @@ async function startCam(deviceId) {
           catch (e3) { return handleGUMError(e3); } }
   video.srcObject = stream;
   try { await video.play(); if (startCamBtn) startCamBtn.style.display="none"; }
-  catch { if (startCamBtn) { startCamBtn.style.display="block"; startCamBtn.onclick = async () => { try { await video.play(); startCamBtn.style.display="none"; } catch {} }; } }
+  catch {
+    if (startCamBtn) {
+      startCamBtn.style.display="block";
+      startCamBtn.onclick = async () => { try { await video.play(); startCamBtn.style.display="none"; } catch {} };
+    }
+  }
   const track = stream.getVideoTracks()[0]; const settings = track.getSettings?.() || {};
-  currentDeviceId = settings.deviceId || deviceId || null; camName.textContent = track.label || "Camera";
+  currentDeviceId = settings.deviceId || deviceId || null; if (camName) camName.textContent = track.label || "Camera";
   if (currentDeviceId && cameraSelect) { [...cameraSelect.options].some(o => (o.value===currentDeviceId && (cameraSelect.value=o.value,true))); }
 }
 function stopCam(){ if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; } }
@@ -114,34 +150,47 @@ async function initCameraLayer() {
 
 /* ================== UI ================== */
 function wireUI(){
-  timerBtn.onclick = () => startCountdown(5);
-  snapBtn.onclick  = () => capture();
-  acceptBtn.onclick= () => acceptShot();
-  retakeBtn.onclick= () => { isFrozen=false; frameData=null; stepPill.textContent="Step: live"; liveBtns.style.display="flex"; frozenBtns.style.display="none"; }
-  classifyBtn.onclick = () => classifyGrip();
-  toggleSkel.onclick  = async () => { skeletonLive = !skeletonLive; if (skeletonLive && !handLandmarker) await startSkeleton(); updateSkeletonUI(); };
-  retakeAllBtn.onclick = () => clearAllShots();
+  if (timerBtn)   timerBtn.onclick = () => startCountdown(5);
+  if (snapBtn)    snapBtn.onclick  = () => capture();
+  if (acceptBtn)  acceptBtn.onclick= () => acceptShot();
+  if (retakeBtn)  retakeBtn.onclick= () => {
+    isFrozen=false; frameData=null;
+    setText(stepPill, "Step: live");
+    if (liveBtns)   liveBtns.style.display  = "flex";
+    if (frozenBtns) frozenBtns.style.display= "none";
+  };
+  if (classifyBtn) classifyBtn.onclick = () => classifyGrip();
+  if (toggleSkel)  toggleSkel.onclick  = async () => {
+    skeletonLive = !skeletonLive;
+    if (skeletonLive) await mp("VIDEO"); // ensure back to video mode
+    updateSkeletonUI();
+  };
+  if (retakeAllBtn) retakeAllBtn.onclick = () => clearAllShots();
 
   document.addEventListener("keydown", (e) => {
     if (e.key === " ") { e.preventDefault(); if (!countdownTimer && !isFrozen) startCountdown(5); }
-    if (e.key === "Escape") { retakeBtn.click(); }
+    if (e.key === "Escape") { retakeBtn?.click(); }
   });
 }
 function updateSkeletonUI(){
-  skelState.textContent = skeletonLive ? "Skeleton: On" : "Skeleton: Off";
-  toggleSkel.textContent = skeletonLive ? "Turn off skeleton" : "Turn on skeleton";
+  setText(skelState, skeletonLive ? "Skeleton: On" : "Skeleton: Off");
+  if (toggleSkel) toggleSkel.textContent = skeletonLive ? "Turn off skeleton" : "Turn on skeleton";
 }
 function updateViewUI(){
   const name = VIEWS[currentView];
-  viewPill.textContent = "View: " + name;
-  guideLabel.textContent = `Step ${currentView+1}/3 — ${name.toUpperCase()} view`;
+  if (viewPill) viewPill.textContent = "View: " + name;
+  if (guideLabel) guideLabel.textContent = `Step ${currentView+1}/3 — ${name.toUpperCase()} view`;
+}
+function updateClassifyEnabled(){
+  const ready = Boolean(getGripKV("mf:grip_view_top") && getGripKV("mf:grip_view_right") && getGripKV("mf:grip_view_left"));
+  if (classifyBtn) classifyBtn.disabled = !ready;
 }
 
 /* ================== loop ================== */
 function resize(){ canvas.width=video.videoWidth||1280; canvas.height=video.videoHeight||720; }
 function loopLive(){
   if (!isFrozen){ resize(); ctx.drawImage(video,0,0,canvas.width,canvas.height); if (skeletonLive) drawSkeletonLive(); }
-  else if (frameData){ ctx.putImageData(frameData,0,0); if (skeletonLive) drawSkeletonFrozen(); }
+  else if (frameData){ ctx.putImageData(frameData,0,0); /* optional frozen overlays */ }
   requestAnimationFrame(loopLive);
 }
 
@@ -164,17 +213,24 @@ function drawSkeletonLive(){
     for (const [a,b] of edges){ const A=px(a), B=px(b); ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); }
   } catch {}
 }
+
+// IMAGE detect but then switch back to VIDEO so live skeleton keeps working
 async function getImageLandmarks(){
   try {
     await mp("IMAGE");
     const res = handLandmarker.detect(canvas);
-    return res?.landmarks?.[0] || null;
-  } catch { return null; }
+    const lm = res?.landmarks?.[0] || null;
+    if (skeletonLive) await mp("VIDEO"); // ensure back to video
+    return lm;
+  } catch {
+    try { if (skeletonLive) await mp("VIDEO"); } catch {}
+    return null;
+  }
 }
-function drawSkeletonFrozen(){ /* optional */ }
 
 /* ================== Capture & accept ================== */
 function startCountdown(seconds=5){
+  if (!countdownEl) return;
   countdownEl.style.display="flex"; countdownEl.textContent=seconds;
   const tick=()=>{ seconds--; if (seconds<=0){ countdownEl.style.display="none"; countdownTimer=null; capture(); }
                    else { countdownEl.textContent=seconds; countdownTimer=setTimeout(tick,1000); } };
@@ -185,53 +241,34 @@ function capture(){
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
   frameData = ctx.getImageData(0,0,canvas.width,canvas.height);
   isFrozen = true;
-  statusBadge.textContent = "Frozen";
-  liveBtns.style.display = "none";
-  frozenBtns.style.display = "flex";
-  stepPill.textContent = "Step: review";
+  if (statusBadge) statusBadge.textContent = "Frozen";
+  if (liveBtns)   liveBtns.style.display = "none";
+  if (frozenBtns) frozenBtns.style.display = "flex";
+  setText(stepPill, "Step: review");
 }
 function acceptShot(){
   const img = canvas.toDataURL("image/jpeg", 0.9);
-  if (currentView===0){ shots.top = img;  thumbTop.src   = img; }
-  if (currentView===1){ shots.right = img; thumbRight.src = img; }
-  if (currentView===2){ shots.left = img;  thumbLeft.src  = img; }
-  // persist for later
-  localStorage.setItem("mousefit:grip_view_"+VIEWS[currentView].toLowerCase(), img);
+  const vName = VIEWS[currentView].toLowerCase();
+  // Update in-memory + thumbs
+  if (vName === "top")   { shots.top   = img; if (thumbTop)   thumbTop.src   = img; }
+  if (vName === "right") { shots.right = img; if (thumbRight) thumbRight.src = img; }
+  if (vName === "left")  { shots.left  = img; if (thumbLeft)  thumbLeft.src  = img; }
+  // Persist for both key families
+  saveGripKV("mf:grip_view_" + vName, img);
 
-  // move to next or enable classify
+  // Next view or ready to classify
   if (currentView < 2){
     currentView++;
     updateViewUI();
-    // reset to live
-    isFrozen=false; frameData=null; stepPill.textContent="Step: live";
-    liveBtns.style.display="flex"; frozenBtns.style.display="none";
-  } else {
-    classifyBtn.disabled = false;
-    showToast("All 3 views captured. You can classify now.");
+    isFrozen=false; frameData=null;
+    setText(stepPill, "Step: live");
+    if (liveBtns)   liveBtns.style.display = "flex";
+    if (frozenBtns) frozenBtns.style.display = "none";
   }
+  updateClassifyEnabled();
 }
 
-function clearAllShots(){
-  shots = { top:null, right:null, left:null };
-  thumbTop.src = thumbRight.src = thumbLeft.src = "";
-  localStorage.removeItem("mousefit:grip_view_top");
-  localStorage.removeItem("mousefit:grip_view_right");
-  localStorage.removeItem("mousefit:grip_view_left");
-  localStorage.removeItem("mousefit:grip_result");
-  localStorage.removeItem("mousefit:grip_pref");
-  classifyBtn.disabled = true;
-  gotoReport.style.display = "none";
-  currentView = 0;
-  updateViewUI();
-  isFrozen = false; frameData = null;
-  stepPill.textContent = "Step: live";
-  liveBtns.style.display = "flex";
-  frozenBtns.style.display = "none";
-  resultPill.textContent = "Result: —";
-}
-
-/* ============== Heuristic classification (works offline) ============== */
-// angle at PIP: between (MCP->PIP) and (PIP->TIP) — straighter ≈ 180°, curled smaller
+/* ============== Heuristic classification ================= */
 function pipAngle(lm, mcp, pip, tip){
   const a = { x: lm[mcp].x, y: lm[mcp].y };
   const b = { x: lm[pip].x, y: lm[pip].y };
@@ -243,20 +280,14 @@ function pipAngle(lm, mcp, pip, tip){
   const cos = Math.max(-1, Math.min(1, dot/(L1*L2||1)));
   return Math.acos(cos) * 180/Math.PI;
 }
-
 function classifyFromLandmarks(lm){
-  if (!lm) return { grip:"unknown", confidence:0.0 };
-
-  // Fingers: index(5-8), middle(9-12), ring(13-16), pinky(17-20)
+  if (!lm) return { grip:"unknown", confidence:0.4 };
   const angIndex  = pipAngle(lm, 5, 6, 8);
   const angMiddle = pipAngle(lm, 9,10,12);
   const angRing   = pipAngle(lm,13,14,16);
   const angPinky  = pipAngle(lm,17,18,20);
-
   const avgIM = (angIndex + angMiddle)/2;
   const avgRP = (angRing + angPinky)/2;
-
-  // thresholds tuned for top-ish views
   let grip = "unknown", score = 0.4;
 
   if (avgIM >= 155 && avgRP >= 150){
@@ -275,37 +306,8 @@ function classifyFromLandmarks(lm){
 
   return { grip, confidence: Math.max(0, Math.min(0.99, score)) };
 }
-
-// simple red contact overlay: tips always, and palm base if palmish
-function overlayContact(grip, lm){
-  if (!lm) return;
-  const W = canvas.width, H = canvas.height;
-  const px = i => ({ x: lm[i].x*W, y: lm[i].y*H });
-
-  ctx.save();
-  ctx.globalAlpha = 0.30;
-  ctx.fillStyle = "#ff3b30";
-
-  // finger tips
-  [4,8,12,16,20].forEach(i => {
-    const p = px(i);
-    ctx.beginPath(); ctx.arc(p.x, p.y, 18, 0, Math.PI*2); ctx.fill();
-  });
-
-  if (grip==="palm" || grip==="relaxed claw"){
-    // rough palm patch: midpoint of 5 and 17 (knuckles), expanded towards wrist (0)
-    const k5 = px(5), k17 = px(17), w = px(0);
-    const center = { x:(k5.x+k17.x+w.x)/3, y:(k5.y+k17.y+w.y)/3 };
-    ctx.beginPath();
-    ctx.ellipse(center.x, center.y+20, 60, 40, 0, 0, Math.PI*2);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
 function mapGripPreference(grip){
   const g = String(grip || "").toLowerCase().trim();
-  // normalize some phrasing
   if (g.includes("relaxed") && g.includes("claw")) return { grip: "claw", relaxed: true };
   if (g.includes("claw"))       return { grip: "claw", relaxed: false };
   if (g.includes("fingertip"))  return { grip: "fingertip", relaxed: false };
@@ -315,55 +317,119 @@ function mapGripPreference(grip){
 
 /* ================== Classify ================== */
 async function classifyGrip(){
-  if (!shots.top || !shots.right || !shots.left){
-    showToast("Capture Top, Right and Left first."); return;
+  // ----- sanity: need all 3 views -----
+  const t0 = getGripKV("mf:grip_view_top");
+  const r0 = getGripKV("mf:grip_view_right");
+  const l0 = getGripKV("mf:grip_view_left");
+  if (!t0 || !r0 || !l0){
+    showToast("Capture Top, Right and Left first.");
+    return;
   }
+  setText(resultPill, "Result: analysing…");
 
-  resultPill.textContent = "Result: analysing…";
-
-  // Try local heuristic on the frozen frame (top view most reliable)
-  const lm = await getImageLandmarks();
-  let localGuess = classifyFromLandmarks(lm);
-
-  // draw contact overlay on the frozen view for instant feedback
-  if (lm) overlayContact(localGuess.grip, lm);
-
-  // Prefer backend if available (send all three views)
-  try {
-    const res = await fetch("/api/grip", {
-      method:"POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ top:shots.top, right:shots.right, left:shots.left, local_guess:localGuess })
+  // ----- downscale to keep payload small -----
+  async function downscale(dataUrl, maxW = 800){
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const x = c.getContext('2d');
+        x.drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => resolve(dataUrl); // fall back
+      img.src = dataUrl;
     });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json(); // { grip, confidence }
-    localStorage.setItem("mousefit:grip_result", JSON.stringify(data));
-    const label = String(data.grip||localGuess.grip).toLowerCase();
-    const conf  = Math.round(100*(data.confidence ?? localGuess.confidence));
-    resultPill.textContent = `Result: ${label} (${conf}%)`;
-    
-    const currentSession = localStorage.getItem("mousefit:session") || "legacy";
-    localStorage.setItem("mousefit:grip_done_session", currentSession);
-    gotoReport.style.display = "inline-block";
-
-    const pref = mapGripPreference(label);
-    localStorage.setItem("mousefit:grip_pref", JSON.stringify(pref));
-    gotoReport.style.display = "inline-block";
-  } catch {
-    // fallback to local
-    localStorage.setItem("mousefit:grip_result", JSON.stringify(localGuess));
-    const conf = Math.round(localGuess.confidence*100);
-    resultPill.textContent = `Result: ${localGuess.grip} (${conf}%)`;
-    showToast("No AI server at /api/grip — used local heuristic.");
-
-    const currentSession = localStorage.getItem("mousefit:session") || "legacy";
-    localStorage.setItem("mousefit:grip_done_session", currentSession);
-    gotoReport.style.display = "inline-block";
-
-    const pref = mapGripPreference(localGuess.grip);
-    localStorage.setItem("mousefit:grip_pref", JSON.stringify(pref));
-    gotoReport.style.display = "inline-block";
   }
+  const [top, right, left] = await Promise.all([downscale(t0), downscale(r0), downscale(l0)]);
+
+  // ----- local heuristic (always compute) -----
+  const lm = await getImageLandmarks();
+  const localGuess = classifyFromLandmarks(lm);
+
+  // ----- try backend -----
+  const API_URL = '/api/grip'; // change to 'https://api.yoursite.com/grip' if different origin
+  try {
+    console.debug('POST', API_URL, { top: top.slice(0,64)+'…', right: right.slice(0,64)+'…', left: left.slice(0,64)+'…', local_guess: localGuess });
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      // if cross-origin with cookies: credentials:'include', and ensure CORS allows it
+      body: JSON.stringify({ top, right, left, local_guess: localGuess }),
+      // keepalive helps when navigating right after:
+      keepalive: true
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(()=> '');
+      console.error('Grip API non-OK', res.status, txt);
+      throw new Error(`Grip API ${res.status}: ${txt || 'no body'}`);
+    }
+
+    const data = await res.json(); // { grip, confidence }
+    console.debug('Grip API OK', data);
+
+    const finalGrip = String(data.grip || localGuess.grip || 'unknown').toLowerCase();
+    const finalConf = Math.round(100 * (data.confidence ?? localGuess.confidence ?? 0.4));
+
+    // persist (both key families)
+    saveGripKV("mf:grip_result", JSON.stringify({ grip: finalGrip, confidence: finalConf/100 }));
+    saveGripKV("mf:grip", finalGrip);
+    saveGripKV("mf:grip_pref", JSON.stringify(mapGripPreference(finalGrip)));
+
+    setText(resultPill, `Result: ${finalGrip} (${finalConf}%)`);
+    if (gotoReport) gotoReport.style.display = "inline-block";
+  } catch (err) {
+    console.warn('Grip API failed — using local heuristic', err);
+
+    const finalGrip = String(localGuess.grip || 'unknown').toLowerCase();
+    const finalConf = Math.round(100 * (localGuess.confidence ?? 0.4));
+
+    saveGripKV("mf:grip_result", JSON.stringify({ grip: finalGrip, confidence: finalConf/100 }));
+    saveGripKV("mf:grip", finalGrip);
+    saveGripKV("mf:grip_pref", JSON.stringify(mapGripPreference(finalGrip)));
+
+    setText(resultPill, `Result: ${finalGrip} (${finalConf}%)`);
+    if (gotoReport) gotoReport.style.display = "inline-block";
+
+    // Optional: surface why it failed to you
+    showToast("AI server not reachable — used local guess. See console for details.");
+  }
+}
+
+
+/* ================== Clear / Retake All ================== */
+function clearAllShots(){
+  shots = { top:null, right:null, left:null };
+  if (thumbTop)   thumbTop.src   = "";
+  if (thumbRight) thumbRight.src = "";
+  if (thumbLeft)  thumbLeft.src  = "";
+
+  clearGripK([
+    "mf:grip_view_top",
+    "mf:grip_view_right",
+    "mf:grip_view_left",
+    "mf:grip_result",
+    "mf:grip_pref",
+    "mf:grip"
+  ]);
+
+  updateClassifyEnabled();
+  if (gotoReport) gotoReport.style.display = "none";
+
+  currentView = 0;
+  updateViewUI();
+
+  isFrozen = false; frameData = null;
+  setText(stepPill, "Step: live");
+  if (liveBtns)   liveBtns.style.display = "flex";
+  if (frozenBtns) frozenBtns.style.display = "none";
+  setText(resultPill, "Result: —");
 }
 
 /* ================== Misc ================== */
