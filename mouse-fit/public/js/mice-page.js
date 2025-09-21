@@ -12,7 +12,12 @@ const detail = $('#detailContent');
 // --- utils ---
 function mm(v) { return (v || v === 0) ? `${v} mm` : '—'; }
 function g(v) { return (v || v === 0) ? `${v} g` : '—'; }
-function usd(v) { return (v || v === 0) ? `$${Number(v).toFixed(0)}` : '—'; }
+function usd(v) {
+  if (v == null || v === '') return '—';
+  if (typeof v === 'number' && Number.isFinite(v)) return `$${v.toFixed(0)}`;
+  const maybeNum = Number(v);
+  return Number.isFinite(maybeNum) ? `$${maybeNum.toFixed(0)}` : '—';
+}
 function cmFrom(mmVal) { return (mmVal || mmVal === 0) ? (mmVal/10).toFixed(1) + ' cm' : '—'; }
 
 function pick(m, keys, fallback='') {

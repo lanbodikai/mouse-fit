@@ -8,35 +8,11 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-
+    <script src="/js/nav2.js" defer></script>
     <link rel="stylesheet" href="/neon.css" />
     <!-- Vite will inject compiled JS; CSS comes from src/neon.css (imported in main.jsx) -->
   </head>
   <body>
-    <!-- NAVBAR -->
-    <nav class="nav">
-      <div class="nav-inner">
-        <a class="brand logo" href="/">
-          <span class="logo-pill">MF</span>
-          <span class="brand-text">Mouse-Fit</span>
-        </a>
-
-        <div class="nav-links">
-          <a class="nav-link is-active" href="/">Home</a>
-          <a class="nav-link" href="#projects">Projects</a>
-          <a class="nav-link" href="/about.html">About the author</a>
-          <a class="nav-link" href="htmls/mice.html">Mouse-Database</a>
-        </div>
-
-        <div class="nav-cta">
-          <div class="search">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"/></svg>
-            <input placeholder="Search" />
-          </div>
-          <a class="btn-grad" href="#" onclick="alert('Register flow coming soon')">Register</a>
-        </div>
-      </div>
-    </nav>
 
     <!-- HERO -->
     <header class="hero">
@@ -86,16 +62,28 @@
 
     <!-- Smooth scroll cue -->
     <script type="module">
-      document.getElementById('y').textContent = new Date().getFullYear();
-      document.getElementById('cue')?.addEventListener('click',()=>{
-        document.getElementById('projects')?.scrollIntoView({behavior:'smooth', block:'start'});
+      window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('y').textContent = new Date().getFullYear();
+        document.getElementById('cue')?.addEventListener('click', () => {
+          document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        // Highlight "Projects" link when that section is in view
+        const projectsLink = document.querySelector('.nav-links a[data-link="projects"]');
+        const homeLink = document.querySelector('.nav-links a[href="/index.html"]');
+        const projectsSection = document.getElementById('projects');
+        if (projectsLink && homeLink && projectsSection) {
+          const obs = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+              projectsLink.setAttribute('aria-current', 'page');
+              homeLink.removeAttribute('aria-current');
+            } else {
+              projectsLink.removeAttribute('aria-current');
+              homeLink.setAttribute('aria-current', 'page');
+            }
+          }, { threshold: 0.3 });
+          obs.observe(projectsSection);
+        }
       });
-      // Highlight "Projects" link when that section is in view
-      const linkProjects = document.querySelector('.nav-link[href="#projects"]');
-      const obs = new IntersectionObserver(([e])=>{
-        linkProjects?.classList.toggle('is-active', e.isIntersecting);
-      }, { threshold: .3 });
-      const sec = document.getElementById('projects'); if (sec) obs.observe(sec);
     </script>
 
     <!-- Vite entry -->

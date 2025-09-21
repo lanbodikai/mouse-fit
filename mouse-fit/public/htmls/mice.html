@@ -5,9 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>MouseFit • Mouse Database</title>
     <!-- Global theme -->
-    <link rel="stylesheet" href="/neon.css" />
-
-    <style>
+    <!-- Global theme (if present) + font -->
+<link rel="stylesheet" href="/neon.css" />
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;700&display=swap" rel="stylesheet" />
+<script src="/js/nav.js" defer></script>
+<style>
+:root{
+  --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8;
+  --pill:#0d1322; --pillb:#273045;
+  --border:rgba(255,255,255,.10);
+  --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:Lexend, system-ui, Arial;
+  color:var(--fg);
+}
       /* Page shell */
       .page { max-width: 1100px; margin: 0 auto; padding: 16px; }
       .layout { display:grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
@@ -112,18 +126,6 @@
   </head>
 
   <body>
-    <header class="nav">
-      <div class="nav-inner">
-        <a class="brand" href="/">MouseFit</a>
-        <nav class="links">
-          <a href="/htmls/measure.html">Hand Measure</a>
-          <a href="/htmls/grip.html">Grip</a>
-          <a href="/htmls/report.html">Report</a>
-          <a class="active" href="/htmls/mice.html">Mouse Database</a>
-          <a href="/htmls/ai.html">AI Agent</a>
-        </nav>
-      </div>
-    </header>
 
     <main class="page layout">
       <section>

@@ -16,37 +16,171 @@ html,body{
     radial-gradient(900px 520px at 92% 8%,    rgba(50,140,255,.18), transparent 60%),
     linear-gradient(135deg, var(--deep) 0%, var(--ink) 52%, var(--roy) 100%);
   background-attachment:fixed;
+  margin: 0; padding: 0;
   color:var(--fg);
   font-family:Sora, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  margin:0;
 }
 a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 
-/* ===== NAVBAR ===== */
-.nav{position:sticky;top:0;z-index:50;height:68px;border-bottom:1px solid var(--border);
-     background:linear-gradient(to bottom, rgba(5,6,10,.86), rgba(5,6,10,.42));backdrop-filter:blur(8px)}
-.nav-inner{max-width:1200px;height:100%;margin:auto;display:flex;align-items:center;gap:18px;padding:0 18px}
-.logo{display:flex;align-items:center;gap:10px}
-.logo-pill{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:12px;
-  background:radial-gradient(120% 120% at 20% 10%, rgba(124,58,237,.55), rgba(34,211,238,.45));
-  box-shadow:0 0 18px rgba(124,58,237,.3), 0 0 28px rgba(34,211,238,.18);font-weight:800}
-.brand-text{font-weight:800;letter-spacing:.02em}
-.nav-links{display:flex;gap:16px;margin-left:12px}
-.nav-link{opacity:.82;padding:10px 10px;border-radius:8px}
-.nav-link:hover{opacity:1}
-.nav-link.disabled{opacity:.45;pointer-events:none}
-.nav-link.is-active{opacity:1; background:rgba(255,255,255,.04); border:1px solid var(--border)}
-.nav-cta{margin-left:auto;display:flex;align-items:center;gap:12px}
-.search{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid var(--border);
-  background:rgba(255,255,255,.04)}
-.search svg{width:16px;height:16px;stroke:#cbd5ff;fill:none;stroke-width:2}
-.search input{background:transparent;color:var(--fg);border:none;outline:none;min-width:180px}
-.btn-grad{display:inline-flex;align-items:center;justify-content:center;padding:9px 16px;border-radius:999px;
-  background:var(--grad); color:white; font-weight:700; box-shadow:0 0 18px rgba(34,211,238,.24),0 0 28px rgba(124,58,237,.2)}
-.btn-dim{display:inline-flex;align-items:center;justify-content:center;padding:9px 16px;border-radius:999px;
-  background:rgba(255,255,255,.06); color:#e7ecff; border:1px solid var(--border)}
-.btn-grad.lg,.btn-dim.lg{padding:12px 18px}
+/* Theme tokens */
+:root{
+  --vio:#7c3aed;
+  --cya:#22d3ee;
+  --grad:linear-gradient(90deg,var(--vio),var(--cya));
+  --border:rgba(255,255,255,.10);
+}
+
+/* ===== BAR (use 100% not 100vw) ===== */
+.nav{
+  position: sticky;
+  top: 0;
+  z-index: 60;
+
+  left: 0;
+  right: 0;
+  width: 100%;
+  margin: 0;
+
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(10,15,25,.90), rgba(10,15,25,.60));
+  backdrop-filter: blur(10px);
+}
+
+/* ===== INNER WRAPPER (centered) ===== */
+.nav-inner{
+  max-width: 1240px;              /* tweak to your taste */
+  width: 100%;
+  height: 64px;
+  margin: 0 auto;                  /* centers the row */
+  padding: 0 16px;                 /* page-side padding */
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ===== BRAND ===== */
+.brand{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #f6f7ff;
+  letter-spacing: .02em;
+  font-weight: 800;
+}
+.logo-pill{
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;             /* rounded square */
+  background: radial-gradient(120% 120% at 20% 10%, rgba(124,58,237,.55), rgba(34,211,238,.45));
+  box-shadow: 0 0 18px rgba(124,58,237,.30), 0 0 28px rgba(34,211,238,.18);
+  color: #fff;
+  font-weight: 800;
+  font-size: .92rem;               /* smaller “MF” */
+  letter-spacing: .06em;
+}
+.brand-text{
+  font-size: 1.05rem;              /* slightly smaller title */
+  line-height: 1;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* ===== LINKS ===== */
+.nav-links{
+  display: flex;
+  gap: 12px;
+  list-style: none;
+  margin: 0 0 0 6px;
+  padding: 0;
+}
+.nav-links a{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 12px;
+  color: #dfe6ff;
+  opacity: .85;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background .15s ease, opacity .15s ease, box-shadow .15s ease, transform .08s ease;
+}
+.nav-links a:hover{ opacity: 1; background: rgba(255,255,255,.05); }
+.nav-links a:active{ transform: translateY(1px); }
+.nav-links a[aria-current="page"]{
+  opacity: 1;
+  background: rgba(255,255,255,.08);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 1px 6px rgba(0,0,0,.25);
+}
+.page-frame{ margin: 0; padding-left: 0; }
+
+/* Push right cluster (search + register) */
+.nav-spacer{ flex: 1; }
+
+/* ===== SEARCH ===== */
+.search{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: #f1f4ff;
+}
+.search input{
+  width: 240px;
+  border: 0;
+  background: transparent;
+  color: #e9eeff;
+  outline: none;
+  font: inherit;
+}
+.search:focus-within{
+  box-shadow: 0 0 0 3px rgba(34,211,238,.20);
+  border-color: rgba(34,211,238,.45);
+}
+
+/* ===== REGISTER BUTTON ===== */
+.reg-btn{
+  margin-left: 12px;
+  height: 40px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  background: var(--grad);
+  border: 1px solid transparent;
+  box-shadow: 0 0 18px rgba(124,58,237,.28), 0 0 28px rgba(34,211,238,.22);
+  transition: filter .15s ease, transform .08s ease;
+}
+.reg-btn:hover{ filter: brightness(1.06); }
+.reg-btn:active{ transform: translateY(1px); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 960px){
+  .nav-links{ display: none; }
+  .search input{ width: 160px; }
+}
+@media (max-width: 560px){
+  .search{ display: none; }
+  .reg-btn{ padding: 0 14px; }
+}
+
+/* Optional safety: prevent accidental horizontal jiggle from 100vw anywhere else */
+html, body { overflow-x: hidden; }
+
+
 
 /* ===== HERO ===== */
 .hero{max-width:1200px;margin:24px auto 0;padding:22px 18px 56px;
@@ -429,3 +563,17 @@ main, .page { scroll-margin-top: 64px; } /* content not hidden under sticky nav 
   opacity: 1 !important;        /* defeat .muted opacity */
   filter: none;
 }
+/* Equalize the visual left/right padding even when a scrollbar exists */
+:root { --sb: calc(100vw - 100%); }  /* scrollbar width (0 if none) */
+
+.nav { width: 100%; }                /* avoid 100vw jiggle */
+.nav-inner{
+  max-width: 1240px;
+  height: 64px;
+  margin-inline: auto;               /* true center */
+  padding-inline: calc(16px + var(--sb) / 2);  /* compensate both sides */
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
