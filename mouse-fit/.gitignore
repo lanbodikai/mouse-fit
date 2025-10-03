@@ -37,3 +37,5 @@ logs/
 !public/models/
 !public/models/mouse/
 !public/models/mouse/best_web_model/**
+.env
+server/**/embeddings.json
