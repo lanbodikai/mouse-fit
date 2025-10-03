@@ -122,6 +122,11 @@ body{
   -webkit-text-fill-color: #000;
 }
 
+      /* Mobile: make search input fit small screens */
+      @media (max-width: 600px){
+        .page .toolbar input[type="text"]{ min-width: 0; width: 100%; }
+        .toolbar{ gap:8px; }
+      }
     </style>
   </head>
 

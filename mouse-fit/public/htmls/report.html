@@ -129,6 +129,18 @@ body[data-revealed="true"]  .grip-thumbs img{ filter:none }
 .bg-palm::before { background: linear-gradient(135deg, rgba(82,0,163,1), rgba(167,94,246,1)); }
 .bg-claw::before { background: linear-gradient(135deg, rgba(14,98,255,1), rgba(104,169,255,1)); }
 .bg-tip::before  { background: linear-gradient(135deg, rgba(214,31,105,1), rgba(255,139,197,1)); }
+/* ===== Mobile layout ===== */
+@media (max-width: 720px){
+  .hero{ max-width: 100%; margin: 16px auto 0; padding: 0 12px; grid-template-columns: 1fr; gap: 12px }
+  .blob{ aspect-ratio: 3 / 2; }
+  .report-copy{ padding: 4px 2px 8px 2px }
+  .h1{ font-size: 22px; }
+  .stats .row{ font-size: 13px }
+  .reveal-bar{ gap:8px }
+  .reveal-bar .btn{ flex:1 1 auto; min-width: 140px }
+  .ai-wrap{ margin: 20px auto 60px; padding: 0 12px }
+}
+
 </style>
 <script src="/js/nav.js" defer></script>
 <script>
