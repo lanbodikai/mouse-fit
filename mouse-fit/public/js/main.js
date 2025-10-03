@@ -75,7 +75,8 @@ const snapTipBtn   = document.getElementById("snapTip");
 
 const toggleSkel   = document.getElementById("toggleSkel");
 const skelState    = document.getElementById("skelState");
-const stepPill     = document.getElementById("step");
+// Correct ID: measure.html uses id="stepPill"
+const stepPill     = document.getElementById("stepPill");
 
 // === required draggable handles (must exist in measure.html) ===
 const pEls = ["p0","p1","p2","p3"].map(id => document.getElementById(id));
@@ -248,6 +249,16 @@ function wireUI() {
     if (userPrefSkeletonOn && !skeletonLive) await startSkeleton();
     updateSkeletonUI();
   };
+  // Also wire the Reset in the refine toolbar
+  const resetBtn2 = document.getElementById("reset2");
+  if (resetBtn2) {
+    resetBtn2.onclick = async () => {
+      resetAll();
+      await startCam(currentDeviceId);
+      if (userPrefSkeletonOn && !skeletonLive) await startSkeleton();
+      updateSkeletonUI();
+    };
+  }
   confirmBtn.onclick = () => confirmCard();
 
   snapEdgesBtn.onclick = () => { if (frameData) snapPalmEdgesSmart(); };
@@ -418,7 +429,7 @@ function capture() {
   if (guides) guides.style.display = "none";
   liveBtns.style.display = "none";
   refineRow.style.display = "flex";
-  stepPill.textContent = "Step: card";
+  if (stepPill) stepPill.textContent = "Step: card";
 
   // Seed card corners from visible guide (cardGuide if present; else handGuide)
   const rectC = canvas.getBoundingClientRect();
@@ -476,7 +487,7 @@ function resetAll() {
   if (guides) guides.style.display = "";
   liveBtns.style.display = "flex";
   refineRow.style.display = "none";
-  stepPill.textContent = "Step: live";
+  if (stepPill) stepPill.textContent = "Step: live";
 
   [...pEls, wL, wR, hA, hB].forEach(el => {
     el.style.display = "none";

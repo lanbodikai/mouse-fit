@@ -1,0 +1,13 @@
+﻿* text=auto
+
+# Force LF in code/web files (works fine on Windows)
+*.js   text eol=lf
+*.ts   text eol=lf
+*.jsx  text eol=lf
+*.tsx  text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.py   text eol=lf
+*.sh   text eol=lf

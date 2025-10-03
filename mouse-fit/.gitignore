@@ -1,19 +1,39 @@
-# secrets
-.env
-.env.local
-
-
-# dependencies / builds
-node_modules/
-dist/
-build/
-.cache/
-.vite/
-.eslintcache
-
-# OS/editor junk
+﻿# OS/Editor
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+
+# Node/Build
+node_modules/
+.next/
+dist/
+out/
+
+# Python/venvs
+tfenv/
+yoloenv/
+.venv/
+venv/
+
+# Training artifacts & large data
+runs/
+dataset_v2/
+models/
+*.pt
+*.onnx
+*.npy
+*.npz
+*.ckpt
+*.bin
+*.tflite
+
+# Logs & caches
+logs/
+**/__pycache__/
 *.log
 
-server/rag/embeddings.json
+# Allow the web-serving TFJS model you actually need
+!public/models/
+!public/models/mouse/
+!public/models/mouse/best_web_model/**
