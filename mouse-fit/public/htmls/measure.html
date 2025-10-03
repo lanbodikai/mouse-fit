@@ -16,6 +16,8 @@
   --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
   --stage-offset-y: 40px; 
   --stage-offset-x: 100px; 
+  --guides-left:4%; --guides-right:4%; --guides-top:4%; --guides-bottom:4%;
+  --dock-scale:1;
 }
 *{box-sizing:border-box}
 
@@ -63,9 +65,9 @@ body{ margin:0; font-family:Lexend, system-ui, Arial; color:var(--fg); }
 
 /* overlays inside stage */
 .stage .guides{
-  position:absolute; left:4%; right:4%; top:4%; bottom:4%;
+  position:absolute; left:var(--guides-left); right:var(--guides-right); top:var(--guides-top); bottom:var(--guides-bottom);
   display:flex; align-items:center; justify-content:center;
-  pointer-events:none; z-index:2;
+  pointer-events:auto; touch-action:none; z-index:2;
 }
 .stage .guide{
   border:3px dashed rgba(255,255,255,.65);
@@ -102,6 +104,7 @@ body{ margin:0; font-family:Lexend, system-ui, Arial; color:var(--fg); }
   border-radius:14px;
   box-shadow: inset 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(0,0,0,.35);
   padding:12px;
+  transform: scale(var(--dock-scale)); transform-origin: top right; touch-action:none;
 }
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-top:8px}
@@ -272,12 +275,14 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
           <button id="timer" class="primary">Capture in 5 Seconds (Space)</button>
           <button id="snap">Capture now</button>
           <button id="toggleSkel">Turn off skeleton</button>
+          <button id="toggleGuide">Hide guides</button>
           <button id="reset">Reset (Esc)</button>
         </div>
         <div class="meta">
   <span id="skelState" class="pill">Skeleton: On</span>
   <span id="stepPill"  class="pill">Step: live</span>
   <span id="viewPill"  class="pill">View: Top</span>
+  <span id="guideState" class="pill">Guides: On</span>
 </div>
       </div>
 

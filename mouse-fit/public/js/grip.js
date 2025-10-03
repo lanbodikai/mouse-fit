@@ -52,6 +52,7 @@ const acceptBtn    = document.getElementById("accept");
 const retakeBtn    = document.getElementById("retake");
 const classifyBtn  = document.getElementById("classify");
 const toggleSkel   = document.getElementById("toggleSkel");
+const toggleGuideButtons = Array.from(document.querySelectorAll("[data-toggle-guide]"));
 
 const skelState    = document.getElementById("skelState");
 const stepPill     = document.getElementById("stepPill");
@@ -65,6 +66,11 @@ const thumbLeft    = document.getElementById("thumbLeft");
 
 const retakeAllBtn = document.getElementById("retakeAll");
 const gotoReport   = document.getElementById("gotoReport");
+
+const gripGuide    = document.querySelector(".gripGuide");
+const stageEl      = document.querySelector(".stage");
+const controlPanel = document.querySelector(".control-dock .panel");
+const rootStyle    = document.documentElement.style;
 
 /* thumbnails helper (avoid black) */
 function setThumbImage(imgEl, dataUrl) {
@@ -90,12 +96,33 @@ function clearGripK(keys){
   });
 }
 const setText = (el, txt) => { if (el) el.textContent = txt; };
+const PREF_SKELETON    = "mf:pref:skeleton-live";
+const PREF_GUIDE_VIS   = "mf:pref:guide-visible";
+const PREF_GUIDE_SCALE = "mf:pref:guide-scale";
+const PREF_PANEL_SCALE = "mf:pref:panel-scale";
+
+function getStoredBool(key, fallback = false){
+  const value = localStorage.getItem(key);
+  if (value === null) return fallback;
+  return value === '1' || value === 'true';
+}
+function getStoredNumber(key, fallback = 1, min, max){
+  const raw = parseFloat(localStorage.getItem(key));
+  if (!Number.isFinite(raw)) return fallback;
+  let val = raw;
+  if (typeof min === 'number') val = Math.max(min, val);
+  if (typeof max === 'number') val = Math.min(max, val);
+  return val;
+}
 
 /* ================== state ================== */
 let stream = null, currentDeviceId = null;
 let frameData = null;
 let handLandmarker = null, runMode = null;
-let skeletonLive = true;
+let skeletonLive = getStoredBool(PREF_SKELETON, true);
+let guideVisible = getStoredBool(PREF_GUIDE_VIS, true);
+let guideScale   = getStoredNumber(PREF_GUIDE_SCALE, 1, 0.6, 1.4);
+let panelScale   = getStoredNumber(PREF_PANEL_SCALE, 1, 0.7, 1.25);
 let countdownTimer = null;
 let isFrozen = false;
 
@@ -434,7 +461,7 @@ async function drawLiveOverlayThrottled(){
   }
 
   // Use YOLO to acquire the object (first time or after repeated loss)
-  const dets = await yoloDetectBoxes(canvas, {preferGuide:true});
+  const dets = await yoloDetectBoxes(canvas, {preferGuide:guideVisible});
   let det = dets?.[0] || null;
   if (det) {
     __lastDet = det; __lastDetAt = now;
@@ -465,7 +492,7 @@ async function drawFrozenOverlayThrottled(){
   }
 
   // Fall back to YOLO on frozen frame
-  const dets = await yoloDetectBoxes(canvas, {preferGuide:true});
+  const dets = await yoloDetectBoxes(canvas, {preferGuide:guideVisible});
   let det = dets?.[0] || null;
   if (det) { __lastDet = det; __lastDetAt = now; drawBox(det.box[0], det.box[1], det.box[2], det.box[3], det.score); }
 }
@@ -488,10 +515,17 @@ function loopLive(){
 /* ================== boot ================== */
 (async function boot() {
   await initCameraLayer();
+  applyGuideScale();
+  applyPanelScale();
+  setGuideVisibility(guideVisible);
   wireUI();
+  updateViewUI();
+  updateSkeletonUI();
+  initPinchGestures();
   requestAnimationFrame(loopLive);
-  if (skeletonLive) await startSkeleton();
-  updateViewUI(); updateSkeletonUI();
+  ensureSkeletonReady();
+  video?.addEventListener('loadeddata', ensureSkeletonReady);
+  video?.addEventListener('loadedmetadata', ensureSkeletonReady);
 
   // restore thumbs
   const sTop   = getGripKV("mf:grip_view_top");
@@ -567,9 +601,13 @@ function wireUI(){
   if (classifyBtn) classifyBtn.onclick = () => classifyGrip();
   if (toggleSkel)  toggleSkel.onclick  = async () => {
     skeletonLive = !skeletonLive;
-    if (skeletonLive) await mp("VIDEO");
+    if (skeletonLive) {
+      await mp("VIDEO");
+      ensureSkeletonReady();
+    }
     updateSkeletonUI();
   };
+  toggleGuideButtons.forEach(btn => btn.onclick = () => setGuideVisibility(!guideVisible));
   if (retakeAllBtn) retakeAllBtn.onclick = () => clearAllShots();
 
   document.addEventListener("keydown", (e) => {
@@ -580,6 +618,7 @@ function wireUI(){
 function updateSkeletonUI(){
   setText(skelState, skeletonLive ? "Skeleton: On" : "Skeleton: Off");
   if (toggleSkel) toggleSkel.textContent = skeletonLive ? "Turn off skeleton" : "Turn on skeleton";
+  localStorage.setItem(PREF_SKELETON, skeletonLive ? "1" : "0");
 }
 function updateViewUI(){
   const name = VIEWS[currentView];
@@ -589,6 +628,85 @@ function updateViewUI(){
 function updateClassifyEnabled(){
   const ready = Boolean(getGripKV("mf:grip_view_top") && getGripKV("mf:grip_view_right") && getGripKV("mf:grip_view_left"));
   if (classifyBtn) classifyBtn.disabled = !ready;
+}
+function applyGuideScale(){
+  rootStyle.setProperty('--guide-scale', guideScale.toFixed(3));
+}
+function applyPanelScale(){
+  rootStyle.setProperty('--panel-scale', panelScale.toFixed(3));
+}
+function setGuideScale(next){
+  guideScale = clamp(Number(next) || 1, 0.6, 1.4);
+  applyGuideScale();
+  localStorage.setItem(PREF_GUIDE_SCALE, guideScale.toFixed(3));
+}
+function setPanelScale(next){
+  panelScale = clamp(Number(next) || 1, 0.7, 1.25);
+  applyPanelScale();
+  localStorage.setItem(PREF_PANEL_SCALE, panelScale.toFixed(3));
+}
+function updateGuideUI(){
+  if (gripGuide) {
+    gripGuide.style.visibility = guideVisible ? 'visible' : 'hidden';
+    gripGuide.style.opacity = guideVisible ? '1' : '0';
+  }
+  if (stageEl) stageEl.classList.toggle('guide-hidden', !guideVisible);
+  toggleGuideButtons.forEach(btn => {
+    btn.textContent = guideVisible ? 'Hide guide' : 'Show guide';
+    btn.setAttribute('aria-pressed', guideVisible ? 'false' : 'true');
+  });
+  if (guideLabel) guideLabel.style.display = guideVisible ? 'inline-flex' : 'none';
+  localStorage.setItem(PREF_GUIDE_VIS, guideVisible ? '1' : '0');
+}
+function setGuideVisibility(show){
+  guideVisible = Boolean(show);
+  trackGuideRect = null;
+  updateGuideUI();
+}
+function initPinchGestures(){
+  if (!(window.navigator?.maxTouchPoints > 0)) return;
+  const handlers = [
+    { el: gripGuide, get: () => guideScale, set: setGuideScale, min:0.6, max:1.4 },
+    { el: controlPanel, get: () => panelScale, set: setPanelScale, min:0.7, max:1.25 }
+  ];
+  handlers.forEach(({ el, get, set, min, max }) => addPinchHandler(el, get, set, { min, max }));
+}
+function touchDist(t0, t1){
+  const dx = t1.clientX - t0.clientX;
+  const dy = t1.clientY - t0.clientY;
+  return Math.hypot(dx, dy);
+}
+function addPinchHandler(el, getCurrent, setScale, opts = {}){
+  if (!el) return;
+  let startDist = 0;
+  let startScale = 1;
+  const { min = 0.5, max = 1.6 } = opts;
+  el.addEventListener('touchstart', (ev) => {
+    if (ev.touches.length === 2) {
+      startDist = touchDist(ev.touches[0], ev.touches[1]);
+      startScale = getCurrent();
+    }
+  }, { passive:true });
+  el.addEventListener('touchmove', (ev) => {
+    if (ev.touches.length === 2 && startDist) {
+      const currentDist = touchDist(ev.touches[0], ev.touches[1]);
+      if (currentDist > 0) {
+        const scale = clamp(startScale * (currentDist / startDist), min, max);
+        setScale(scale);
+      }
+      if (ev.cancelable) ev.preventDefault();
+    }
+  }, { passive:false });
+  const handleEnd = (ev) => {
+    if (ev.touches && ev.touches.length === 2) {
+      startDist = touchDist(ev.touches[0], ev.touches[1]);
+      startScale = getCurrent();
+    } else {
+      startDist = 0;
+    }
+  };
+  el.addEventListener('touchend', handleEnd, { passive:true });
+  el.addEventListener('touchcancel', () => { startDist = 0; }, { passive:true });
 }
 
 /* ================== countdown / capture ================== */
@@ -706,21 +824,43 @@ async function mp(mode){
   runMode = mode; return handLandmarker;
 }
 async function startSkeleton(){ await mp("VIDEO"); }
+function ensureSkeletonReady(){
+  if (!skeletonLive || handLandmarker) return;
+  startSkeleton().catch(err => console.warn("[Skeleton] init failed", err));
+}
 function drawSkeletonLive(){
+  if (!handLandmarker || video.readyState < 2) return;
+  let saved = false;
   try {
     const result = handLandmarker.detectForVideo(video, performance.now());
-    const lm = result?.landmarks?.[0]; if (!lm) return;
-    ctx.lineWidth = 3; ctx.strokeStyle = "rgba(0,0,0,0.6)";
+    const lm = result?.landmarks?.[0];
+    if (!lm) return;
+    ctx.save();
+    saved = true;
     const edges = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
     const px = i => ({ x: lm[i].x * canvas.width, y: lm[i].y * canvas.height });
+    const thickness = Math.max(2, Math.round(canvas.width / 480));
+    ctx.lineWidth = thickness;
+    ctx.strokeStyle = 'rgba(34,211,238,0.9)';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(5,17,34,0.6)';
+    ctx.shadowBlur = Math.max(2, thickness * 1.2);
     for (const [a,b] of edges){ const A=px(a), B=px(b); ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke(); }
+    ctx.shadowBlur = 0;
     if (SHOW_GUIDE_OVERLAY) {
       const g = getGuideMouseBox(); if (g) {
-        ctx.save(); ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 2; ctx.setLineDash([6,6]);
+        ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 2; ctx.setLineDash([6,6]);
         ctx.strokeRect(g.x, g.y, g.width, g.height); ctx.restore();
       }
     }
-  } catch {}
+  } catch (err) {
+    if (console?.debug) console.debug('[Skeleton] draw error', err);
+  } finally {
+    if (saved) {
+      try { ctx.restore(); } catch {}
+    }
+  }
 }
 async function getImageLandmarks(){
   try { await mp("IMAGE"); const res = handLandmarker.detect(canvas); const lm = res?.landmarks?.[0] || null; if (skeletonLive) await mp("VIDEO"); return lm; }
@@ -764,9 +904,10 @@ function pointInBox(pt, box) {
   return (pt.x >= box.x && pt.x <= box.x + box.width && pt.y >= box.y && pt.y <= box.y + box.height);
 }
 function getGuideMouseBox() {
-  const guide = document.querySelector(".gripGuide");
-  if (!guide) return null;
+  const guide = gripGuide;
+  if (!guide || !guideVisible) return null;
   const rect  = guide.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
   const stage = canvas.getBoundingClientRect();
   // scale from CSS pixels to canvas pixel coords
   const sx = canvas.width  / stage.width;
@@ -802,7 +943,7 @@ async function drawMouseOutlineRedOnFrozen() {
 
   octx.clearRect(0, 0, overlay.width, overlay.height);
 
-  const dets = await yoloDetectBoxes(canvas, {preferGuide:true});
+  const dets = await yoloDetectBoxes(canvas, {preferGuide:guideVisible});
   if (dets?.length) {
     let [x1, y1, x2, y2] = dets[0].box;
     const refined = await refineBoxWithHand([x1,y1,x2,y2]);
@@ -1335,3 +1476,23 @@ window.YOLO = {
   conf: () => YOLO_CONF,
   setConf: (v) => { YOLO_CONF = Number(v); console.log('YOLO_CONF =', YOLO_CONF); }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

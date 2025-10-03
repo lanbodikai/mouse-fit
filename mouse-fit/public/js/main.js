@@ -77,6 +77,9 @@ const toggleSkel   = document.getElementById("toggleSkel");
 const skelState    = document.getElementById("skelState");
 // Correct ID: measure.html uses id="stepPill"
 const stepPill     = document.getElementById("stepPill");
+const toggleGuide  = document.getElementById("toggleGuide");
+const guideState   = document.getElementById("guideState");
+const dockPanel    = document.querySelector('.control-dock .panel');
 
 // === required draggable handles (must exist in measure.html) ===
 const pEls = ["p0","p1","p2","p3"].map(id => document.getElementById(id));
@@ -107,13 +110,25 @@ let nextCorner = 0;
 (async function boot() {
   await initCameraLayer();       // robust camera start (localhost/iOS safe)
   wireUI();
+  restoreGuidesPrefs();
+  restoreDockScale();
   resize();
   requestAnimationFrame(loopLive);
 
   // Start skeleton overlay by default (respect user preference)
+  await waitForVideoReady();
   if (userPrefSkeletonOn) await startSkeleton();
   updateSkeletonUI();
 })();
+
+function waitForVideoReady(){
+  return new Promise(res=>{
+    if (video.readyState>=2 && (video.videoWidth||0)>0) return res();
+    const done=()=>{ res(); cleanup(); };
+    const cleanup=()=>{ video.removeEventListener('loadedmetadata',done); video.removeEventListener('playing',done); };
+    video.addEventListener('loadedmetadata',done); video.addEventListener('playing',done);
+  });
+}
 
 /* ================== CAMERA (robust for localhost/iOS) ================== */
 async function ensureCamPermission() {
@@ -274,6 +289,22 @@ function wireUI() {
     }
     updateSkeletonUI();
   };
+  if (toggleGuide) {
+    toggleGuide.onclick = () => {
+      const hidden = guides?.style.display === 'none';
+      if (hidden) {
+        guides.style.display = '';
+        if (guideState) guideState.textContent = 'Guides: On';
+        toggleGuide.textContent = 'Hide guides';
+        localStorage.setItem('mf:guides:hidden','0');
+      } else {
+        guides.style.display = 'none';
+        if (guideState) guideState.textContent = 'Guides: Off';
+        toggleGuide.textContent = 'Show guides';
+        localStorage.setItem('mf:guides:hidden','1');
+      }
+    };
+  }
 
   document.addEventListener("keydown", (e) => {
     if (e.key === " ") { e.preventDefault(); if (!H && !countdownTimer) startCountdown(5); }
@@ -331,6 +362,11 @@ function updateSkeletonUI() {
     toggleSkel.textContent = "Turn on skeleton";
   }
 }
+function updateGuidesUI(){
+  const hidden = guides?.style.display === 'none';
+  if (guideState) guideState.textContent = hidden ? 'Guides: Off' : 'Guides: On';
+  if (toggleGuide) toggleGuide.textContent = hidden ? 'Show guides' : 'Hide guides';
+}
 
 /* ================== Live draw loop ================== */
 function resize() {
@@ -384,18 +420,18 @@ function drawSkeletonLive() {
     const result = handLandmarker.detectForVideo(video, performance.now());
     const lm = result?.landmarks?.[0];
     if (!lm) return;
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "rgba(0,0,0,0.6)";
     const edges = [ [0,1],[1,2],[2,3],[3,4],
                     [0,5],[5,6],[6,7],[7,8],
                     [0,9],[9,10],[10,11],[11,12],
                     [0,13],[13,14],[14,15],[15,16],
                     [0,17],[17,18],[18,19],[19,20] ];
     const px = i => ({ x: lm[i].x * canvas.width, y: lm[i].y * canvas.height });
-    for (const [a,b] of edges) {
-      const A = px(a), B = px(b);
-      ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
-    }
+    // outline
+    ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    for (const [a,b] of edges) { const A = px(a), B = px(b); ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); }
+    // bright
+    ctx.lineWidth = 3; ctx.strokeStyle = '#8ef0ff';
+    for (const [a,b] of edges) { const A = px(a), B = px(b); ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); }
   } catch { /* ignore */ }
 }
 
@@ -946,4 +982,94 @@ function showToast(msg, durationMs = 2200) {
   toast.textContent = msg;
   toast.style.display = "block";
   setTimeout(() => { toast.style.display = "none"; }, durationMs);
+}
+
+/* ================== Guides + Dock: restore + pinch ================== */
+function restoreGuidesPrefs(){
+  try{
+    const hidden = localStorage.getItem('mf:guides:hidden') === '1';
+    if (hidden && guides) guides.style.display = 'none';
+    const L = localStorage.getItem('mf:guides:left');
+    const R = localStorage.getItem('mf:guides:right');
+    const T = localStorage.getItem('mf:guides:top');
+    const B = localStorage.getItem('mf:guides:bottom');
+    const root = document.documentElement.style;
+    if (L) root.setProperty('--guides-left', L);
+    if (R) root.setProperty('--guides-right', R);
+    if (T) root.setProperty('--guides-top', T);
+    if (B) root.setProperty('--guides-bottom', B);
+    updateGuidesUI();
+  } catch{}
+}
+function restoreDockScale(){
+  const s = parseFloat(localStorage.getItem('mf:dock-scale')||'1');
+  document.documentElement.style.setProperty('--dock-scale', String(Math.max(0.7, Math.min(1.6, s))));
+}
+
+// Pinch to resize guides
+if (guides){
+  let startDist=0, startInsets=null;
+  const getDist=(t)=> Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+  guides.addEventListener('touchstart', (e)=>{
+    if (e.touches.length===2){
+      startDist = getDist(e.touches);
+      const cs = getComputedStyle(document.documentElement);
+      startInsets = {
+        left: parseFloat(cs.getPropertyValue('--guides-left')),
+        right: parseFloat(cs.getPropertyValue('--guides-right')),
+        top: parseFloat(cs.getPropertyValue('--guides-top')),
+        bottom: parseFloat(cs.getPropertyValue('--guides-bottom'))
+      };
+      e.preventDefault();
+    }
+  }, {passive:false});
+  guides.addEventListener('touchmove', (e)=>{
+    if (e.touches.length===2 && startInsets){
+      const scale = getDist(e.touches)/(startDist||1);
+      const d = (1/scale - 1) * 5;
+      const L = Math.max(0, startInsets.left + d);
+      const R = Math.max(0, startInsets.right+ d);
+      const T = Math.max(0, startInsets.top  + d);
+      const B = Math.max(0, startInsets.bottom+ d);
+      const root = document.documentElement.style;
+      root.setProperty('--guides-left',  L + '%');
+      root.setProperty('--guides-right', R + '%');
+      root.setProperty('--guides-top',   T + '%');
+      root.setProperty('--guides-bottom',B + '%');
+      e.preventDefault();
+    }
+  }, {passive:false});
+  guides.addEventListener('touchend', ()=>{
+    const cs = getComputedStyle(document.documentElement);
+    localStorage.setItem('mf:guides:left', cs.getPropertyValue('--guides-left').trim());
+    localStorage.setItem('mf:guides:right',cs.getPropertyValue('--guides-right').trim());
+    localStorage.setItem('mf:guides:top',  cs.getPropertyValue('--guides-top').trim());
+    localStorage.setItem('mf:guides:bottom',cs.getPropertyValue('--guides-bottom').trim());
+    startInsets=null; startDist=0;
+  });
+}
+
+// Pinch to scale dock panel
+if (dockPanel){
+  let startDist=0, startScale=1;
+  const getDist=(t)=> Math.hypot(t[0].clientX-t[1].clientX, t[0].clientY-t[1].clientY);
+  dockPanel.addEventListener('touchstart', (e)=>{
+    if (e.touches.length===2){
+      startDist = getDist(e.touches);
+      startScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--dock-scale'))||1;
+      e.preventDefault();
+    }
+  }, {passive:false});
+  dockPanel.addEventListener('touchmove', (e)=>{
+    if (e.touches.length===2 && startDist>0){
+      const s = Math.max(0.7, Math.min(1.6, startScale * (getDist(e.touches)/(startDist||1))));
+      document.documentElement.style.setProperty('--dock-scale', String(s));
+      e.preventDefault();
+    }
+  }, {passive:false});
+  dockPanel.addEventListener('touchend', ()=>{
+    const s = getComputedStyle(document.documentElement).getPropertyValue('--dock-scale').trim();
+    localStorage.setItem('mf:dock-scale', s);
+    startDist=0;
+  });
 }

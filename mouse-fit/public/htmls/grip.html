@@ -18,6 +18,8 @@
   --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
   --stage-offset-y: 40px;
   --stage-offset-x: 100px;
+  --guide-scale: 1;
+  --panel-scale: 1;
 }
 *{box-sizing:border-box}
 html,body{
@@ -64,8 +66,15 @@ canvas#overlay            { z-index:3; pointer-events:none; } /* draw above the 
   border:3px dashed rgba(255,255,255,0.65);
   border-radius:14px; background:rgba(255,255,255,0.06);
   display:flex; align-items:center; justify-content:center;
-  pointer-events:none;
+  pointer-events:auto;
+  touch-action:none;
+  transform-origin:center;
+  transform:scale(var(--guide-scale, 1));
+  transition:transform 0.18s ease, opacity 0.15s ease;
+  opacity:1;
 }
+.stage.guide-hidden .gripGuide{ opacity:0; visibility:hidden; }
+.stage.guide-hidden .label{ display:none; }
 .stage .label{
   position:absolute; top:-14px; left:14px;
   background:#0b1224; border:1px solid #263041; color:#cfe9f6;
@@ -86,6 +95,10 @@ canvas#overlay            { z-index:3; pointer-events:none; } /* draw above the 
   backdrop-filter: blur(8px); border-radius:14px;
   box-shadow: inset 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(0,0,0,.35);
   padding:12px;
+  transform-origin: top right;
+  transform: scale(var(--panel-scale, 1));
+  transition: transform 0.18s ease;
+  will-change: transform;
 }
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-top:8px}
@@ -99,6 +112,10 @@ button,.btn-link{background:#101626;color:#eaf0ff;border:1px solid #223049;borde
 button.primary{background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));border-color:transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
 select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:10px;padding:8px}
 .hint{font-size:14px;color:#a6b0c8;margin:6px 0 2px}
+.pinch-hint{display:none;margin-top:6px}
+@media (pointer:coarse){
+  .pinch-hint{display:block}
+}
 
 .thumbs{display:flex;gap:10px;margin-top:6px;align-items:center}
 .thumb{
@@ -140,6 +157,7 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
   .panel{
     width:auto; max-width:none; max-height:48dvh; border-radius:16px 16px 12px 12px;
     padding:10px; margin:0 auto; backdrop-filter: blur(12px);
+    transform-origin:center bottom;
   }
   .toolbar{ grid-template-columns:1fr; }
   .btn-group{ grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
@@ -200,6 +218,7 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
           <button id="timer" class="primary">Capture in 5 Seconds (Space)</button>
           <button id="snap">Capture now</button>
           <button id="toggleSkel">Turn off skeleton</button>
+          <button type="button" data-toggle-guide>Hide guide</button>
           <button id="retakeAll">Retake all (clear)</button>
         </div>
         <div class="meta">
@@ -207,6 +226,7 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
           <span id="stepPill"  class="pill">Step: live</span>
           <span id="viewPill"  class="pill">View: Top</span>
         </div>
+        <p class="hint pinch-hint">Pinch the guide box or toolbar to resize.</p>
       </div>
       
       <!-- FROZEN -->
@@ -214,6 +234,7 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
         <div class="btn-group">
           <button id="accept">Use This Angle</button>
           <button id="retake">Retake</button>
+          <button type="button" data-toggle-guide>Hide guide</button>
           <button id="classify" disabled>Classify Grip</button>
           <a id="gotoReport" class="btn-link" href="./report.html">Go to Report</a>
         </div>
@@ -359,3 +380,15 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
