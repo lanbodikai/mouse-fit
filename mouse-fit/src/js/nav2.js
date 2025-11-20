@@ -1,10 +1,10 @@
 // nav2.js — shared top bar for all MouseFit pages
 
 const mfTools = [
-  { label: "Hand Measure", href: "/htmls/measure.html" },
-  { label: "Grip", href: "/htmls/grip.html" },
-  { label: "Report Page", href: "/htmls/report.html" },
-  { label: "Mouse Database", href: "/htmls/mice.html" },
+  { label: "Hand Measure", href: "/src/htmls/measure.html" },
+  { label: "Grip", href: "/src/htmls/grip.html" },
+  { label: "Report Page", href: "/src/htmls/report.html" },
+  { label: "Mouse Database", href: "/src/htmls/mouse-db.html" },
 ];
 
 function buildTopbar() {
@@ -50,7 +50,7 @@ function buildTopbar() {
           </div>
         </div>
 
-        <a class="mf-link" href="/htmls/ai.html">Ask AI</a>
+        <a class="mf-link" href="/src/htmls/ai.html">Ask AI</a>
       </div>
     </div>
   `;

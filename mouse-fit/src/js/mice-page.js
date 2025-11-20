@@ -1,7 +1,7 @@
 // MouseFit • Mouse Database page (no API / no rerank).
 // Works with varied dataset shapes by normalizing common key names.
 
-import { MICE } from '/js/mice.js';
+import { MICE } from './mice.js';
 
 const $ = (sel) => document.querySelector(sel);
 const grid = $('#grid');
@@ -213,7 +213,7 @@ q.addEventListener('input', () => {
 });
 clearBtn.addEventListener('click', () => { q.value = ''; handleQueryInput(); });
 
-// Deep-link support: /htmls/mice.html?q=lightweight claw <70g
+// Deep-link support: /src/htmls/mouse-db.html?q=lightweight claw <70g
 const urlQ = new URLSearchParams(location.search).get('q');
 if (urlQ) { q.value = urlQ; handleQueryInput(); }
 

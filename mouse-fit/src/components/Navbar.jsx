@@ -29,15 +29,15 @@ const Navbar = () => {
               Showcase ▾
             </span>
             <div className={`dropdown-menu ${isDropdownOpen ? 'show' : ''}`}>
-              <a href="/htmls/measure.html" className="dropdown-link">Hand Measure</a>
-              <a href="/htmls/grip.html" className="dropdown-link">Grip Test</a>
-              <a href="/htmls/report.html" className="dropdown-link">Report Page</a>
+              <a href="/src/htmls/measure.html" className="dropdown-link">Hand Measure</a>
+              <a href="/src/htmls/grip.html" className="dropdown-link">Grip Test</a>
+              <a href="/src/htmls/report.html" className="dropdown-link">Report Page</a>
             </div>
           </div>
 
           {/* New Links */}
-          <a href="/htmls/mouse-db.html" className="nav-link">Mouse Database</a>
-          <a href="/htmls/ai.html" className="nav-link special-link">AI Agent</a>
+          <a href="/src/htmls/mouse-db.html" className="nav-link">Mouse Database</a>
+          <a href="/src/htmls/ai.html" className="nav-link special-link">AI Agent</a>
         </div>
 
         {/* Mobile Hamburger */}
