@@ -6,9 +6,7 @@
 <title>Mouse-Fit — Measurement Report</title>
 
 <!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script src="/js/nav2.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/neon.css" />
 
 <style>
@@ -19,89 +17,13 @@
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
-  margin:0; font-family:Sora, system-ui, Arial;
+  margin:0; font-family:'Sora', system-ui, Arial;
   /* Updated background to match index.html Blue/Purple tone instead of Pink */
   background:
     radial-gradient(1150px 620px at 90% 6%, rgba(48,124,255,.18), transparent 60%),
     linear-gradient(135deg,var(--bg) 0%, #071022 58%, #0a1c3a 100%);
   color:var(--fg);
   background-attachment:fixed;
-}
-
-.toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background-color: #1a202c;
-    color: white;
-    position: relative;
-    z-index: 100;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    color: white;
-    font-size: 1.25rem;
-    font-weight: bold;
-}
-
-.logo img {
-    height: 2rem;
-}
-
-.nav-items {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.dropdown {
-    position: relative;
-}
-
-.dropdown-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1rem;
-    cursor: pointer;
-}
-
-.dropdown-content {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #2d3748;
-    border-radius: 0.25rem;
-    padding: 0.5rem 0;
-    min-width: 10rem;
-    z-index: 10;
-}
-
-.dropdown-content a {
-    display: block;
-    padding: 0.5rem 1rem;
-    text-decoration: none;
-    color: white;
-}
-
-.dropdown-content a:hover {
-    background-color: #4a5568;
-}
-
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-
-.nav-link {
-    text-decoration: none;
-    color: white;
-    font-size: 1rem;
 }
 
 /* Hero Section */
@@ -189,24 +111,74 @@ body[data-revealed="true"]  #snapshot{ filter:none; transform:scale(1); }
 
 </style>
 <script>
-/* (Same Logic script as before, omitted for brevity but assumed present) */
-function readK(key){ return sessionStorage.getItem(key) || localStorage.getItem(key.replace(/^mf:/,'mousefit:')) || null; }
-const grip=readK('mf:grip'), result=JSON.parse(readK('mf:grip_result')||'{"grip":"unknown","confidence":0}');
-const topV=readK('mf:grip_view_top'), rightV=readK('mf:grip_view_right'), leftV=readK('mf:grip_view_left');
+// Small helper so we can read values whether they were stored under "mf:*" in
+// sessionStorage or "mousefit:*" in localStorage (old flow).
+function readK(key){
+  return (
+    sessionStorage.getItem(key) ||
+    localStorage.getItem(key.replace(/^mf:/, "mousefit:")) ||
+    null
+  );
+}
 
-window.addEventListener('DOMContentLoaded', () => {
-  const pct = Math.round((result.confidence || 0)*100);
-  const label = document.getElementById('gripLabel');
-  const s = id => document.getElementById(id);
-  if (topV && s('gripTop'))   s('gripTop').src   = topV;
-  if (rightV && s('gripRight')) s('gripRight').src = rightV;
-  if (leftV && s('gripLeft'))  s('gripLeft').src  = leftV;
-  
-  // Render Text logic matches previous file
+// Optional grip data (may or may not be present)
+const grip        = readK("mf:grip");
+const gripResult  = JSON.parse(readK("mf:grip_result") || '{"grip":"unknown","confidence":0}');
+const topV        = readK("mf:grip_view_top");
+const rightV      = readK("mf:grip_view_right");
+const leftV       = readK("mf:grip_view_left");
+
+window.addEventListener("DOMContentLoaded", () => {
+  // --- 1) Hand measurements from measure.html ---
+  const lengthMm = Number(readK("mf:length_mm") || 0);
+  const widthMm  = Number(readK("mf:width_mm")  || 0);
+
+  const lenEl  = document.getElementById("handLength");
+  const widEl  = document.getElementById("handWidth");
+  const sizeEl = document.getElementById("handSize");
+
+  if (lengthMm && lenEl) {
+    lenEl.textContent = (lengthMm / 10).toFixed(1);
+  }
+  if (widthMm && widEl) {
+    widEl.textContent = (widthMm / 10).toFixed(1);
+  }
+
+  if (lengthMm && widthMm && sizeEl) {
+    let size = "Medium";
+    if (lengthMm < 170 || widthMm < 80) size = "Small";
+    else if (lengthMm > 195 || widthMm > 95) size = "Large";
+    sizeEl.textContent = size;
+  }
+
+  // --- 2) Grip info (from grip.html) ---
+  const gripPill       = document.getElementById("gripPill");
+  const suggestedGrip  = document.getElementById("suggestedGrip");
+  const gripThumbsWrap = document.getElementById("gripThumbs");
+  const pct            = Math.round((gripResult.confidence || 0) * 100);
+
+  if (grip && grip !== "unknown") {
+    if (gripPill) {
+      gripPill.textContent = `Grip: ${grip} (${pct || 0}% confidence)`;
+    }
+    if (suggestedGrip && !suggestedGrip.textContent.includes(grip)) {
+      suggestedGrip.textContent = `Your measured grip: ${grip}.`;
+    }
+  }
+
+  const s = (id) => document.getElementById(id);
+  if (topV && s("gripTop"))   s("gripTop").src   = topV;
+  if (rightV && s("gripRight")) s("gripRight").src = rightV;
+  if (leftV && s("gripLeft"))  s("gripLeft").src  = leftV;
+
+  if (gripThumbsWrap && (topV || rightV || leftV)) {
+    gripThumbsWrap.style.display = "flex";
+  }
 });
 </script>
 </head>
 <body data-revealed="false">
+<div id="nav-react" style="position: relative; z-index: 1000;"></div>
 <section class="hero">
   <div class="blob"><img id="snapshot" alt="Hand snapshot"></div>
   <div class="report-copy">
@@ -295,5 +267,6 @@ window.addEventListener('DOMContentLoaded', () => {
   import { mice } from '/js/mice.js'; // simplified for this response
   // ...
 </script>
+<script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

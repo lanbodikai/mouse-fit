@@ -1,0 +1,116 @@
+.mf-carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  height: 500px;
+  margin: 0 auto;
+  perspective: 1200px; /* Creates the 3D space */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mf-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d; /* Essential for 3D children */
+}
+
+/* --- CARD BASE STYLE --- */
+.mf-slide {
+  position: absolute;
+  width: 300px;
+  height: 450px;
+  background: #1a1a1d;
+  border-radius: 20px;
+  overflow: hidden;
+  /* Center anchor point */
+  left: 50%; top: 50%;
+  margin-left: -150px; margin-top: -225px;
+  
+  transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  cursor: pointer;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+}
+
+.mf-slide img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: brightness(0.6); /* Dim by default */
+  transition: 0.4s;
+}
+
+/* --- BLUE TITLE BANNER --- */
+.mf-overlay {
+  position: absolute;
+  bottom: 0; left: 0; width: 100%;
+  padding: 12px;
+  background: rgba(59, 130, 246, 0.9); /* Blue banner */
+  backdrop-filter: blur(4px);
+}
+.mf-overlay h3 {
+  margin: 0; color: white; text-align: center;
+  font-size: 1rem; font-weight: 700; letter-spacing: 0.5px;
+}
+
+/* --- 3D POSITIONS --- */
+
+/* 1. ACTIVE (Center, Big, Bright) */
+.mf-slide.active {
+  z-index: 10;
+  transform: translateZ(200px); /* Bring forward */
+  box-shadow: 0 20px 60px rgba(124, 58, 237, 0.5); /* Purple glow */
+  border: 2px solid #7c3aed;
+}
+.mf-slide.active img { filter: brightness(1); }
+
+/* 2. NEXT (Right, Angled, Back) */
+.mf-slide.next {
+  z-index: 5;
+  transform: translateX(260px) translateZ(-150px) rotateY(-25deg);
+  filter: brightness(0.7);
+}
+
+/* 3. PREV (Left, Angled, Back) */
+.mf-slide.prev {
+  z-index: 5;
+  transform: translateX(-260px) translateZ(-150px) rotateY(25deg);
+  filter: brightness(0.7);
+}
+
+/* 4. HIDDEN (Far Back) */
+.mf-slide.hidden {
+  z-index: 0;
+  transform: translateZ(-400px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- CONTROLS (Side Arrows) --- */
+.mf-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: 0.2s;
+  backdrop-filter: blur(5px);
+}
+.mf-nav-btn.prev-btn { left: 20px; }
+.mf-nav-btn.next-btn { right: 20px; }
+
+.mf-nav-btn:hover {
+  background: #7c3aed; /* Purple hover */
+  border-color: #7c3aed;
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+}

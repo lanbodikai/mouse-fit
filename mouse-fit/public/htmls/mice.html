@@ -6,9 +6,7 @@
 <title>MouseFit • Mouse Database</title>
 
 <!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script src="/js/nav2.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/neon.css" />
 
 <style>
@@ -22,7 +20,7 @@
 html,body{height:100%}
 
 body{
-  margin:0; font-family:Sora, system-ui, Arial;
+  margin:0; font-family:'Sora', system-ui, Arial;
   background:
     radial-gradient(1150px 620px at 90% 6%, rgba(48,124,255,.18), transparent 60%),
     radial-gradient(1100px 560px at 10% 115%, rgba(24,160,240,.18), transparent 65%),
@@ -175,9 +173,10 @@ body{
 </style>
 </head>
 <body>
+<div id="nav-react" style="position: relative; z-index: 1000;"></div>
 
-<main class="page">
-  <section class="layout">
+    <main class="page">
+    <section class="layout">
     <div>
         <div class="toolbar">
           <input id="q" type="text" placeholder="Filter by brand, specs, shape..." />
@@ -208,5 +207,6 @@ body{
 </script>
 
 <script type="module" src="/js/mice-page.js"></script>
+<script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

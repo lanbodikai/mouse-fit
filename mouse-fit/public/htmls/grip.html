@@ -6,9 +6,7 @@
 <title>Mouse-Fit — Grip Checker</title>
 
 <!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script src="/js/nav2.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/neon.css" />
 
 <!-- TensorFlow.js core (load BEFORE grip.js) -->
@@ -30,7 +28,7 @@ html,body{
     radial-gradient(140% 120% at 20% -10%, #0c1022 0%, #0a0d1f 35%, rgba(0,0,0,0) 60%) fixed,
     linear-gradient(180deg, #0a0f1e 0%, #12102a 55%, #1a1240 100%) fixed !important;
 }
-body{margin:0; font-family:Sora, system-ui, Arial; color:var(--fg);}
+body{margin:0; font-family:'Sora', system-ui, Arial; color:var(--fg);}
 .page-frame{ display:none !important; }
 
 .toolbar {
@@ -251,7 +249,8 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
 </style>
 </head>
 <body>
-<div class="wrap">
+  <div id="nav-react" style="position: relative; z-index: 1000;"></div>
+  <div class="wrap">
   <div class="stage">
     <video id="cam" playsinline autoplay muted></video>
     <canvas id="frame"></canvas>
@@ -461,12 +460,9 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
     location.href = "/htmls/report.html";
   };
 </script>
-
+<script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
-
-
-
 
 
 

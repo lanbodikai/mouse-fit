@@ -6,100 +6,17 @@
 <title>Mouse-Fit — Chat with AI</title>
 
 <!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script src="/js/nav2.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/neon.css" />
 
 <style>
-:root{ --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.10);
-  --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa; }
-*{box-sizing:border-box}
-html,body{height:100%}
 body{
-  margin:0; font-family:Sora, system-ui, Arial;
-  /* Corrected Blue Background */
-  background:
-    radial-gradient(1100px 560px at 90% 6%,rgba(48,124,255,.18),transparent 60%),
-    linear-gradient(135deg,#05060a,#071022 58%,#0a1c3a 100%);
-  color:var(--fg);
+  margin:0;
+  font-family:'Sora',sans-serif;
+  background:#050505;
+  color:#fff;
 }
-
-.toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background-color: #1a202c;
-    color: white;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    color: white;
-    font-size: 1.25rem;
-    font-weight: bold;
-}
-
-.logo img {
-    height: 2rem;
-}
-
-.nav-items {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.dropdown {
-    position: relative;
-}
-
-.dropdown-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1rem;
-    cursor: pointer;
-}
-
-.dropdown-content {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #2d3748;
-    border-radius: 0.25rem;
-    padding: 0.5rem 0;
-    min-width: 10rem;
-    z-index: 10;
-}
-
-.dropdown-content a {
-    display: block;
-    padding: 0.5rem 1rem;
-    text-decoration: none;
-    color: white;
-}
-
-.dropdown-content a:hover {
-    background-color: #4a5568;
-}
-
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-
-.nav-link {
-    text-decoration: none;
-    color: white;
-    font-size: 1rem;
-}
-
-.hero{max-width:960px;margin:40px auto 0;padding:0 18px;text-align:center}
+.hero{max-width:960px;margin:120px auto 0;padding:0 18px;text-align:center}
 .hero h1{margin:4px 0 6px;font-size:44px;letter-spacing:-.02em}
 .hero h1 .ai{background:linear-gradient(90deg,var(--g2),var(--g3));-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{margin:0;color:var(--sub);line-height:1.55}
@@ -128,6 +45,7 @@ textarea:focus{border-color:rgba(34,211,238,.5);}
 </style>
 </head>
 <body>
+<div id="nav-react" style="position: relative; z-index: 1000;"></div>
 <section class="hero">
   <h1>Chat with <span class="ai">AI</span></h1>
   <p>Natural language recommendations based on Llama 3.3.</p>
@@ -165,5 +83,6 @@ textarea:focus{border-color:rgba(34,211,238,.5);}
 </script>
 
 <script type="module" src="../js/ai.js"></script>
+<script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
