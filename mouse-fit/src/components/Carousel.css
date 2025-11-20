@@ -10,6 +10,21 @@
   align-items: center;
 }
 
+/* Invisible hover zones to nudge carousel */
+.mf-hover-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 22%;
+  z-index: 15;
+}
+.mf-hover-left {
+  left: 0;
+}
+.mf-hover-right {
+  right: 0;
+}
+
 .mf-track {
   position: relative;
   width: 100%;
@@ -138,4 +153,3 @@
   filter: brightness(0.55);
   pointer-events: auto;
 }
-

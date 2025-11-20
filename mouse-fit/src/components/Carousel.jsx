@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Carousel.css';
 import measureImg from '../../projects/measure.png';
 import gripImg from '../../projects/grip.png';
@@ -39,6 +39,36 @@ const slides = [
 
 const Carousel = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [hoverDirection, setHoverDirection] = useState(null); // 'left' | 'right' | null
+  const hoverTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (!hoverDirection) {
+      if (hoverTimerRef.current) {
+        clearInterval(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      return;
+    }
+
+    const step = () => {
+      setActiveIndex((prev) =>
+        hoverDirection === 'left'
+          ? (prev - 1 + slides.length) % slides.length
+          : (prev + 1) % slides.length
+      );
+    };
+
+    // small delay between shifts while hovering
+    hoverTimerRef.current = setInterval(step, 700);
+
+    return () => {
+      if (hoverTimerRef.current) {
+        clearInterval(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+    };
+  }, [hoverDirection]);
 
   const getClassName = (index) => {
     const len = slides.length;
@@ -54,6 +84,16 @@ const Carousel = () => {
 
   return (
     <div className="mf-carousel-container">
+      <div
+        className="mf-hover-zone mf-hover-left"
+        onMouseEnter={() => setHoverDirection('left')}
+        onMouseLeave={() => setHoverDirection(null)}
+      />
+      <div
+        className="mf-hover-zone mf-hover-right"
+        onMouseEnter={() => setHoverDirection('right')}
+        onMouseLeave={() => setHoverDirection(null)}
+      />
       <div className="mf-track">
         {slides.map((slide, index) => (
           <div 
