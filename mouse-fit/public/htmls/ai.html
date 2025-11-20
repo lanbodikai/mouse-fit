@@ -4,92 +4,134 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Mouse-Fit — Chat with AI</title>
-<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;700&display=swap" rel="stylesheet" />
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="/js/nav2.js" defer></script>
 <link rel="stylesheet" href="/neon.css" />
+
 <style>
 :root{ --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.10);
   --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa; }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
-  margin:0; font-family:Lexend, system-ui, Arial;
+  margin:0; font-family:Sora, system-ui, Arial;
+  /* Corrected Blue Background */
   background:
     radial-gradient(1100px 560px at 90% 6%,rgba(48,124,255,.18),transparent 60%),
     linear-gradient(135deg,#05060a,#071022 58%,#0a1c3a 100%);
   color:var(--fg);
 }
-/* ultra-thin neon frame */
-.page-frame{position:fixed; inset:6px; pointer-events:none; z-index:1000; border-radius:16px;
-  border:1px solid rgba(167,139,250,.35);
-  box-shadow:inset 0 0 0 1px rgba(34,211,238,.18), 0 0 18px rgba(124,58,237,.18);
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #1a202c;
+    color: white;
 }
-/* hero */
-.hero{max-width:960px;margin:28px auto 0;padding:0 18px;text-align:center}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.logo img {
+    height: 2rem;
+}
+
+.nav-items {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #2d3748;
+    border-radius: 0.25rem;
+    padding: 0.5rem 0;
+    min-width: 10rem;
+    z-index: 10;
+}
+
+.dropdown-content a {
+    display: block;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: white;
+}
+
+.dropdown-content a:hover {
+    background-color: #4a5568;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: white;
+    font-size: 1rem;
+}
+
+.hero{max-width:960px;margin:40px auto 0;padding:0 18px;text-align:center}
 .hero h1{margin:4px 0 6px;font-size:44px;letter-spacing:-.02em}
 .hero h1 .ai{background:linear-gradient(90deg,var(--g2),var(--g3));-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{margin:0;color:var(--sub);line-height:1.55}
-.hero .note{margin-top:10px;font-size:.95rem;color:#d0d9f8}
-.hero .cta{margin-top:14px}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;font-weight:700;cursor:pointer;text-decoration:none}
-.btn.neon{background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));color:#fff;border:1px solid transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
-.btn.ghost{background:transparent;color:#e8f0ff;border:1px solid rgba(255,255,255,.14)}
+.hero .note{margin-top:10px;font-size:.95rem;color:#d0d9f8; font-family:'JetBrains Mono', monospace; opacity:.8;}
 
-/* chat: narrower */
 .chat-wrap{max-width:860px;margin:24px auto 60px;padding:0 18px}
 .chat-card{
-  border:1px solid rgba(167,139,250,.22);
-  border-radius:18px;
-  background:rgba(255,255,255,.04);
-  box-shadow:inset 0 0 0 1px rgba(34,211,238,.10), 0 0 24px rgba(124,58,237,.12);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:22px;
+  background:rgba(255,255,255,.03);
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  overflow:hidden;
 }
-.card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:blur(6px)}
-.card-head .title{font-weight:700}
-.card-head .controls{display:flex;gap:8px}
-.clear-btn{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0f1524;color:#cfe9f6;cursor:pointer}
-.clear-btn:hover{filter:brightness(1.05)}
-.messages{height:min(56vh,620px);overflow:auto;padding:16px 14px;display:flex;flex-direction:column;gap:12px}
-.msg{max-width:76%;padding:10px 12px;border-radius:14px;line-height:1.45;border:1px solid rgba(255,255,255,.08);background:#0e1424}
-.msg.user{margin-left:auto;background:#101c2e}
-.msg.assistant{margin-right:auto;background:#0f1628}
-.msg .role{opacity:.7;font-size:12px;margin-bottom:4px}
-.msg.assistant strong{color:#fff}
-.msg.assistant ol{margin:6px 0 0 18px;padding-left:18px;font-size:.95rem}
-.msg.assistant ul{margin:6px 0 12px 18px;padding-left:18px;color:var(--sub);font-size:.9rem}
-.msg.assistant li{margin-bottom:6px}
-.msg.assistant .detail{margin:4px 0;color:var(--sub);font-size:.85rem}
-.msg.assistant ol li ul{margin-top:4px}
-.inputbar{display:flex;gap:10px;align-items:center;padding:12px;border-top:1px solid rgba(255,255,255,.08)}
-textarea{flex:1;min-height:44px;max-height:140px;resize:vertical;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#0c1120;color:#eaf1ff;outline:none}
-.send{min-width:52px;height:44px;border-radius:12px;border:1px solid transparent;cursor:pointer;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));color:#fff;box-shadow:0 0 16px rgba(124,58,237,.30), 0 0 24px rgba(34,211,238,.18)}
-.small{font-size:12px;color:#a8b6d6}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2)}
+.clear-btn{padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#cfe9f6;cursor:pointer; font-family:inherit; font-size:13px;}
 
-/* Mobile tweaks */
-@media (max-width: 720px){
-  .hero{margin-top:18px}
-  .hero h1{font-size:clamp(26px, 6vw, 36px)}
-  .hero .note{font-size:.9rem}
-  .chat-wrap{margin:18px auto 40px;padding:0 12px}
-  .messages{height:min(54dvh, 60vh)}
-  .msg{max-width:88%}
-  .inputbar{flex-direction:column; align-items:stretch; gap:8px}
-  textarea{min-height:52px}
-  .send{width:100%; height:46px}
-}
+.messages{height:min(56vh,620px);overflow:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+.msg{max-width:80%;padding:12px 16px;border-radius:16px;line-height:1.5;font-size:15px;}
+.msg.user{margin-left:auto;background:rgba(34,211,238,.15); border:1px solid rgba(34,211,238,.2); color:#fff;}
+.msg.assistant{margin-right:auto;background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);}
+
+.inputbar{display:flex;gap:10px;align-items:center;padding:16px;border-top:1px solid rgba(255,255,255,.06); background:rgba(0,0,0,.1)}
+textarea{flex:1;min-height:48px;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.2);color:#fff;outline:none; font-family:inherit;}
+textarea:focus{border-color:rgba(34,211,238,.5);}
+.send{width:50px;height:50px;border-radius:14px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff; font-size:18px; display:grid; place-items:center; box-shadow:0 0 15px rgba(124,58,237,.3);}
 </style>
-<script src="/js/nav.js" defer></script>
 </head>
 <body>
-<div class="page-frame" aria-hidden="true"></div>
-
-
 <section class="hero">
   <h1>Chat with <span class="ai">AI</span></h1>
-  <p>Answer a few quick questions and I’ll match you with gaming mice that fit your hand, grip, and budget.</p>
-  <p class="note">You can respond in natural language — I’ll ask for hand length, hand width, preferred grip style, and your price range.</p>
-  <div class="cta">
-    <a class="btn neon" href="#chat">Try demo</a>
-    <a class="btn ghost" href="/htmls/report.html">View report</a>
-  </div>
+  <p>Natural language recommendations based on Llama 3.3.</p>
+  <p class="note">"I have 19x10cm hands and use claw grip. Budget 00."</p>
 </section>
 
 <section id="chat" class="chat-wrap">
@@ -97,17 +139,30 @@ textarea{flex:1;min-height:44px;max-height:140px;resize:vertical;padding:12px;bo
     <div class="card-head">
       <div class="title">Mouse-Fit Recommender</div>
       <div class="controls">
-        <span class="small" id="modelBadge">Dataset loading…</span>
-        <button class="clear-btn" id="clearChat">Clear chat</button>
+        <button class="clear-btn" id="clearChat">Clear</button>
       </div>
     </div>
-    <div class="messages" id="messages"></div>
+    <div class="messages" id="messages">
+      <div class="msg assistant"><div class="role">AI</div>Hello! Tell me about your hand size (e.g. 18x9cm) and grip style, and I'll suggest some mice.</div>
+    </div>
     <div class="inputbar">
-      <textarea id="prompt" placeholder="Enter your message…"></textarea>
+      <textarea id="prompt" placeholder="Type here..."></textarea>
       <button class="send" id="sendBtn">➤</button>
     </div>
   </div>
 </section>
+
+<!-- Footer (simple) -->
+<footer class="foot">
+  <div class="foot-inner">
+    <span>© <span id="y"></span> Mouse-Fit</span>
+    <span class="muted">Fast & Precis</span>
+  </div>
+</footer>
+
+<script type="module">
+  document.getElementById('y').textContent = new Date().getFullYear();
+</script>
 
 <script type="module" src="../js/ai.js"></script>
 </body>

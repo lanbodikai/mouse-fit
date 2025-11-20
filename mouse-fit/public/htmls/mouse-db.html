@@ -1,18 +1,36 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Mouse-Database — Coming soon</title>
-    <link rel="stylesheet" href="/neon.css" />
-    <script src="/js/nav.js" defer></script>
-  </head>
-  <body>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mouse-Database — Coming soon</title>
 
-    <main class="mf-coming">
-      <h1>Mouse-Database</h1>
-      <p>Curated specs and shapes, launching soon.</p>
-      <a class="pill" href="/">Back to Home</a>
-    </main>
-  </body>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="/js/nav2.js" defer></script>
+<link rel="stylesheet" href="/neon.css" />
+
+</head>
+<body>
+
+<main class="mf-coming">
+  <h1>Mouse-Database</h1>
+  <p>Curated specs and shapes, launching soon.</p>
+  <a class="pill" href="/">Back to Home</a>
+</main>
+
+<!-- Footer (simple) -->
+<footer class="foot">
+  <div class="foot-inner">
+    <span>© <span id="y"></span> Mouse-Fit</span>
+    <span class="muted">Fast & Precis</span>
+  </div>
+</footer>
+
+<script type="module">
+  document.getElementById('y').textContent = new Date().getFullYear();
+</script>
+
+</body>
 </html>

@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Mouse-Fit — Hand Measure</title>
 
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="/js/nav2.js" defer></script>
 <link rel="stylesheet" href="/neon.css" />
-<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;700&display=swap" rel="stylesheet" />
-<script src="/js/nav.js" defer></script>
 
 <style>
 :root{
@@ -26,7 +28,83 @@ html,body{ height:100%; overflow:hidden; overscroll-behavior:none;
   background:
     radial-gradient(140% 120% at 20% -10%, #0c1022 0%, #0a0d1f 35%, rgba(0,0,0,0) 60%) fixed,
     linear-gradient(180deg, #0a0f1e 0%, #12102a 55%, #1a1240 100%) fixed !important; }
-body{ margin:0; font-family:Lexend, system-ui, Arial; color:var(--fg); }
+body{ margin:0; font-family:Sora, system-ui, Arial; color:var(--fg); }
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #1a202c;
+    color: white;
+    position: relative;
+    z-index: 100;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.logo img {
+    height: 2rem;
+}
+
+.nav-items {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #2d3748;
+    border-radius: 0.25rem;
+    padding: 0.5rem 0;
+    min-width: 10rem;
+    z-index: 10;
+}
+
+.dropdown-content a {
+    display: block;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: white;
+}
+
+.dropdown-content a:hover {
+    background-color: #4a5568;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: white;
+    font-size: 1rem;
+}
 
 /* remove the thin neon page frame/borders entirely */
 .page-frame{ display:none !important; }
@@ -220,10 +298,6 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
 </style>
 </head>
 <body>
-
-<!-- (was the neon border) -->
-<div class="page-frame" aria-hidden="true"></div>
-
 <div class="wrap">
   <div class="stage">
     <video id="cam" playsinline autoplay muted></video>
@@ -316,8 +390,17 @@ select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:1
   </div>
 </div>
 
+<!-- Footer (simple) -->
+<footer class="foot">
+  <div class="foot-inner">
+    <span>© <span id="y"></span> Mouse-Fit</span>
+    <span class="muted">Fast & Precis</span>
+  </div>
+</footer>
+
 <script>
 (() => {
+  document.getElementById('y').textContent = new Date().getFullYear();
   const box = document.getElementById('coach');
   if (!box) return;
   const key = box.dataset.key || 'mf:coach';

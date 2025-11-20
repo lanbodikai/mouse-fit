@@ -1,163 +1,105 @@
-// nav2.js — index.html navigation with section highlighting + real page links
+// nav2.js — shared top bar for all MouseFit pages
 
-// Mix of in-page sections and external pages:
-const navItems = [
-  // type: 'section' => anchor within index.html
-    {
-    href: '/index.html#projects',
-    label: 'Projects',
-    attrs: { 'data-link': 'projects' },
-    isActive: ({ path, hash }) => {
-      const onHome = path === '/' || path.endsWith('/index.html');
-      return onHome && hash === '#projects';
-    },
-  },
-  { type: 'section', id: 'about',    label: 'About the author' },
-
-  // type: 'page' => normal navigation to another HTML (like nav.js)
-  
-  {
-    type: 'page',
-    href: '/htmls/mice.html',
-    label: 'Mouse-Database',
-    // same active logic as your nav.js
-    isActive: ({ path }) =>
-      path.endsWith('/htmls/mice.html') || path.endsWith('/htmls/mouse-db.html'),
-  },
-
-  // (Optional) add more external pages like your original nav:
-  // { type: 'page', href: '/htmls/measure.html', label: 'Measure' },
-  // { type: 'page', href: '/htmls/grip.html',    label: 'Grip' },
-  // { type: 'page', href: '/htmls/ai.html',      label: 'AI' },
-  // { type: 'page', href: '/htmls/report.html',  label: 'Report' },
+const mfTools = [
+  { label: "Hand Measure", href: "/htmls/measure.html" },
+  { label: "Grip", href: "/htmls/grip.html" },
+  { label: "Report Page", href: "/htmls/report.html" },
+  { label: "Mouse Database", href: "/htmls/mice.html" },
 ];
 
-function buildNav2() {
-  const state = { path: window.location.pathname, hash: window.location.hash };
+function buildTopbar() {
+  if (document.querySelector(".mf-topbar")) return;
 
-  const nav = document.createElement('nav');
-  nav.className = 'nav';
+  const path = window.location.pathname;
+  const dropId = "mf-tools-menu";
+
+  const nav = document.createElement("header");
+  nav.className = "mf-topbar";
   nav.innerHTML = `
-    <div class="nav-inner">
-      <a class="brand" href="#home" data-scroll>
-        <span class="logo-pill" aria-hidden="true">MF</span>
-        <span class="brand-text">Mouse-Fit</span>
+    <div class="mf-topbar-inner">
+      <a class="mf-brand" href="/">
+        <img class="mf-logo" src="/vite.svg" alt="MouseFit logo" />
+        <span class="mf-name">MouseFit</span>
       </a>
 
-      <ul class="nav-links" role="list" data-links></ul>
+      <form class="mf-search" role="search" aria-label="Site search">
+        <input type="search" name="q" placeholder="Search..." />
+        <button type="submit" aria-label="Search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 21l-4.35-4.35M10.5 18A7.5 7.5 0 1 1 18 10.5 7.5 7.5 0 0 1 10.5 18Z" fill="none" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+      </form>
 
-      <div class="nav-spacer" aria-hidden="true"></div>
+      <div class="mf-nav">
+        <div class="mf-dropdown">
+          <button class="mf-drop-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="${dropId}">
+            Mousefit Tools
+            <svg class="mf-caret" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" />
+            </svg>
+          </button>
+          <div class="mf-drop-panel" id="${dropId}" role="menu">
+            ${mfTools
+              .map(
+                (tool) => `
+                  <a href="${tool.href}" role="menuitem">${tool.label}</a>
+                `,
+              )
+              .join("")}
+          </div>
+        </div>
 
-      <label class="search" role="search" aria-label="Site search">
-        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"
-                fill="none" stroke="currentColor" stroke-width="2"/>
-        </svg>
-        <input type="search" placeholder="Search" aria-label="Search" />
-      </label>
-
-      <a class="reg-btn" href="#" data-action="register">Register</a>
+        <a class="mf-link" href="/htmls/ai.html">Ask AI</a>
+      </div>
     </div>
   `;
+
   document.body.prepend(nav);
 
-  const list = nav.querySelector('[data-links]');
+  const trigger = nav.querySelector(".mf-drop-trigger");
+  const panel = nav.querySelector(".mf-drop-panel");
+  const links = Array.from(panel.querySelectorAll("a"));
 
-  // Build links
-  const linkMap = new Map(); // id or href => <a>
-  navItems.forEach((item) => {
-    const li = document.createElement('li');
-    const a  = document.createElement('a');
-
-    if (item.type === 'section') {
-      a.href = `#${item.id}`;
-      a.setAttribute('data-scroll', '');
-      linkMap.set(item.id, a);
-    } else {
-      a.href = item.href;
-      linkMap.set(item.href, a);
-
-      // compute active like nav.js
-      const active = item.isActive
-        ? item.isActive(state)
-        : state.path === new URL(item.href, location.origin).pathname;
-      if (active) a.setAttribute('aria-current', 'page');
-    }
-
-    a.textContent = item.label;
-    li.appendChild(a);
-    list.appendChild(li);
-  });
-
-  // Smooth scroll for section anchors only
-  nav.addEventListener('click', (e) => {
-    const a = e.target.closest('a[data-scroll]');
-    if (!a) return;
-    const hash = a.getAttribute('href');
-    const el = document.querySelector(hash);
-    if (!el) return;
-
-    e.preventDefault();
-    const navH = nav.offsetHeight || 64;
-    const y = window.scrollY + el.getBoundingClientRect().top - (navH + 8);
-    window.scrollTo({ top: y, behavior: 'smooth' });
-    history.replaceState(null, '', hash);
-  });
-
-  // Make sure sections don’t hide under sticky bar
-  const navH = nav.offsetHeight || 64;
-  navItems.forEach((it) => {
-    if (it.type === 'section') {
-      const el = document.getElementById(it.id);
-      if (el) el.style.scrollMarginTop = `${navH + 12}px`;
+  // Mark the active tool based on path
+  links.forEach((link) => {
+    const linkPath = new URL(link.href, location.origin).pathname;
+    if (linkPath === path) {
+      link.setAttribute("aria-current", "page");
     }
   });
 
-  // Active-on-scroll for sections
-  const sectionIds = navItems.filter(i => i.type === 'section').map(i => i.id);
-  const sectionVisibility = new Map(); // id -> ratio
+  const closeMenu = () => {
+    nav.classList.remove("mf-open");
+    trigger?.setAttribute("aria-expanded", "false");
+  };
 
-  function setActiveSection(id) {
-    // Clear aria-current only from SECTION links; leave page links (e.g., Mouse DB) alone
-    sectionIds.forEach(secId => {
-      const a = linkMap.get(secId);
-      if (a) a.removeAttribute('aria-current');
-    });
-    const a = linkMap.get(id);
-    if (a) a.setAttribute('aria-current', 'page');
-  }
+  const toggleMenu = () => {
+    const open = nav.classList.toggle("mf-open");
+    trigger?.setAttribute("aria-expanded", String(open));
+    if (open) {
+      panel?.querySelector("a")?.focus?.();
+    }
+  };
 
-  const thresholds = [];
-  for (let i = 0; i <= 20; i++) thresholds.push(i / 20);
-
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      const id = entry.target.id;
-      sectionVisibility.set(id, entry.isIntersecting ? entry.intersectionRatio : 0);
-    });
-    let best = { id: null, r: 0 };
-    sectionVisibility.forEach((r, id) => { if (r > best.r) best = { id, r }; });
-    if (best.id) setActiveSection(best.id);
-  }, {
-    root: null,
-    rootMargin: `-${navH + 8}px 0px 0px 0px`,
-    threshold: thresholds,
-  });
-
-  sectionIds.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) io.observe(el);
-  });
-
-  // Initial highlight (hash or top)
-  const initial = (location.hash || '#home').slice(1);
-  if (sectionIds.includes(initial)) setActiveSection(initial);
-
-  // Demo click for register
-  nav.querySelector('[data-action="register"]')?.addEventListener('click', (e) => {
+  trigger?.addEventListener("click", (e) => {
     e.preventDefault();
-    alert('Register flow coming soon');
+    toggleMenu();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!nav.contains(e.target)) closeMenu();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeMenu();
+    if (e.key === "ArrowDown" && document.activeElement === trigger) {
+      e.preventDefault();
+      nav.classList.add("mf-open");
+      trigger?.setAttribute("aria-expanded", "true");
+      panel?.querySelector("a")?.focus?.();
+    }
   });
 }
 
-document.addEventListener('DOMContentLoaded', buildNav2);
+document.addEventListener("DOMContentLoaded", buildTopbar);
