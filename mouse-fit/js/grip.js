@@ -71,6 +71,9 @@ const gripGuide    = document.querySelector(".gripGuide");
 const stageEl      = document.querySelector(".stage");
 const controlPanel = document.querySelector(".control-dock .panel");
 const rootStyle    = document.documentElement.style;
+const footerYear   = document.getElementById("y");
+
+if (footerYear) footerYear.textContent = new Date().getFullYear();
 
 /* thumbnails helper (avoid black) */
 function setThumbImage(imgEl, dataUrl) {
@@ -707,6 +710,116 @@ function addPinchHandler(el, getCurrent, setScale, opts = {}){
   };
   el.addEventListener('touchend', handleEnd, { passive:true });
   el.addEventListener('touchcancel', () => { startDist = 0; }, { passive:true });
+}
+
+setupFloatingDock();
+setupCoachPanel();
+
+function setupFloatingDock(){
+  const dock = document.querySelector('.control-dock');
+  const handle = dock?.querySelector('.dock-handle');
+  makeFloatingDraggable(dock, handle, 'mf:grip:dock-pos');
+}
+
+function setupCoachPanel(){
+  const coach = document.getElementById('coach');
+  if (!coach) return;
+  const handle = coach.querySelector('.coach-bar') || coach;
+  const closeBtn = coach.querySelector('.coach-close');
+  makeFloatingDraggable(coach, handle, 'mf:grip:coach-pos');
+  if (closeBtn) {
+    closeBtn.type = 'button';
+    closeBtn.addEventListener('click', () => coach.remove());
+  }
+}
+
+function makeFloatingDraggable(target, handle, storageKey){
+  if (!target || !handle) return;
+  handle.style.touchAction = 'none';
+
+  const applyStored = () => {
+    const stored = readStoredPosition(storageKey);
+    if (!stored) return;
+    const clamped = clampToViewport(target, stored.left, stored.top);
+    applyFloatingPosition(target, clamped.left, clamped.top);
+  };
+
+  applyStored();
+  if (storageKey) window.addEventListener('resize', applyStored);
+
+  let pointerId = null;
+  let dragStart = null;
+
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    pointerId = e.pointerId;
+    handle.setPointerCapture?.(pointerId);
+    const rect = target.getBoundingClientRect();
+    applyFloatingPosition(target, rect.left, rect.top);
+    dragStart = { x: e.clientX, y: e.clientY, left: rect.left, top: rect.top };
+  });
+
+  const onMove = (e) => {
+    if (pointerId === null || e.pointerId !== pointerId || !dragStart) return;
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    const next = clampToViewport(target, dragStart.left + dx, dragStart.top + dy);
+    applyFloatingPosition(target, next.left, next.top);
+  };
+
+  const endDrag = (e) => {
+    if (pointerId === null || (e.pointerId !== undefined && e.pointerId !== pointerId)) return;
+    handle.releasePointerCapture?.(pointerId);
+    pointerId = null;
+    if (storageKey && dragStart) {
+      const left = parseFloat(target.style.left) || dragStart.left;
+      const top = parseFloat(target.style.top) || dragStart.top;
+      writeStoredPosition(storageKey, { left, top });
+    }
+    dragStart = null;
+  };
+
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+}
+
+function applyFloatingPosition(target, left, top){
+  target.style.left = `${left}px`;
+  target.style.top = `${top}px`;
+  target.style.right = 'auto';
+  target.style.bottom = 'auto';
+  target.style.transform = 'none';
+}
+
+function clampToViewport(target, left, top){
+  const margin = 12;
+  const width = target.offsetWidth || parseFloat(target.dataset.dragWidth) || 0;
+  const height = target.offsetHeight || parseFloat(target.dataset.dragHeight) || 0;
+  if (width) target.dataset.dragWidth = String(width);
+  if (height) target.dataset.dragHeight = String(height);
+  const maxLeft = Math.max(margin, window.innerWidth - width - margin);
+  const maxTop = Math.max(margin, window.innerHeight - height - margin);
+  return {
+    left: Math.min(Math.max(margin, left), maxLeft),
+    top: Math.min(Math.max(margin, top), maxTop)
+  };
+}
+
+function readStoredPosition(key){
+  if (!key) return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.left === 'number' && typeof parsed?.top === 'number') return parsed;
+  } catch {}
+  return null;
+}
+
+function writeStoredPosition(key, pos){
+  if (!key) return;
+  try { localStorage.setItem(key, JSON.stringify(pos)); } catch {}
 }
 
 /* ================== countdown / capture ================== */

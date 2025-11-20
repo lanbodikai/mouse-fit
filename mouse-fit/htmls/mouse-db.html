@@ -4,13 +4,10 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>MouseFit • Mouse Database</title>
-
-<!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/neon.css" />
 
 <style>
-/* ============ THEME ALIGNMENT ============ */
 :root{
   --deep:#05060a; --ink:#071022; --roy:#0a1c3a;
   --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.07);
@@ -28,94 +25,64 @@ body{
   background-attachment:fixed;
   color:var(--fg);
 }
+#nav-react{
+  flex:0 0 auto;
+  position:relative;
+  z-index:1000;
+  margin:16px auto 0;
+  max-width:1200px;
+}
+.nav-placeholder{
+  min-height:72px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  padding:16px 28px;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:18px;
+  background:rgba(8,12,24,.65);
+  backdrop-filter:blur(16px);
+  color:#fff;
+}
+.nav-placeholder__logo{
+  font-weight:800;
+  letter-spacing:0.18em;
+  font-size:.95rem;
+}
+.nav-placeholder__links{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  font-size:.9rem;
+  color:rgba(255,255,255,.7);
+}
+.nav-placeholder__hint{
+  font-size:.85rem;
+  color:rgba(255,255,255,.6);
+}
 
 /* Page Layout */
 .page { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
 .layout { display:grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; }
 @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
 
-/* Toolbar */
-.toolbar {
+/* Search Bar (Renamed class to avoid conflicts) */
+.search-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
-    background-color: #1a202c;
-    color: white;
+    margin-bottom: 1rem;
+    gap: 16px;
 }
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    color: white;
-    font-size: 1.25rem;
-    font-weight: bold;
-}
-
-.logo img {
-    height: 2rem;
-}
-
-.nav-items {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.dropdown {
-    position: relative;
-}
-
-.dropdown-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1rem;
-    cursor: pointer;
-}
-
-.dropdown-content {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #2d3748;
-    border-radius: 0.25rem;
-    padding: 0.5rem 0;
-    min-width: 10rem;
-    z-index: 10;
-}
-
-.dropdown-content a {
-    display: block;
-    padding: 0.5rem 1rem;
-    text-decoration: none;
-    color: white;
-}
-
-.dropdown-content a:hover {
-    background-color: #4a5568;
-}
-
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-
-.nav-link {
-    text-decoration: none;
-    color: white;
-    font-size: 1rem;
-}
-.toolbar input[type="text"] {
+.search-bar input[type="text"] {
   flex:1; min-width: 240px; padding:12px 16px; border-radius:14px;
   background: rgba(255,255,255,.04);
   border: 1px solid var(--border);
   color: #fff; font-family:inherit;
   transition: all .2s ease;
 }
-.toolbar input[type="text"]:focus {
+.search-bar input[type="text"]:focus {
   outline:none; border-color: rgba(34,211,238,.45);
   background: rgba(255,255,255,.07);
   box-shadow: 0 0 0 3px rgba(34,211,238,.15);
@@ -129,14 +96,10 @@ body{
 
 /* Grid */
 .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-
-/* Cards (formerly bubbles/pills) - Now Dark Glass */
 .pill {
   display:flex; flex-direction:column; gap:8px; padding:18px; border-radius:18px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid var(--border);
-  cursor:pointer;
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  cursor:pointer; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 .pill:hover {
   transform: translateY(-2px);
@@ -144,69 +107,67 @@ body{
   box-shadow: 0 10px 40px rgba(0,0,0,.35);
   background: rgba(255,255,255,.05);
 }
-
 .pill h3 { margin:0; font-size: 1.05rem; font-weight:700; letter-spacing:0.02em; color:#fff; }
 .specs { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
-
-/* Chips: refined for dark mode */
 .chip {
   padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;
   background: rgba(255,255,255,.08); color: #dce4ff;
   border: 1px solid rgba(255,255,255,.1);
 }
-/* Subtle accents for chip types */
 .chip--weight { color: #93c5fd; border-color: rgba(147,197,253,.2); }
 .chip--shape  { color: #86efac; border-color: rgba(134,239,172,.2); }
 
-/* Sidebar Card */
+/* Sidebar */
 #details.card {
   position:sticky; top: 80px;
-  background: rgba(255,255,255,.03);
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  padding: 24px;
-  box-shadow: 0 30px 80px rgba(0,0,0,.45);
-  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 22px; padding: 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.45); backdrop-filter: blur(10px);
 }
 #details h2 { margin-top:0; font-size:1.4rem; background:var(--neon); -webkit-background-clip:text; color:transparent; }
 #details .muted { color: var(--sub); line-height:1.6; }
 </style>
 </head>
 <body>
-<div id="nav-react" style="position: relative; z-index: 1000;"></div>
+  <div id="nav-react">
+    <div class="nav-placeholder">
+      <div class="nav-placeholder__logo">MOUSE-FIT</div>
+      <div class="nav-placeholder__links">
+        <span>Measure</span>
+        <span>Grip</span>
+        <span>AI</span>
+        <span>Database</span>
+      </div>
+      <div class="nav-placeholder__hint">Navigation loads here.</div>
+    </div>
+  </div>
 
-    <main class="page">
+  <main class="page">
     <section class="layout">
-    <div>
-        <div class="toolbar">
+      <div>
+        <div class="search-bar">
           <input id="q" type="text" placeholder="Filter by brand, specs, shape..." />
           <button id="clear" class="btn">Clear</button>
         </div>
         <div id="grid" class="grid" aria-live="polite"></div>
-    </div>
-    <aside>
+      </div>
+      <aside>
         <div id="details" class="card">
           <h2>Details</h2>
-          <p class="muted">Select a mouse from the grid to see full specifications, sensor details, and dimensions.</p>
+          <p class="muted">Select a mouse to see specs.</p>
           <div id="detailContent"></div>
         </div>
-    </aside>
-  </section>
-</main>
+      </aside>
+    </section>
+  </main>
 
-<!-- Footer (simple) -->
-<footer class="foot">
-  <div class="foot-inner">
-    <span>© <span id="y"></span> Mouse-Fit</span>
-    <span class="muted">Fast & Precis</span>
-  </div>
-</footer>
+  <footer class="foot" style="text-align:center; padding:20px; color:var(--sub);">
+    <div class="foot-inner"><span>© <span id="y"></span> Mouse-Fit</span></div>
+  </footer>
 
-<script type="module">
-  document.getElementById('y').textContent = new Date().getFullYear();
-</script>
-
-<script type="module" src="/js/mice-page.js"></script>
-<script type="module" src="/src/main.jsx"></script>
+  <script type="module">
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+  <script type="module" src="/js/mice-page.js"></script>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

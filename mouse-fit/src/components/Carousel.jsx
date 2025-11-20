@@ -1,36 +1,44 @@
 import React, { useState } from 'react';
 import './Carousel.css';
+import measureImg from '../../projects/measure.png';
+import gripImg from '../../projects/grip.png';
+import databaseImg from '../../projects/rapid.png';
+import aiImg from '../../projects/ai.png';
 
 // Keep your 4 specific items
 const slides = [
   { 
     title: "Hand Measure", 
-    image: "https://images.unsplash.com/photo-1589254065878-42c9da997008?auto=format&fit=crop&w=600&q=80" 
+    subtitle: "Blueprint-scale scans",
+    statLabel: "profiles",
+    statValue: "48k",
+    image: measureImg 
   },
   { 
     title: "Grip Test", 
-    image: "https://images.unsplash.com/photo-1615663245857-acda5b2a615d?auto=format&fit=crop&w=600&q=80"
+    subtitle: "Realtime force curves",
+    statLabel: "tests",
+    statValue: "32k",
+    image: gripImg
   },
   { 
     title: "Mouse Database", 
-    image: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=600&q=80"
+    subtitle: "Tailored gear drops",
+    statLabel: "mice",
+    statValue: "1.2k",
+    image: databaseImg
   },
   { 
     title: "Ask AI", 
-    image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=600&q=80"
+    subtitle: "Neon-fit co-pilot",
+    statLabel: "answers",
+    statValue: "50k",
+    image: aiImg
   },
 ];
 
 const Carousel = () => {
   const [activeIndex, setActiveIndex] = useState(0);
-
-  const nextSlide = () => {
-    setActiveIndex((prev) => (prev + 1) % slides.length);
-  };
-
-  const prevSlide = () => {
-    setActiveIndex((prev) => (prev - 1 + slides.length) % slides.length);
-  };
 
   const getClassName = (index) => {
     const len = slides.length;
@@ -46,10 +54,6 @@ const Carousel = () => {
 
   return (
     <div className="mf-carousel-container">
-      {/* Side Controls */}
-      <button onClick={prevSlide} className="mf-nav-btn prev-btn">❮</button>
-      <button onClick={nextSlide} className="mf-nav-btn next-btn">❯</button>
-
       <div className="mf-track">
         {slides.map((slide, index) => (
           <div 
@@ -59,6 +63,7 @@ const Carousel = () => {
           >
             <img src={slide.image} alt={slide.title} />
             <div className="mf-overlay">
+              <span className="mf-overlay-label">MouseFit</span>
               <h3>{slide.title}</h3>
             </div>
           </div>

@@ -7,12 +7,38 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/neon.css" />
   </head>
-  <body>
+  <body class="nav-offset-disabled">
     <div id="nav-react" style="position: relative; z-index: 1000;"></div>
 
     <style>
       /* Global Resets */
-      body { margin: 0; padding: 0; background: #050505; color: white; font-family: 'Sora', sans-serif; }
+      body {
+        margin: 0;
+        padding: 0;
+        background: #050505;
+        color: white;
+        font-family: 'Sora', sans-serif;
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+        min-height: 100vh;
+      }
+
+      .snap-section {
+        min-height: 100vh;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+      }
+
+      @keyframes slowReveal {
+        from { opacity: 0; transform: translateY(40px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .reveal {
+        opacity: 0;
+        animation: slowReveal 1.2s ease forwards;
+        animation-delay: var(--delay, 0s);
+      }
       
       /* Hero Layout - IMAGE LEFT, TEXT RIGHT */
       .hero-section {
@@ -29,20 +55,38 @@
       .hero-image {
         position: relative;
         z-index: 1;
-        border-radius: 24px;
+        border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        width: 80%;
+        margin: 0 auto;
+        aspect-ratio: 4 / 4;
+        background: #d078ed;
+        display: flex;
       }
       .hero-image img {
         width: 100%;
-        height: auto;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(1.08);
+        transition: transform 0.4s ease;
         display: block;
       }
       
       /* Text Container */
       .hero-text {
         text-align: left;
+      }
+      
+      .featured-section {
+        text-align: center;
+        margin-top: 40px;
+        padding: 120px 20px 100px;
+        background: linear-gradient(to bottom, #050505, #0a0a0f);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
       }
       
       /* Typography & Colors from screenshot */
@@ -91,34 +135,34 @@
       /* Responsive */
       @media (max-width: 1024px) {
         .hero-section { grid-template-columns: 1fr; text-align: center; padding: 100px 24px 60px; }
-        .hero-image { order: -1; max-width: 700px; margin: 0 auto 40px; }
+        .hero-image { order: -1; max-width: auto; margin: 0 auto 40px; }
         .hero-text { align-items: center; display: flex; flex-direction: column; }
         .btn-group { justify-content: center; }
+        .featured-section { padding: 80px 20px; }
       }
     </style>
 
-    <div class="hero-section">
-      <div class="hero-image">
-        <img src="/projects/hero.jpg" alt="Mouse Fit Hero">
+    <div class="hero-section snap-section">
+      <div class="hero-image reveal" style="--delay: 0.2s;">
+        <img src="/projects/hero.png" alt="Mouse Fit Hero">
       </div>
       <div class="hero-text">
-        <div class="eyebrow">MOUSE-FIT DATABASE</div>
-        <h1>Discover your perfect <br> <span class="highlight-purple">Gaming Gear</span></h1>
-        <p class="lead">
-          Camera-based hand measurement, AI grip analysis, and a curated database of the world's best gaming mice.
-          Powered by Llama 3.3.
+        <div class="eyebrow reveal" style="--delay: 0.3s;">MOUSE-FIT V2</div>
+        <h1 class="reveal" style="--delay: 0.5s;">Discover your perfect <br> <span class="highlight-purple">Gaming Gear</span></h1>
+        <p class="lead reveal" style="--delay: 0.7s;">
+          Disclaimer: This program is meant to be used on a laptop or tablet with a working camera.<br> - Mobile UI coming soon...
         </p>
-        <div class="btn-group">
+        <div class="btn-group reveal" style="--delay: 0.9s;">
           <a href="/htmls/measure.html" class="btn btn-primary">Quick Start</a>
           <a href="/htmls/ai.html" class="btn btn-secondary">AI Assistant</a>
         </div>
       </div>
     </div>
 
-    <div style="text-align: center; margin-top: 40px; padding-bottom: 100px; background: linear-gradient(to bottom, #050505, #0a0a0f);">
+    <section class="featured-section snap-section">
       <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 40px;">FEATURED COLLECTION</h2>
       <div id="projects-react"></div>
-    </div>
+    </section>
 
     <footer style="text-align: center; padding: 40px; color: #555; border-top: 1px solid #111;">
       © 2025 Mouse-Fit
