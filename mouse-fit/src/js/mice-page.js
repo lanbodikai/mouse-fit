@@ -213,7 +213,7 @@ q.addEventListener('input', () => {
 });
 clearBtn.addEventListener('click', () => { q.value = ''; handleQueryInput(); });
 
-// Deep-link support: /src/htmls/mouse-db.html?q=lightweight claw <70g
+// Deep-link support: /htmls/mouse-db.html?q=lightweight claw <70g
 const urlQ = new URLSearchParams(location.search).get('q');
 if (urlQ) { q.value = urlQ; handleQueryInput(); }
 

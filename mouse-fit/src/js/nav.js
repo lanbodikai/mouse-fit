@@ -1,15 +1,14 @@
 const links = [
-  { href: '/src/htmls/ai.html', label: 'AI' },
-  { href: '/src/htmls/measure.html', label: 'Measure' },
-  { href: '/src/htmls/grip.html', label: 'Grip' },
+  { href: '/htmls/ai.html', label: 'AI' },
+  { href: '/htmls/measure.html', label: 'Measure' },
+  { href: '/htmls/grip.html', label: 'Grip' },
   {
-    href: '/src/htmls/mouse-db.html',
+    href: '/htmls/mouse-db.html',
     label: 'Mouse DB',
     isActive: ({ path }) =>
-      path.endsWith('/src/htmls/mouse-db.html') ||
       path.endsWith('/htmls/mouse-db.html'),
   },
-  { href: '/src/htmls/report.html', label: 'Report' },
+  { href: '/htmls/report.html', label: 'Report' },
 ];
 
 const buildNav = () => {

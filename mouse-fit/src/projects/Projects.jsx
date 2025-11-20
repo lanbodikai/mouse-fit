@@ -2,9 +2,9 @@
 import React, { useEffect, useRef } from "react";
 
 const items = [
-  { title: "Hand Measure",      subtitle: "Dimension Checker",  tag: "Open",        href: "/src/htmls/measure.html", img: "/projects/measure.png" },
-  { title: "Grip Checker",      subtitle: "Gripstyle Indentifier",     tag: "Open",        href: "/src/htmls/grip.html",    img: "/projects/grip.png"    },
-  { title: "AI Mouse-Finder",   subtitle: "AI powered picks",  tag: "Open",        href: "/src/htmls/ai.html",      img: "/projects/ai.png"      },
+  { title: "Hand Measure",      subtitle: "Dimension Checker",  tag: "Open",        href: "/htmls/measure.html", img: "/projects/measure.png" },
+  { title: "Grip Checker",      subtitle: "Gripstyle Indentifier",     tag: "Open",        href: "/htmls/grip.html",    img: "/projects/grip.png"    },
+  { title: "AI Mouse-Finder",   subtitle: "AI powered picks",  tag: "Open",        href: "/htmls/ai.html",      img: "/projects/ai.png"      },
   { title: "Rapid Trigger Tweak", subtitle: "RT keyboard tuning", tag: "Coming soon", href: "#",                  img: "/projects/rapid.png",  disabled: true },
 ];
 

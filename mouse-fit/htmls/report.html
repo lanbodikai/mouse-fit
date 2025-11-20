@@ -394,11 +394,11 @@ body[data-revealed="true"]  .grip-thumbs img{ filter:none }
   let handLength = profile.length_mm || 180;
   let handWidth  = profile.width_mm  || 90;
 
-  // ---- pull mice from ../js/mice.js ----
+  // ---- pull mice from /src/js/mice.js ----
   async function loadMice(){
     try{
       // Dynamically import to ensure we get the data
-      const mod = await import("../js/mice.js");
+      const mod = await import("/src/js/mice.js");
       if (Array.isArray(mod.MICE)) return mod.MICE;
       if (Array.isArray(mod.mice)) return mod.mice;
       if (Array.isArray(mod.default)) return mod.default;
