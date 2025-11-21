@@ -21,10 +21,9 @@
 
 body {
   margin: 0;
-  background-color: var(--bg-deep);
-  background-image: 
-    radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.15), transparent 40%),
-    radial-gradient(circle at 85% 30%, rgba(0, 243, 255, 0.12), transparent 40%);
+  background:
+    radial-gradient(140% 120% at 20% -10%, #0c1022 0%, #0a0d1f 35%, rgba(0, 0, 0, 0) 60%) fixed,
+    linear-gradient(180deg, #0a0f1e 0%, #12102a 55%, #1a1240 100%) fixed;
   color: var(--text-main);
   font-family: 'Sora', sans-serif;
   overflow-x: hidden;
