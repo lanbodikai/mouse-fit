@@ -1,0 +1,219 @@
+import Script from "next/script";
+import NotchedPanel from "@/components/shell/NotchedPanel";
+
+const styles = `
+/* ============ LAYOUT & THEME ============ */
+:root{
+  --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.07);
+  --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
+}
+.tool-shell, .tool-shell *{box-sizing:border-box}
+
+/* Flexbox Layout */
+.tool-shell {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Sora', system-ui, Arial;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* Main Content Wrapper (pushes footer down) */
+.main-content{
+  flex: 1 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+/* Hero */
+.hero{
+  flex: 1 1 45%;
+  max-width: 560px;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+.hero h1{ margin:4px 0 6px; font-size:44px; letter-spacing:-.02em; line-height:1.1; }
+.hero h1 .ai{ background:linear-gradient(90deg,var(--g2),var(--g3)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hero p{ margin:0; color:var(--sub); line-height:1.55; }
+.hero .note{ margin-top:10px; font-size:.95rem; color:#d0d9f8; font-family:'JetBrains Mono', monospace; opacity:.8; }
+
+/* Chat Interface */
+.chat-wrap{
+  flex: 1 1 55%;
+  width: 100%;
+  max-width:560px;
+  margin: 0;
+  padding:0;
+  display:flex;
+  justify-content:flex-end;
+}
+.chat-card{
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:22px;
+  background:rgba(255,255,255,.03);
+  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  overflow:hidden;
+  display: flex;
+  flex-direction: column;
+  width:100%;
+  max-width:520px;
+}
+
+.card-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:rgba(0,0,0,.2);
+}
+.clear-btn{
+  padding:8px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05); color:#cfe9f6; cursor:pointer;
+  font-family:inherit; font-size:13px;
+}
+.clear-btn:hover{ background:rgba(255,255,255,.1); }
+
+.messages{
+  height: min(56vh, 620px);
+  overflow-y: auto;
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* Message Bubbles */
+.msg{ max-width:80%; padding:12px 16px; border-radius:16px; line-height:1.5; font-size:15px; }
+.msg.user{
+  margin-left:auto;
+  background: rgba(34,211,238,.15);
+  border: 1px solid rgba(34,211,238,.2);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.msg.assistant{
+  margin-right:auto;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  color: var(--fg);
+  border-bottom-left-radius: 4px;
+}
+.msg .role { font-size: 0.75rem; opacity: 0.5; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Input Bar */
+.inputbar{
+  display:flex; gap:10px; align-items:center;
+  padding:16px;
+  border-top:1px solid rgba(255,255,255,.06);
+  background:rgba(0,0,0,.2);
+}
+textarea{
+  flex:1; min-height:48px; padding:14px;
+  border-radius:14px; border:1px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.2); color:#fff; outline:none;
+  font-family:inherit; resize: none;
+}
+textarea:focus{ border-color:rgba(34,211,238,.5); }
+
+.send{
+  width:50px; height:50px; border-radius:14px; border:none; cursor:pointer;
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  color:#fff; font-size:18px; display:grid; place-items:center;
+  box-shadow:0 0 15px rgba(124,58,237,.3);
+  transition: filter 0.2s;
+}
+.send:hover{ filter: brightness(1.1); }
+
+/* Recommendations List Styling (injected by JS) */
+.recommendations { padding-left: 20px; margin: 10px 0; }
+.recommendations li { margin-bottom: 12px; }
+.recommendations .detail { font-size: 0.85em; color: var(--sub); margin-bottom: 4px; }
+
+/* Layout pairing */
+.ai-flex{
+  flex: 1 1 auto;
+  width: 100%;
+  margin: 0;
+  padding: 24px clamp(24px,5vw,96px) 24px;
+  display:flex;
+  gap:48px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+@media (max-width: 1000px){
+  .ai-flex{
+    flex-direction: column;
+    margin-top: 20px;
+    gap: 40px;
+    padding: 32px 20px 40px;
+  }
+  .hero, .chat-wrap{
+    max-width: 100%;
+  }
+  .chat-wrap{
+    justify-content: center;
+  }
+  .chat-card{
+    max-width: 100%;
+  }
+}
+
+/* Footer */
+.foot { flex-shrink: 0; padding: 20px; text-align: center; font-size: 12px; color: var(--sub); }
+`;
+
+const bodyHtml = `
+  <div class="main-content">
+    <div class="ai-flex">
+    <section class="hero">
+      <h1>Chat with <span class="ai">AI</span></h1>
+      <p>Natural language recommendations based on Llama 3.3.</p>
+      <p class="note">"I have 19x10cm hands and use claw grip. Budget $80."</p>
+      <div id="modelBadge" style="margin-top:8px; font-size:12px; color:#22d3ee; opacity:0.8;"></div>
+    </section>
+
+    <section id="chat" class="chat-wrap">
+      <div class="chat-card">
+        <div class="card-head">
+          <div class="title" style="font-weight:700; font-size:14px;">Mouse-Fit Assistant</div>
+          <div class="controls">
+            <button class="clear-btn" id="clearChat">Restart</button>
+          </div>
+        </div>
+        <div id="messages" class="messages">
+          </div>
+        <div class="inputbar">
+          <textarea id="prompt" placeholder="Type here..."></textarea>
+          <button class="send" id="sendBtn">➤</button>
+        </div>
+      </div>
+    </section>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <div class="foot-inner">
+      <span>© <span id="y"></span> Mouse-Fit</span>
+    </div>
+  </footer>
+`;
+
+export default function AiPage() {
+  return (
+    <NotchedPanel className="p-0" contentClassName="h-full">
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
+      <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+      <Script
+        id="ai-year"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{ __html: "document.getElementById('y').textContent = new Date().getFullYear();" }}
+      />
+      <Script type="module" src="/src/js/ai.js" strategy="afterInteractive" />
+    </NotchedPanel>
+  );
+}

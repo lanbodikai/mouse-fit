@@ -1,0 +1,100 @@
+:root{
+  --mf-deep:#05060a;
+  --mf-ink:#071022;
+  --mf-roy:#0a1c3a;
+  --mf-fg:#eaf0ff;
+  --mf-sub:#a6b0c8;
+  --mf-border:rgba(255,255,255,.08);
+  --mf-neon:linear-gradient(90deg,#7c3aed 0%,#22d3ee 50%,#a78bfa 100%);
+  --mf-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22);
+  --page-aspect:calc(16 / 10);
+  --page-canvas-width:100vw;
+  --page-canvas-height:100vh;
+  --mf-anim-ease:cubic-bezier(.22,.68,.18,1);
+}
+
+html,body{background-color:var(--mf-deep);}
+
+body.mf-glow{
+  margin:0;
+  min-height:100vh;
+  font-family:Lexend, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  color:var(--mf-fg);
+  background:
+    radial-gradient(1150px 620px at 90% 6%, rgba(48,124,255,.18), transparent 60%),
+    radial-gradient(1100px 560px at 10% 115%, rgba(24,160,240,.18), transparent 65%),
+    linear-gradient(135deg,var(--mf-deep) 0%,var(--mf-ink) 58%,var(--mf-roy) 100%);
+  background-attachment:fixed;
+  position:relative;
+  overflow-x:hidden;
+  isolation:isolate;
+}
+
+body.mf-glow::before{
+  content:"";
+  position:fixed;
+  inset:-30%;
+  background:
+    radial-gradient(42% 42% at 24% 30%, rgba(124,58,237,.32), transparent 70%),
+    radial-gradient(36% 36% at 72% 26%, rgba(34,211,238,.26), transparent 72%),
+    radial-gradient(58% 58% at 52% 74%, rgba(167,139,250,.30), transparent 78%);
+  filter:blur(80px);
+  opacity:.75;
+  pointer-events:none;
+  z-index:-1;
+}
+
+.mf-surface{
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--mf-border);
+  border-radius:22px;
+  box-shadow:0 30px 80px rgba(0,0,0,.45);
+}
+
+.mf-neon{
+  background:var(--mf-neon);
+  color:#fff;
+  border:1px solid transparent;
+  box-shadow:var(--mf-shadow);
+}
+
+.mf-canvas{
+  width:var(--page-canvas-width);
+  max-width:100%;
+  margin-inline:auto;
+}
+
+@media (max-width:640px){
+  body.mf-glow{padding-bottom:16px;}
+}
+
+/* ===== Shared motion ===== */
+@keyframes mf-fade-up{
+  from{opacity:0;transform:translateY(26px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@keyframes mf-fade-in{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+.mf-animate-fade-up{
+  opacity:0;
+  animation:mf-fade-up .9s var(--mf-anim-ease) forwards;
+}
+.mf-animate-fade-in{
+  opacity:0;
+  animation:mf-fade-in .9s var(--mf-anim-ease) forwards;
+}
+.mf-delay-1{animation-delay:.12s;}
+.mf-delay-2{animation-delay:.24s;}
+.mf-delay-3{animation-delay:.36s;}
+
+@media (prefers-reduced-motion: reduce){
+  .mf-animate-fade-up,
+  .mf-animate-fade-in{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    opacity:1 !important;
+    transform:none !important;
+  }
+}

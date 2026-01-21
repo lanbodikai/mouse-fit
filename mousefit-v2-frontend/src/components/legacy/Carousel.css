@@ -1,0 +1,155 @@
+.mf-carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  height: 500px;
+  margin: 0 auto;
+  perspective: 1200px; /* Creates the 3D space */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Invisible hover zones to nudge carousel */
+.mf-hover-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 22%;
+  z-index: 15;
+}
+.mf-hover-left {
+  left: 0;
+}
+.mf-hover-right {
+  right: 0;
+}
+
+.mf-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d; /* Essential for 3D children */
+}
+
+/* --- CARD BASE STYLE --- */
+.mf-slide {
+  position: absolute;
+  width: 300px;
+  height: 315px;
+  background: #1a1a1d;
+  border-radius: 20px;
+  overflow: hidden;
+  /* Center anchor point */
+  left: 50%; top: 50%;
+  margin-left: -150px; margin-top: -157.5px;
+  
+  transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+  cursor: pointer;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+}
+
+.mf-slide img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: brightness(0.6); /* Dim by default */
+  transition: 0.4s;
+}
+
+/* --- BLUE TITLE BANNER --- */
+.mf-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 25%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 14px 18px;
+  min-height: unset;
+  color: #f5fbff;
+  background: linear-gradient(135deg,
+    rgba(129, 73, 255, 0.5) 0%,
+    rgba(59, 130, 246, 0.5) 50%,
+    rgba(45, 212, 191, 0.5) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 20px 45px rgba(59, 130, 246, 0.35);
+  backdrop-filter: blur(18px);
+}
+.mf-overlay::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% 0 -10%;
+  background: radial-gradient(circle at 20% -20%, rgba(255,255,255,0.5), transparent 55%);
+  opacity: 0.7;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.mf-overlay > * {
+  position: relative;
+  z-index: 1;
+}
+.mf-overlay-label {
+  display: inline-block;
+  font-size: 0.65rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.mf-overlay h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.mf-overlay p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* --- 3D POSITIONS --- */
+
+/* 1. ACTIVE (Center, Big, Bright) */
+.mf-slide.active {
+  z-index: 10;
+  transform: translateZ(200px) translateX(0) scale(1); /* Bring forward */
+  box-shadow: 0 20px 60px rgba(124, 58, 237, 0.5); /* Purple glow */
+  border: 2px solid #7c3aed;
+}
+.mf-slide.active img { filter: brightness(1); }
+.mf-slide.active:hover {
+  transform: translateZ(230px) translateX(0) scale(1.02);
+}
+
+/* 2. NEXT (Right, Angled, Back) */
+.mf-slide.next {
+  z-index: 5;
+  transform: translateX(360px) translateZ(-140px) rotateY(-15deg);
+  filter: brightness(0.7);
+}
+.mf-slide.next:hover {
+  transform: translateX(390px) translateZ(-120px) rotateY(-8deg);
+}
+
+/* 3. PREV (Left, Angled, Back) */
+.mf-slide.prev {
+  z-index: 5;
+  transform: translateX(-360px) translateZ(-140px) rotateY(15deg);
+  filter: brightness(0.7);
+}
+.mf-slide.prev:hover {
+  transform: translateX(-390px) translateZ(-120px) rotateY(8deg);
+}
+
+/* 4. HIDDEN (Far Back) */
+.mf-slide.hidden {
+  z-index: 2;
+  transform: translateZ(-280px) scale(0.85);
+  opacity: 0.45;
+  filter: brightness(0.55);
+  pointer-events: auto;
+}

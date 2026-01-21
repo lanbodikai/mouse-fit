@@ -1,0 +1,188 @@
+import Script from "next/script";
+import NotchedPanel from "@/components/shell/NotchedPanel";
+
+const styles = `
+:root{
+  --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.10);
+  --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
+  --stage-offset-y: 0px;
+  --stage-offset-x: 0px;
+  --guide-scale: 1;
+  --panel-scale: 1;
+}
+.tool-shell, .tool-shell *{box-sizing:border-box}
+
+/* Flexbox Layout */
+.tool-shell {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Sora', system-ui, Arial;
+  color: var(--fg);
+  position: relative;
+}
+
+/* App Wrapper */
+.wrap{ flex: 1 1 auto; position:relative; padding:16px; display:grid; place-items:center; overflow:hidden; }
+
+.stage{
+  position:relative; width:min(1000px, 88vw); height:100%; max-height:80vh;
+  aspect-ratio:16 / 9; border-radius:18px; overflow:hidden;
+  border:2px solid rgba(167,139,250,.55);
+  box-shadow: inset 0 0 0 2px rgba(34,211,238,.22), 0 16px 50px rgba(12,20,35,.60), 0 0 34px rgba(124,58,237,.28);
+}
+.stage > video, .stage > canvas{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.stage > video { z-index:0; } canvas#frame { z-index:1; } .stage > .gripGuide { z-index:2; } canvas#overlay { z-index:3; pointer-events:none; }
+
+.stage .gripGuide{
+  position:absolute; left:4%; right:4%; top:4%; bottom:4%;
+  border:3px dashed rgba(255,255,255,0.65); border-radius:14px; background:rgba(255,255,255,0.06);
+  display:flex; align-items:center; justify-content:center; transform-origin:center; transform:scale(var(--guide-scale, 1));
+}
+.stage.guide-hidden .gripGuide{ opacity:0; visibility:hidden; }
+.stage .label{ position:absolute; top:-14px; left:14px; background:#0b1224; border:1px solid #263041; color:#cfe9f6; font-size:12px; font-weight:700; padding:3px 8px; border-radius:999px; }
+.stage .badge{ position:absolute; right:10px; top:10px; background:#0e1424; border:1px solid #263041; color:#9fcde2; font-size:12px; padding:4px 8px; border-radius:999px; z-index:6 }
+.stage .toast{ position:absolute; top:12px; left:50%; transform:translateX(-50%); background:#0e1424; border:1px solid #2a3442; color:#cdd8e4; padding:8px 12px; border-radius:10px; font-size:13px; display:none; z-index:7 }
+.stage .countdown{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); font-size:22vmin; font-weight:900; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.6); pointer-events:none; z-index:8 }
+
+/* Dock */
+.control-dock{ position:absolute; top:50%; right:16px; transform:translateY(-50%); z-index:50; padding:0; background:none; }
+.panel{ width:360px; max-height:min(84vh, 720px); overflow:auto; border:1px solid rgba(167,139,250,.25); background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.28)), rgba(9,12,22,.84); backdrop-filter: blur(8px); border-radius:14px; padding:12px; transform-origin: top right; transform: scale(var(--panel-scale, 1)); }
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-top:8px}
+.btn-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.meta{display:flex; flex-direction:column; gap:10px; justify-content:flex-end}
+.meta .pill{ width:100%; text-align:center; }
+.pill{padding:4px 10px;border-radius:999px;background:#0f1524;border:1px solid #2a2f40;font-size:12px;color:#cfe9f6}
+button,.btn-link{background:#101626;color:#eaf0ff;border:1px solid #223049;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none; text-align:center;}
+button.primary{background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));border-color:transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
+select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:10px;padding:8px}
+.thumbs{display:flex;gap:10px;margin-top:6px;align-items:center}
+.thumb{ position: relative; width:72px; height:48px; border-radius:8px; border:1px solid #2a2f40; background:#fff; overflow:hidden; display:grid; place-items:center; }
+.thumb img{ width:100%; height:100%; object-fit:cover; display:none; }
+.thumb.has-img img{ display:block; }
+.hint{font-size:14px;color:#a6b0c8;margin:6px 0 2px}
+.dock-handle{ cursor:move; height:22px; margin:-4px -4px 8px -4px; border-radius:10px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#cfe9f6; letter-spacing:.02em; }
+.dock-handle::after{ content:"Drag me"; opacity:.85; }
+
+/* Coach */
+.coach{ position:absolute; top:24px; left:24px; width:320px; padding:0 12px 12px; border-radius:16px; border:1px solid rgba(167,139,250,.30); background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.28)), rgba(9,12,22,.84); backdrop-filter:blur(10px); color:var(--fg); z-index:60;}
+.coach.hidden{ display:none; }
+.coach-bar{ height:36px; display:flex; align-items:center; justify-content:space-between; padding:0 8px 0 12px; margin:8px 0 10px; border-radius:12px; background:rgba(255,255,255,.10); cursor:move; }
+.coach-close{ width:28px; height:28px; border-radius:999px; background:rgba(255,255,255,.12); display:grid; place-items:center; cursor:pointer; }
+.coach-content p{ margin:6px 2px; color:#cfd6ee; line-height:1.35; }
+
+@media (max-width: 820px){
+  .tool-shell{ overflow:auto; overscroll-behavior:y contain; display:block; }
+  .wrap{ height:auto; min-height:calc(100dvh - 60px); padding:12px 12px 88px; }
+  .stage{ width:min(100%, 96vw); max-height:none; aspect-ratio: 16/9; translate: 0 0; }
+  .control-dock{ position:sticky; left:0; right:0; bottom:0; top:auto; transform:none; padding:0 8px 8px; }
+  .panel{ width:auto; max-width:none; max-height:48dvh; margin:0 auto; }
+  .toolbar{ grid-template-columns:1fr; }
+}
+`;
+
+const bodyHtml = `
+  <div class="wrap">
+    <div class="stage">
+      <video id="cam" playsinline autoplay muted></video>
+      <canvas id="frame"></canvas>
+      <div class="gripGuide"><span class="label" id="guideLabel">Step 1/3 — TOP view</span></div>
+      <canvas id="overlay"></canvas>
+      <div id="status" class="badge">Live</div>
+      <div id="toast" class="toast"></div>
+      <div id="countdown" class="countdown">5</div>
+    </div>
+
+    <div class="control-dock">
+      <div class="panel">
+        <div class="dock-handle"></div>
+        <div class="row" style="gap:12px; margin-bottom:6px;">
+          <label>Camera:</label>
+          <select id="cameraSelect"></select>
+          <button id="refreshCams">Refresh</button>
+          <span id="camName" class="pill">—</span>
+        </div>
+        <div id="hint" class="hint">Capture 3 angles: <b>Top</b>, <b>Right</b>, <b>Left</b>.</div>
+
+        <div class="thumbs">
+          <div class="thumb"><img id="thumbTop"   alt="Top"><span>Top</span></div>
+          <div class="thumb"><img id="thumbRight" alt="Right"><span>Right</span></div>
+          <div class="thumb"><img id="thumbLeft"  alt="Left"><span>Left</span></div>
+        </div>
+
+        <div class="toolbar" id="liveBtns">
+          <div class="btn-group">
+            <button id="timer" class="primary">Capture (Space)</button>
+            <button id="snap">Capture now</button>
+            <button id="toggleSkel">Toggle skeleton</button>
+            <button type="button" data-toggle-guide>Hide guide</button>
+            <button id="retakeAll">Retake all</button>
+          </div>
+          <div class="meta">
+            <span id="skelState" class="pill">Skeleton: On</span>
+            <span id="stepPill"  class="pill">Step: live</span>
+            <span id="viewPill"  class="pill">View: Top</span>
+          </div>
+        </div>
+
+        <div class="toolbar" id="frozenBtns" style="display:none;">
+          <div class="btn-group">
+            <button id="accept">Use This Angle</button>
+            <button id="retake">Retake</button>
+            <button type="button" data-toggle-guide>Hide guide</button>
+            <button id="classify" disabled>Classify Grip</button>
+            <a id="gotoReport" class="btn-link" href="/report">Report</a>
+          </div>
+          <div class="meta"><span id="resultPill" class="pill">Result: —</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button id="startCamBtn" style="position:absolute; inset:auto 12px 12px auto; z-index:30; background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3)); color:#fff; border:0; padding:10px 14px; border-radius:12px; display:none;">Tap to start</button>
+
+  <div class="coach" id="coach" data-key="mf:coach:grip" role="dialog">
+    <div class="coach-bar"><strong>Guide</strong><button class="coach-close">×</button></div>
+    <div class="coach-content">
+      <p>1) Position hand (holding mouse) inside box.</p>
+      <p>2) Capture Top, Right, then Left views.</p>
+      <p>3) Classify.</p>
+    </div>
+  </div>
+
+  <footer class="foot" style="text-align:center; padding:10px; font-size:12px; color:var(--sub);">
+    <span>© <span id="y"></span> Mouse-Fit</span>
+  </footer>
+`;
+
+export default function GripPage() {
+  return (
+    <NotchedPanel className="p-0" contentClassName="h-full">
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
+      <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+      <Script
+        src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.14.0/dist/tf.min.js"
+        strategy="beforeInteractive"
+      />
+      <Script
+        id="grip-thumbs"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `['thumbTop','thumbRight','thumbLeft'].forEach(id => {\n  const img = document.getElementById(id);\n  const box = img?.closest('.thumb');\n  if (!img || !box) return;\n  const showIfLoaded = () => { if (img.currentSrc && img.naturalWidth > 0) box.classList.add('has-img'); };\n  img.addEventListener('load', showIfLoaded);\n  if (img.complete) showIfLoaded();\n});`,
+        }}
+      />
+      <Script type="module" src="/src/js/grip.js" strategy="afterInteractive" />
+      <Script
+        id="grip-finish"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `window.finishGrip = (grip) => {\n  sessionStorage.setItem('mf:grip', grip);\n  location.href = '/report';\n};`,
+        }}
+      />
+    </NotchedPanel>
+  );
+}
