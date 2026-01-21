@@ -1,0 +1,11 @@
+# dataset_v2/data.yaml
+path: dataset_v2  # root path to dataset
+
+train: images/train
+val: images/val
+
+# If you later add a test split, you can add:
+# test: images/test
+
+names:
+  0: mouse
