@@ -75,3 +75,19 @@ html {
   animation: pageZoomIn 0.9s ease-out;
   transform-origin: center;
 }
+
+.stage-viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.stage-shell {
+  width: 1440px;
+  height: 900px;
+  transform: scale(min(calc(100vw / 1440), calc(100vh / 900)));
+  transform-origin: center;
+}
