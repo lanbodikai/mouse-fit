@@ -67,7 +67,6 @@
 }
 .special-link:hover {
   border-color: #00f3ff;
-  box-shadow: 0 0 15px rgba(124, 58, 237, 0.2);
 }
 
 /* --- DROPDOWN LOGIC --- */
@@ -94,7 +93,6 @@
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 
 /* Show Dropdown */
@@ -149,7 +147,6 @@
     visibility: visible;
     background: transparent;
     border: none;
-    box-shadow: none;
     padding-left: 0;
     margin-bottom: 20px;
   }

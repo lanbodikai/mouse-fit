@@ -1,4 +1,7 @@
+"use client";
+
 import Script from "next/script";
+import { useEffect } from "react";
 
 const styles = `
 :root{
@@ -75,13 +78,14 @@ const styles = `
 .control-dock{ position:relative; display:flex; flex-direction:column; gap:16px; z-index:50; padding:0; background:none; flex-shrink: 0; height: 75%; transform: translateY(var(--dock-offset-y)); }
 .panel{ width:380px; flex:0 0 58%; overflow:auto; border:1px solid rgba(255,255,255,.1); background: var(--bg); backdrop-filter: blur(8px); border-radius:30px; padding:20px; transform: scale(var(--dock-scale)); transform-origin: top right; touch-action:none; scrollbar-width: none; }
 .panel::-webkit-scrollbar{ width:0; height:0; }
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0;}
+.row > * {min-width:0;flex-shrink:1;}
 .toolbar{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:10px;border-radius:20px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);}
 .btn-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .btn-group button{width:100%; min-height:36px}
 .meta{display:flex; flex-direction: row; gap: 8px; flex-wrap:wrap;}
 .meta .pill { flex:1; text-align: center; min-width:0; }
-.pill{padding:6px 10px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:11px;color:#fff;font-weight:600;}
+.pill{padding:6px 10px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:11px;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:100%;}
 button{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:8px 10px;font-weight:600;cursor:pointer;transition:all 0.2s;font-size:12px;letter-spacing:.1px;}
 button:hover{background:rgba(255,255,255,.2);}
 button.primary{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);}
@@ -90,8 +94,8 @@ select{background:#000;color:#fff;border:1px solid rgba(255,255,255,.1);border-r
 
 /* Coach / Handle */
 .dock-handle{ display:none; }
-.coach{ height: 35%; flex:0 0 35%; position: relative; width: 380px; padding: 16px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,.1); background: var(--bg); backdrop-filter: blur(10px); color: var(--fg); z-index: 60; }
-.coach.hidden{ display:none; }
+.coach{ height: 35%; flex:0 0 35%; position: relative; width: 380px; padding: 16px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,.1); background: var(--bg); backdrop-filter: blur(10px); color: var(--fg); z-index: 60; display: block !important; visibility: visible !important; opacity: 1 !important; }
+.coach.hidden{ display: block !important; visibility: visible !important; }
 .coach-bar{ display: flex; align-items: center; padding: 0; margin: 0 0 12px 0; border:none; background: none; user-select: none; }
 .coach-bar strong{ font-size:15px; font-weight:700; color:#fff; }
 .coach-close{ display:none; }
@@ -152,7 +156,6 @@ const bodyHtml = `
           <select id="cameraSelect"></select>
           <button id="refreshCams">Refresh</button>
           <span id="camName" class="pill">—</span>
-          <span id="skelState" class="pill">Skeleton: On</span>
         </div>
         <div id="hint" class="hint">Tip: Press <b>Space</b> to capture. Keep hand and card in view.</div>
 
@@ -165,8 +168,6 @@ const bodyHtml = `
             <button id="reset">Reset (Esc)</button>
           </div>
           <div class="meta">
-            <span id="stepPill"  class="pill">Step: live</span>
-            <span id="viewPill"  class="pill">View: Top</span>
             <span id="guideState" class="pill">Guides: On</span>
           </div>
         </div>
@@ -192,11 +193,98 @@ const bodyHtml = `
 `;
 
 export default function MeasurePage() {
+  useEffect(() => {
+    // Ensure coach element is visible on navigation
+    const ensureCoachVisible = () => {
+      const coach = document.getElementById('coach');
+      if (coach) {
+        // Remove hidden class if present and ensure it's displayed
+        coach.classList.remove('hidden');
+        coach.style.display = '';
+        coach.style.visibility = 'visible';
+        coach.style.opacity = '1';
+        // Trigger setup if script hasn't run yet
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('measure-page-ready'));
+        }
+        return true;
+      }
+      return false;
+    };
+
+    // Try multiple times to ensure DOM is ready
+    let attempts = 0;
+    const maxAttempts = 20;
+    const trySetup = () => {
+      attempts++;
+      const found = ensureCoachVisible();
+      if (!found && attempts < maxAttempts) {
+        setTimeout(trySetup, 50);
+      } else if (found) {
+        // Once found, ensure it stays visible
+        const coach = document.getElementById('coach');
+        if (coach) {
+          // Force visibility
+          coach.style.display = '';
+          coach.style.visibility = 'visible';
+          coach.style.opacity = '1';
+          coach.classList.remove('hidden');
+        }
+      }
+    };
+    
+    // Use MutationObserver to watch for coach element being added
+    const observer = new MutationObserver((mutations) => {
+      const coach = document.getElementById('coach');
+      if (coach) {
+        ensureCoachVisible();
+        observer.disconnect();
+      }
+    });
+    
+    // Start observing the document body
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    // Start immediately and also after delays
+    trySetup();
+    const timeoutId1 = setTimeout(trySetup, 100);
+    const timeoutId2 = setTimeout(trySetup, 300);
+    const timeoutId3 = setTimeout(trySetup, 500);
+
+    // Cleanup camera on unmount
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeoutId1);
+      clearTimeout(timeoutId2);
+      clearTimeout(timeoutId3);
+      if (typeof window !== 'undefined' && (window as any).stopCam) {
+        try {
+          (window as any).stopCam();
+        } catch (e) {
+          // Ignore errors
+        }
+      }
+      // Also try to stop any active media streams
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            stream.getTracks().forEach(track => track.stop());
+          })
+          .catch(() => {
+            // Ignore errors
+          });
+      }
+    };
+  }, []);
+
   return (
     <div className="h-full">
       <style dangerouslySetInnerHTML={{ __html: styles }} />
       <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-      <Script type="module" src="/src/js/main.js" strategy="afterInteractive" />
+      <Script type="module" src="/src/js/main.js" strategy="afterInteractive" key="main-js" />
       <Script
         id="measure-finish"
         strategy="afterInteractive"

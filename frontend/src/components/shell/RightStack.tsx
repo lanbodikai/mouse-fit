@@ -75,7 +75,7 @@ export default function RightStack() {
 
   return (
     <div className="flex h-full flex-col gap-5">
-      <div className="rounded-[28px] bg-[color:var(--panel)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <div className="rounded-[28px] bg-[color:var(--panel)] p-5">
         <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/45">
           <span>Best Fit Result</span>
           <span>{isDemo ? "Demo" : "Swipe"}</span>
@@ -85,7 +85,7 @@ export default function RightStack() {
         </div>
       </div>
 
-      <div className="flex-1 rounded-[28px] bg-[color:var(--panel)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" />
+      <div className="flex-1 rounded-[28px] bg-[color:var(--panel)] p-5" />
     </div>
   );
 }

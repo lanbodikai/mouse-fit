@@ -74,9 +74,9 @@ const snapEdgesBtn = document.getElementById("snapEdges");
 const snapTipBtn   = document.getElementById("snapTip");
 
 const toggleSkel   = document.getElementById("toggleSkel");
-const skelState    = document.getElementById("skelState");
+const skelState    = null; // Removed from UI
 // Correct ID: measure.html uses id="stepPill"
-const stepPill     = document.getElementById("stepPill");
+const stepPill     = null; // Removed from UI
 const toggleGuide  = document.getElementById("toggleGuide");
 const guideState   = document.getElementById("guideState");
 const dockPanel    = document.querySelector('.control-dock .panel');
@@ -210,7 +210,13 @@ async function startCam(deviceId) {
   const track = stream.getVideoTracks()[0];
   const settings = track.getSettings?.() || {};
   currentDeviceId = settings.deviceId || deviceId || null;
-  camName.textContent = track.label || "Camera";
+  if (camName) {
+    const label = track.label || "Camera";
+    // Truncate long camera names to prevent UI overflow
+    const maxLength = 30;
+    camName.textContent = label.length > maxLength ? label.substring(0, maxLength - 3) + '...' : label;
+    camName.title = label; // Show full name on hover
+  }
 
   if (currentDeviceId && cameraSelect) {
     [...cameraSelect.options].some(o => (o.value === currentDeviceId && (cameraSelect.value = o.value, true)));
@@ -228,6 +234,15 @@ async function startCam(deviceId) {
 
 function stopCam() {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (video) {
+    video.srcObject = null;
+    video.pause();
+  }
+}
+
+// Expose stopCam globally for cleanup
+if (typeof window !== 'undefined') {
+  window.stopCam = stopCam;
 }
 
 function handleGUMError(e) {
@@ -358,11 +373,11 @@ function wireUI() {
 
 function updateSkeletonUI() {
   if (skeletonLive) {
-    skelState.textContent = "Skeleton: On";
-    toggleSkel.textContent = "Turn off skeleton";
+    if (skelState) skelState.textContent = "Skeleton: On";
+    if (toggleSkel) toggleSkel.textContent = "Turn off skeleton";
   } else {
-    skelState.textContent = "Skeleton: Off";
-    toggleSkel.textContent = "Turn on skeleton";
+    if (skelState) skelState.textContent = "Skeleton: Off";
+    if (toggleSkel) toggleSkel.textContent = "Turn on skeleton";
   }
 }
 function updateGuidesUI(){
@@ -1082,8 +1097,8 @@ if (dockPanel){
   });
 }
 
-setupFloatingDock();
-setupCoachBox();
+// Declare coachSetupAttempts before any functions that use it
+let coachSetupAttempts = 0;
 
 function setupFloatingDock(){
   const dock = document.querySelector('.control-dock');
@@ -1093,14 +1108,68 @@ function setupFloatingDock(){
 
 function setupCoachBox(){
   const coach = document.getElementById('coach');
-  if (!coach) return;
-  const handle = coach.querySelector('.coach-bar') || coach;
+  if (!coach) {
+    // Retry if coach element doesn't exist yet (up to 10 times)
+    coachSetupAttempts++;
+    if (coachSetupAttempts < 10) {
+      setTimeout(setupCoachBox, 100);
+    }
+    return;
+  }
+  coachSetupAttempts = 0; // Reset counter on success
+  // Ensure coach is visible - remove hidden class and ensure display
+  coach.classList.remove('hidden');
+  coach.style.display = '';
+  coach.style.visibility = 'visible';
+  coach.style.opacity = '1';
+  
+  // Reset any positioning styles that might have been applied
+  coach.style.position = '';
+  coach.style.left = '';
+  coach.style.top = '';
+  coach.style.right = '';
+  coach.style.bottom = '';
+  coach.style.transform = '';
+  
+  // Ensure it's in the document flow
+  const controlDock = coach.closest('.control-dock');
+  if (controlDock && !coach.parentElement) {
+    // If somehow detached, reattach it
+    controlDock.insertBefore(coach, controlDock.firstChild);
+  }
+  
+  // Remove any floating/draggable functionality - just keep it as static UI
   const closeBtn = coach.querySelector('.coach-close');
-  makeFloatingDraggable(coach, handle, 'mf:measure:coach-pos');
   if (closeBtn) {
     closeBtn.type = 'button';
-    closeBtn.addEventListener('click', () => coach.remove());
+    // Don't allow closing - coach stays visible
+    closeBtn.style.display = 'none';
   }
+}
+
+// Call setup functions after they're defined
+setupFloatingDock();
+setupCoachBox();
+
+// Listen for navigation events to ensure coach stays visible
+if (typeof window !== 'undefined') {
+  window.addEventListener('measure-page-ready', () => {
+    setupCoachBox();
+  });
+  
+  // Also check on DOMContentLoaded and when page becomes visible
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupCoachBox);
+  } else {
+    setupCoachBox();
+  }
+  
+  // Re-check when page becomes visible (handles client-side navigation)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      setTimeout(setupCoachBox, 100);
+    }
+  });
 }
 
 function makeFloatingDraggable(target, handle, storageKey){
@@ -1109,7 +1178,16 @@ function makeFloatingDraggable(target, handle, storageKey){
 
   const applyStored = () => {
     const stored = readStoredPosition(storageKey);
-    if (!stored) return;
+    if (!stored) {
+      // If no stored position, ensure element is visible in default position
+      target.style.position = '';
+      target.style.left = '';
+      target.style.top = '';
+      target.style.right = '';
+      target.style.bottom = '';
+      target.style.transform = '';
+      return;
+    }
     const clamped = clampToViewport(target, stored.left, stored.top);
     applyFloatingPosition(target, clamped.left, clamped.top);
   };

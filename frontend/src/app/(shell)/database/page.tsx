@@ -1,4 +1,7 @@
+"use client";
+
 import Script from "next/script";
+import { useEffect } from "react";
 
 const styles = `
 :root{
@@ -103,6 +106,24 @@ const bodyHtml = `
 `;
 
 export default function DatabasePage() {
+  useEffect(() => {
+    // Ensure script runs on every navigation
+    const initScript = () => {
+      // Re-run initialization if elements exist
+      const grid = document.getElementById('grid');
+      if (grid && typeof window !== 'undefined') {
+        // Trigger a custom event that mice-page.js can listen to
+        window.dispatchEvent(new CustomEvent('database-page-ready'));
+      }
+    };
+
+    // Run immediately and also after a short delay to ensure DOM is ready
+    initScript();
+    const timeoutId = setTimeout(initScript, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   return (
     <div className="h-full">
       <style dangerouslySetInnerHTML={{ __html: styles }} />
@@ -112,7 +133,12 @@ export default function DatabasePage() {
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: "document.getElementById('y').textContent = new Date().getFullYear();" }}
       />
-      <Script type="module" src="/src/js/mice-page.js" strategy="afterInteractive" />
+      <Script 
+        type="module" 
+        src="/src/js/mice-page.js" 
+        strategy="afterInteractive"
+        key="mice-page-script"
+      />
     </div>
   );
 }

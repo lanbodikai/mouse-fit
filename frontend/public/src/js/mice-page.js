@@ -204,6 +204,9 @@ function localFilter(query, items) {
   });
 }
 
+let initialized = false;
+let all = null;
+
 function boot() {
   if (!bindDom()) {
     if (document.readyState === 'loading') {
@@ -214,29 +217,53 @@ function boot() {
     return;
   }
 
-  // Build normalized array once
-  const all = Array.isArray(MICE) ? MICE.map(normalize).filter(Boolean) : [];
-  renderGrid(all);
+  // Only initialize once, but re-render on navigation
+  if (!initialized) {
+    // Build normalized array once
+    all = Array.isArray(MICE) ? MICE.map(normalize).filter(Boolean) : [];
 
-  const handleQueryInput = () => {
-    const query = q.value.trim();
-    const filtered = localFilter(query, all);
-    renderGrid(filtered);
-  };
+    const handleQueryInput = () => {
+      const query = q.value.trim();
+      const filtered = localFilter(query, all);
+      renderGrid(filtered);
+    };
 
-  let debounceTimer = null;
-  q.addEventListener('input', () => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(handleQueryInput, 200);
-  });
-  clearBtn.addEventListener('click', () => { q.value = ''; handleQueryInput(); });
+    let debounceTimer = null;
+    q.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(handleQueryInput, 200);
+    });
+    clearBtn.addEventListener('click', () => { q.value = ''; handleQueryInput(); });
 
-  // Deep-link support: /htmls/mouse-db.html?q=lightweight claw <70g
-  const urlQ = new URLSearchParams(location.search).get('q');
-  if (urlQ) { q.value = urlQ; handleQueryInput(); }
+    initialized = true;
+  }
 
-  // Optional: pre-select first item
-  if (all[0]) showDetails(all[0]);
+  // Always re-render on navigation
+  if (all) {
+    const handleQueryInput = () => {
+      const query = q.value.trim();
+      const filtered = localFilter(query, all);
+      renderGrid(filtered);
+    };
+
+    // Deep-link support: /htmls/mouse-db.html?q=lightweight claw <70g
+    const urlQ = new URLSearchParams(location.search).get('q');
+    if (urlQ) { 
+      q.value = urlQ; 
+      handleQueryInput(); 
+    } else {
+      // Render all items if no query
+      renderGrid(all);
+    }
+
+    // Optional: pre-select first item
+    if (all[0]) showDetails(all[0]);
+  }
+}
+
+// Listen for navigation events
+if (typeof window !== 'undefined') {
+  window.addEventListener('database-page-ready', boot);
 }
 
 boot();

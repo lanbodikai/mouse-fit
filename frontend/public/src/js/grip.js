@@ -54,9 +54,9 @@ const classifyBtn  = document.getElementById("classify");
 const toggleSkel   = document.getElementById("toggleSkel");
 const toggleGuideButtons = Array.from(document.querySelectorAll("[data-toggle-guide]"));
 
-const skelState    = document.getElementById("skelState");
-const stepPill     = document.getElementById("stepPill");
-const viewPill     = document.getElementById("viewPill");
+const skelState    = null; // Removed from UI
+const stepPill     = null; // Removed from UI
+const viewPill     = null; // Removed from UI
 const resultPill   = document.getElementById("resultPill");
 const guideLabel   = document.getElementById("guideLabel");
 
@@ -75,11 +75,45 @@ const footerYear   = document.getElementById("y");
 
 if (footerYear) footerYear.textContent = new Date().getFullYear();
 
-/* thumbnails helper (avoid black) */
+/* thumbnails helper (avoid black, handle large images) */
 function setThumbImage(imgEl, dataUrl) {
   if (!imgEl || !dataUrl) return;
   const box = imgEl.closest('.thumb');
-  imgEl.src = dataUrl;
+  
+  // If dataUrl is very long (likely base64), convert to blob URL to reduce memory
+  if (dataUrl.length > 100000) {
+    try {
+      // Convert base64 to blob
+      const byteString = atob(dataUrl.split(',')[1] || dataUrl);
+      const mimeString = dataUrl.split(',')[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      // Revoke old URL if exists
+      if (imgEl.dataset.blobUrl) {
+        URL.revokeObjectURL(imgEl.dataset.blobUrl);
+      }
+      
+      imgEl.dataset.blobUrl = blobUrl;
+      imgEl.src = blobUrl;
+    } catch (e) {
+      console.warn('Failed to convert to blob URL, using data URL:', e);
+      imgEl.src = dataUrl;
+    }
+  } else {
+    imgEl.src = dataUrl;
+  }
+  
+  // Constrain image size
+  imgEl.style.maxWidth = '100%';
+  imgEl.style.maxHeight = '100%';
+  imgEl.style.objectFit = 'contain';
+  
   if (box) box.classList.add('has-img');
 }
 
@@ -583,10 +617,31 @@ async function startCam(deviceId) {
     }
   }
   const track = stream.getVideoTracks()[0]; const settings = track.getSettings?.() || {};
-  currentDeviceId = settings.deviceId || deviceId || null; if (camName) camName.textContent = track.label || "Camera";
+  currentDeviceId = settings.deviceId || deviceId || null; 
+  if (camName) {
+    const label = track.label || "Camera";
+    // Truncate long camera names to prevent UI overflow
+    const maxLength = 30;
+    camName.textContent = label.length > maxLength ? label.substring(0, maxLength - 3) + '...' : label;
+    camName.title = label; // Show full name on hover
+  }
   if (currentDeviceId && cameraSelect) { [...cameraSelect.options].some(o => (o.value===currentDeviceId && (cameraSelect.value=o.value,true))); }
 }
-function stopCam(){ if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; } }
+function stopCam(){ 
+  if (stream) { 
+    stream.getTracks().forEach(t=>t.stop()); 
+    stream=null; 
+  }
+  if (video) {
+    video.srcObject = null;
+    video.pause();
+  }
+}
+
+// Expose stopCam globally for cleanup
+if (typeof window !== 'undefined') {
+  window.stopCamGrip = stopCam;
+}
 function handleGUMError(e){ showToast("Camera error: " + (e?.message || e)); }
 async function initCameraLayer() {
   if (!(location.protocol==="https:" || location.hostname==="localhost" || location.hostname==="127.0.0.1")) {
@@ -624,7 +679,7 @@ function wireUI(){
   });
 }
 function updateSkeletonUI(){
-  setText(skelState, skeletonLive ? "Skeleton: On" : "Skeleton: Off");
+  if (skelState) setText(skelState, skeletonLive ? "Skeleton: On" : "Skeleton: Off");
   if (toggleSkel) toggleSkel.textContent = skeletonLive ? "Turn off skeleton" : "Turn on skeleton";
   localStorage.setItem(PREF_SKELETON, skeletonLive ? "1" : "0");
 }
@@ -720,6 +775,17 @@ function addPinchHandler(el, getCurrent, setScale, opts = {}){
 setupFloatingDock();
 setupCoachPanel();
 
+// Listen for navigation events to ensure coach is visible
+if (typeof window !== 'undefined') {
+  window.addEventListener('grip-page-ready', () => {
+    setupCoachPanel();
+    const coach = document.getElementById('coach');
+    if (coach) {
+      coach.classList.remove('hidden');
+    }
+  });
+}
+
 function setupFloatingDock(){
   const dock = document.querySelector('.control-dock');
   const handle = dock?.querySelector('.dock-handle');
@@ -728,7 +794,13 @@ function setupFloatingDock(){
 
 function setupCoachPanel(){
   const coach = document.getElementById('coach');
-  if (!coach) return;
+  if (!coach) {
+    // Retry if coach element doesn't exist yet
+    setTimeout(setupCoachPanel, 100);
+    return;
+  }
+  // Ensure coach is visible
+  coach.classList.remove('hidden');
   const handle = coach.querySelector('.coach-bar') || coach;
   const closeBtn = coach.querySelector('.coach-close');
   makeFloatingDraggable(coach, handle, 'mf:grip:coach-pos');
@@ -874,7 +946,7 @@ async function capture(){
   if (statusBadge) statusBadge.textContent = "Frozen";
   if (liveBtns)   liveBtns.style.display  = "none";
   if (frozenBtns) frozenBtns.style.display= "flex";
-  setText(stepPill, "Step: review");
+  if (stepPill) setText(stepPill, "Step: review");
 }
 
 function onRetake(){
@@ -893,13 +965,24 @@ function onRetake(){
 }
 
 function acceptShot(){
-  let img = lastFrozenDataURL || (()=>{
+  // Create a smaller preview image to avoid huge base64 strings
+  const MAX_PREVIEW_SIZE = 800; // Max width/height for preview
+  let img = null;
+  
+  try {
     const snap = document.createElement('canvas');
-    snap.width = canvas.width; snap.height = canvas.height;
-    snap.getContext('2d').drawImage(canvas, 0, 0);
-    try { return snap.toDataURL("image/jpeg", 0.9); } catch { return null; }
-  })();
-  if (!img) img = canvas.toDataURL("image/jpeg", 0.9);
+    const scale = Math.min(1, MAX_PREVIEW_SIZE / Math.max(canvas.width, canvas.height));
+    snap.width = Math.round(canvas.width * scale);
+    snap.height = Math.round(canvas.height * scale);
+    const ctx = snap.getContext('2d');
+    ctx.drawImage(canvas, 0, 0, snap.width, snap.height);
+    img = snap.toDataURL("image/jpeg", 0.85); // Slightly lower quality for smaller size
+  } catch (e) {
+    console.warn('Failed to create preview image:', e);
+    img = lastFrozenDataURL || canvas.toDataURL("image/jpeg", 0.85);
+  }
+  
+  if (!img) img = canvas.toDataURL("image/jpeg", 0.85);
 
   const vName = VIEWS[currentView].toLowerCase();
 
@@ -922,7 +1005,7 @@ function acceptShot(){
 
   // Third shot accepted: stay frozen and move to Detect Grip tab
   updateClassifyEnabled();
-  setText(stepPill, "Step: detect");
+  if (stepPill) setText(stepPill, "Step: detect");
   if (liveBtns)   liveBtns.style.display  = "none";
   if (frozenBtns) frozenBtns.style.display= "flex";
   if (!haveAll && currentView >= 2) {
@@ -1562,6 +1645,11 @@ function clearAllShots(){
   shots = { top:null, right:null, left:null };
   [thumbTop, thumbRight, thumbLeft].forEach(el=>{
     if (!el) return;
+    // Revoke blob URLs to prevent memory leaks
+    if (el.dataset.blobUrl) {
+      URL.revokeObjectURL(el.dataset.blobUrl);
+      delete el.dataset.blobUrl;
+    }
     el.removeAttribute('src');
     const box = el.closest('.thumb');
     if (box) box.classList.remove('has-img');

@@ -22,10 +22,10 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="relative flex h-[585px] w-[88px] flex-col items-center gap-6 rounded-[32px] bg-[#06080b] px-3 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <aside className="relative flex h-[585px] w-[88px] flex-col items-center gap-6 rounded-[32px] bg-[#06080b] px-3 py-4">
       <Link
         href="/"
-        className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[#06080b] text-sm font-semibold text-white/80 shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition hover:bg-white/15 hover:text-white"
+        className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[#06080b] text-sm font-semibold text-white/80 transition hover:bg-white/15 hover:text-white"
         aria-label="MouseFit Home"
       >
         <Image

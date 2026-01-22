@@ -1,4 +1,7 @@
+"use client";
+
 import Script from "next/script";
+import { useEffect } from "react";
 
 const styles = `
 :root{
@@ -54,22 +57,23 @@ const styles = `
 .control-dock{ position:relative; display:flex; flex-direction:column; gap:16px; z-index:50; padding:0; background:none; flex-shrink: 0; height: 75%; transform: translateY(var(--dock-offset-y)); }
 .panel{ width:380px; flex:0 0 58%; overflow:auto; border:1px solid rgba(255,255,255,.1); background: var(--bg); backdrop-filter: blur(8px); border-radius:30px; padding:18px 18px 16px; transform-origin: top right; transform: scale(var(--panel-scale, 1)); scrollbar-width: none; }
 .panel::-webkit-scrollbar{ width:0; height:0; }
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0;}
+.row > * {min-width:0;flex-shrink:1;}
 .toolbar{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:10px 10px 8px;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));}
 .btn-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .btn-group button,.btn-group .btn-link{width:100%; min-height:36px}
 .meta{display:flex; flex-direction: row; gap: 8px; flex-wrap:wrap;}
 .meta .pill{ flex:1; text-align: center; min-width:0; }
-.pill{padding:6px 10px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:11px;color:#fff;font-weight:600;}
+.pill{padding:6px 10px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:11px;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:100%;}
 button,.btn-link{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 10px;font-weight:600;cursor:pointer;text-decoration:none; text-align:center;transition:all 0.2s;font-size:12px;letter-spacing:.1px;}
 button:hover,.btn-link:hover{background:rgba(255,255,255,.2);}
 button.primary{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);}
 select{background:#000;color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:10px 12px;font-size:14px;}
 .thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px;align-items:center}
-.thumb{ position: relative; width:100%; height:48px; max-width:90px; border-radius:12px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); overflow:hidden; display:grid; place-items:center; font-size:11px; color:rgba(255,255,255,.8); }
+.thumb{ position: relative; width:100%; height:48px; max-width:90px; border-radius:12px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.05); overflow:hidden; display:grid; place-items:center; font-size:11px; color:rgba(255,255,255,.8); min-width:0; }
 .thumb span{ position:absolute; left:6px; right:6px; bottom:4px; text-align:center; font-size:10px; }
 .thumb.has-img span{ display:none; }
-.thumb img{ width:100%; height:100%; object-fit:cover; display:none; }
+.thumb img{ width:100%; height:100%; object-fit:contain; display:none; max-width:100%; max-height:100%; }
 .thumb.has-img img{ display:block; }
 .hint{font-size:13px;color:#a6b0c8;margin:4px 0 8px;line-height:1.4;}
 .dock-handle{ display:none; }
@@ -139,9 +143,6 @@ const bodyHtml = `
             <button id="retakeAll">Retake all</button>
           </div>
           <div class="meta">
-            <span id="skelState" class="pill">Skeleton: On</span>
-            <span id="stepPill"  class="pill">Step: live</span>
-            <span id="viewPill"  class="pill">View: Top</span>
           </div>
         </div>
 
@@ -167,6 +168,44 @@ const bodyHtml = `
 `;
 
 export default function GripPage() {
+  useEffect(() => {
+    // Ensure coach element is visible on navigation
+    const ensureCoachVisible = () => {
+      const coach = document.getElementById('coach');
+      if (coach) {
+        coach.classList.remove('hidden');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('grip-page-ready'));
+        }
+      }
+    };
+
+    const timeoutId = setTimeout(ensureCoachVisible, 100);
+    ensureCoachVisible();
+
+    // Cleanup camera on unmount
+    return () => {
+      clearTimeout(timeoutId);
+      if (typeof window !== 'undefined' && (window as any).stopCamGrip) {
+        try {
+          (window as any).stopCamGrip();
+        } catch (e) {
+          // Ignore errors
+        }
+      }
+      // Also try to stop any active media streams
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            stream.getTracks().forEach(track => track.stop());
+          })
+          .catch(() => {
+            // Ignore errors
+          });
+      }
+    };
+  }, []);
+
   return (
     <div className="h-full">
       <style dangerouslySetInnerHTML={{ __html: styles }} />
@@ -182,7 +221,7 @@ export default function GripPage() {
           __html: `['thumbTop','thumbRight','thumbLeft'].forEach(id => {\n  const img = document.getElementById(id);\n  const box = img?.closest('.thumb');\n  if (!img || !box) return;\n  const showIfLoaded = () => { if (img.currentSrc && img.naturalWidth > 0) box.classList.add('has-img'); };\n  img.addEventListener('load', showIfLoaded);\n  if (img.complete) showIfLoaded();\n});`,
         }}
       />
-      <Script type="module" src="/src/js/grip.js" strategy="afterInteractive" />
+      <Script type="module" src="/src/js/grip.js" strategy="afterInteractive" key="grip-js" />
       <Script
         id="grip-finish"
         strategy="afterInteractive"
