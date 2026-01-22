@@ -26,12 +26,12 @@ export default function RightStack() {
         id: "slide-fit",
         content: (
           <div className="space-y-3">
-            <div className="text-[0.65rem] uppercase tracking-[0.3em] text-white/45">
+            <div className="text-[0.65rem] uppercase tracking-[0.3em] text-white/45 transition-colors">
               {isDemo ? "test to show results" : "latest report"}
             </div>
-            <div className="text-2xl font-semibold text-white">{display.name}</div>
-            <div className="text-sm text-white/70">Match score {Math.round(display.score)}%</div>
-            <div className="rounded-2xl bg-white/5 p-3 text-xs text-white/65">
+            <div className="text-2xl font-semibold text-theme-primary transition-colors">{display.name}</div>
+            <div className="text-sm text-white/70 transition-colors">Match score {Math.round(display.score)}%</div>
+            <div className="rounded-2xl bg-white/5 p-3 text-xs text-white/65 transition-colors">
               {display.notes}
             </div>
           </div>
@@ -41,8 +41,8 @@ export default function RightStack() {
         id: "slide-why",
         content: (
           <div className="space-y-4">
-            <div className="text-sm font-semibold text-white">Why it fits</div>
-            <ul className="space-y-2 text-sm text-white/70">
+            <div className="text-sm font-semibold text-theme-primary transition-colors">Why it fits</div>
+            <ul className="space-y-2 text-sm text-white/70 transition-colors">
               <li>Hand size: {display.size}</li>
               <li>Recommended grip: {formatGrip(display.recommendedGrip)}</li>
               <li>{display.notes}</li>
@@ -54,8 +54,8 @@ export default function RightStack() {
         id: "slide-alt",
         content: (
           <div className="space-y-3">
-            <div className="text-sm font-semibold text-white">Suggested alternatives</div>
-            <div className="space-y-2 text-sm text-white/70">
+            <div className="text-sm font-semibold text-theme-primary transition-colors">Suggested alternatives</div>
+            <div className="space-y-2 text-sm text-white/70 transition-colors">
               {display.alternatives.length ? (
                 display.alternatives.map((alt) => (
                   <div key={alt} className="rounded-2xl bg-white/5 px-3 py-2">
@@ -75,7 +75,7 @@ export default function RightStack() {
 
   return (
     <div className="flex h-full flex-col gap-5">
-      <div className="rounded-[28px] bg-[color:var(--panel)] p-5">
+      <div className="rounded-[28px] bg-[color:var(--panel)] p-5 transition-colors">
         <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/45">
           <span>Best Fit Result</span>
           <span>{isDemo ? "Demo" : "Swipe"}</span>

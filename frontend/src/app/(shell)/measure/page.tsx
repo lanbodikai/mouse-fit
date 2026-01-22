@@ -4,10 +4,17 @@ import Script from "next/script";
 import { useEffect } from "react";
 
 const styles = `
-:root{
+:root.dark{
   --bg:#06080b; --fg:#eaf0ff; --sub:#a6b0c8;
   --border:rgba(255,255,255,.10);
   --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
+}
+:root.light{
+  --bg:#f9fafb; --fg:#1a1a1a; --sub:#6b7280;
+  --border:rgba(0,0,0,.10);
+  --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
+}
+:root{
   --stage-offset-y: -120px;
   --stage-offset-x: 0px;
   --dock-offset-y: -105px;
@@ -51,7 +58,7 @@ const styles = `
   aspect-ratio:16/10;
   border-radius:30px;
   overflow:hidden;
-  border: 1px solid rgba(255,255,255,.1);
+  border: 1px solid var(--border);
   background: var(--bg);
   flex-shrink: 0;
   transform: translate(var(--stage-offset-x), var(--stage-offset-y));
@@ -76,30 +83,30 @@ const styles = `
 
 /* Control Dock */
 .control-dock{ position:relative; display:flex; flex-direction:column; gap:16px; z-index:50; padding:0; background:none; flex-shrink: 0; height: 75%; transform: translateY(var(--dock-offset-y)); }
-.panel{ width:380px; flex:0 0 58%; overflow:auto; border:1px solid rgba(255,255,255,.1); background: var(--bg); backdrop-filter: blur(8px); border-radius:30px; padding:20px; transform: scale(var(--dock-scale)); transform-origin: top right; touch-action:none; scrollbar-width: none; }
+.panel{ width:380px; flex:0 0 58%; overflow:auto; border:1px solid var(--border); background: var(--bg); backdrop-filter: blur(8px); border-radius:30px; padding:20px; transform: scale(var(--dock-scale)); transform-origin: top right; touch-action:none; scrollbar-width: none; }
 .panel::-webkit-scrollbar{ width:0; height:0; }
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0;}
 .row > * {min-width:0;flex-shrink:1;}
-.toolbar{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:10px;border-radius:20px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);}
+.toolbar{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:10px;border-radius:20px;border:1px solid var(--border);background:var(--border);opacity:0.5;}
 .btn-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .btn-group button{width:100%; min-height:36px}
 .meta{display:flex; flex-direction: row; gap: 8px; flex-wrap:wrap;}
 .meta .pill { flex:1; text-align: center; min-width:0; }
-.pill{padding:6px 10px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:11px;color:#fff;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:100%;}
-button{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:8px 10px;font-weight:600;cursor:pointer;transition:all 0.2s;font-size:12px;letter-spacing:.1px;}
-button:hover{background:rgba(255,255,255,.2);}
-button.primary{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);}
-select{background:#000;color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:10px 12px;font-size:14px;}
+.pill{padding:6px 10px;border-radius:16px;background:var(--border);border:1px solid var(--border);font-size:11px;color:var(--fg);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:100%;}
+button{background:var(--border);color:var(--fg);border:1px solid var(--border);border-radius:14px;padding:8px 10px;font-weight:600;cursor:pointer;transition:all 0.2s;font-size:12px;letter-spacing:.1px;}
+button:hover{background:var(--border);opacity:0.8;}
+button.primary{background:var(--border);border:1px solid var(--border);opacity:0.9;}
+select{background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:20px;padding:10px 12px;font-size:14px;}
 .hint{font-size:13px;color:var(--sub);margin:4px 0 8px;line-height:1.4;}
 
 /* Coach / Handle */
 .dock-handle{ display:none; }
-.coach{ height: 35%; flex:0 0 35%; position: relative; width: 380px; padding: 16px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,.1); background: var(--bg); backdrop-filter: blur(10px); color: var(--fg); z-index: 60; display: block !important; visibility: visible !important; opacity: 1 !important; }
+.coach{ height: 35%; flex:0 0 35%; position: relative; width: 380px; padding: 16px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--bg); backdrop-filter: blur(10px); color: var(--fg); z-index: 60; display: block !important; visibility: visible !important; opacity: 1 !important; }
 .coach.hidden{ display: block !important; visibility: visible !important; }
 .coach-bar{ display: flex; align-items: center; padding: 0; margin: 0 0 12px 0; border:none; background: none; user-select: none; }
 .coach-bar strong{ font-size:15px; font-weight:700; color:#fff; }
 .coach-close{ display:none; }
-.coach-content p{ margin: 4px 0; color: #cfd6ee; line-height: 1.5; font-size:13px; }
+.coach-content p{ margin: 4px 0; color: var(--sub); line-height: 1.5; font-size:13px; }
 
 @media (max-width: 820px){
   .tool-shell{ overflow:auto; overscroll-behavior:y contain; display: block; }

@@ -23,10 +23,16 @@ const YOLO_CLASSES = 1;
 // keep the dashed guide visible; we draw above it
 const SHOW_GUIDE_OVERLAY = false;
 
-// Speed: use WebGL backend if available
-if (window.tf?.setBackend) {
-  (async () => { try { await tf.setBackend('webgl'); await tf.ready(); } catch {} })();
-}
+// Backend-based YOLO - no TFJS needed
+// API base URL will be set from Next.js environment or default
+const getApiBase = () => {
+  if (typeof window !== 'undefined' && window.API_BASE_URL) {
+    return window.API_BASE_URL;
+  }
+  // Try to get from meta tag or default
+  const meta = document.querySelector('meta[name="api-base-url"]');
+  return meta ? meta.getAttribute('content') : 'http://localhost:8000';
+};
 
 /* ================== DOM ================== */
 const video        = document.getElementById("cam");
@@ -191,26 +197,86 @@ function ensureCanvasSizes(){
 let yoloModel = null;
 
 async function loadMouseModel(baseUrl = YOLO_BASE_URL) {
-  if (typeof tf === 'undefined') {
-    console.error('[YOLO] TFJS missing'); showToast('TFJS missing'); return null;
-  }
+  // Backend-based YOLO - no TFJS needed
   try {
-    const clean = (baseUrl || '').replace(/\/+$/,'');
-    yoloModel = await tf.loadGraphModel(`${clean}/model.json`);
+    console.log('[YOLO] Using backend TensorFlow API');
+    yoloModel = { backend: true }; // Mark as backend model
     window.yoloModel = yoloModel;
-
-    console.log('[YOLO] Loaded:', `${clean}/model.json`);
-    const warm = tf.zeros([1, YOLO_SIZE, YOLO_SIZE, 3]);
-    // No control-flow => execute() is fine (and a bit faster)
-    const outs = yoloModel.execute(warm);
-    const arr  = Array.isArray(outs) ? outs : Object.values(outs);
-    console.log('[YOLO] warmup ok. output shapes =', arr.map(t => t.shape));
-    tf.dispose([warm]); tf.dispose(arr);
+    console.log('[YOLO] Backend model ready');
+    return yoloModel;
   } catch (e) {
-    console.error('[YOLO] load/exec error:', e);
+    console.error('[YOLO] Backend init error:', e);
     yoloModel = null;
+    return null;
   }
-  return yoloModel;
+}
+
+async function yoloDetectBackend(imageLike, { preferGuide = true } = {}) {
+  try {
+    // Convert image to base64
+    const prep = document.createElement('canvas');
+    const { scale, dx, dy, nw, nh } = yoloLetterbox(imageLike, prep);
+    const content = { x1: dx, y1: dy, x2: dx + nw, y2: dy + nh };
+    
+    const imageBase64 = prep.toDataURL('image/jpeg', 0.9).split(',')[1];
+    const API_BASE = getApiBase();
+    
+    // Call backend API
+    const response = await fetch(`${API_BASE}/api/ml/yolo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: imageBase64,
+        conf: YOLO_CONF,
+        iou: YOLO_IOU,
+        max_det: YOLO_MAX_DET,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Backend API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const detections = data.detections || [];
+
+    // Convert backend detections (in 640x640 space) back to original coordinates
+    const dets = detections.map(d => {
+      const [x1, y1, x2, y2] = d.box;
+      // Back-map from 640x640 letterbox space to original image space
+      return {
+        box: [
+          (x1 - dx) / (scale || 1),
+          (y1 - dy) / (scale || 1),
+          (x2 - dx) / (scale || 1),
+          (y2 - dy) / (scale || 1),
+        ],
+        score: d.score || 0,
+        class: d.class || 0,
+      };
+    });
+
+    // Prefer guide ROI (if provided)
+    if (preferGuide && dets.length) {
+      const g = getGuideMouseBox();
+      if (g) {
+        const guideDets = dets.filter(d => {
+          const [x1, y1, x2, y2] = d.box;
+          const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+          return cx >= g.x1 && cx <= g.x2 && cy >= g.y1 && cy <= g.y2;
+        });
+        if (guideDets.length) return guideDets.sort((a, b) => b.score - a.score);
+      }
+    }
+
+    return dets.sort((a, b) => b.score - a.score);
+  } catch (e) {
+    console.error('[YOLO] Backend detection error:', e);
+    showToast('Backend detection failed');
+    return [];
+  }
 }
 
 /* --- helpers for letterbox & math --- */
@@ -285,6 +351,17 @@ async function parseRawGridDetections(arr, dx, dy, scale) {
 // Replace your existing yoloDetectBoxes with this version.
 async function yoloDetectBoxes(imageLike, { preferGuide = true } = {}) {
   if (!yoloModel) return [];
+  
+  // Use backend if available
+  if (yoloModel.backend) {
+    return await yoloDetectBackend(imageLike, { preferGuide });
+  }
+  
+  // Fallback to TFJS (if still needed)
+  if (typeof tf === 'undefined') {
+    console.error('[YOLO] TFJS missing and backend not available');
+    return [];
+  }
 
   // 1) Letterbox to 640x640 and remember content rect
   const prep = document.createElement('canvas');

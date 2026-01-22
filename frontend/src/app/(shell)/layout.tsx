@@ -3,9 +3,11 @@
 import Sidebar from "@/components/shell/Sidebar";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/lib/theme";
 
 export default function ShellLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { theme } = useTheme();
 
   useEffect(() => {
     // Stop camera when not on measure or grip pages
@@ -30,17 +32,22 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             // Ignore errors
           }
         }
-      }
-      
-      // Stop all active video tracks
-      if (navigator.mediaDevices) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then(stream => {
-            stream.getTracks().forEach(track => track.stop());
-          })
-          .catch(() => {
-            // Ignore errors - camera might not be active
-          });
+        
+        // Stop all active video tracks from any video elements
+        const videoElements = document.querySelectorAll('video');
+        videoElements.forEach(video => {
+          if (video.srcObject) {
+            const stream = video.srcObject as MediaStream;
+            stream.getTracks().forEach(track => {
+              track.stop();
+            });
+            video.srcObject = null;
+          }
+        });
+        
+        // Also stop any tracks from navigator.mediaDevices.getUserMedia calls
+        // Note: We can't enumerate active streams directly, but we can stop tracks
+        // that are attached to video elements (done above)
       }
     }
   }, [pathname]);
@@ -49,7 +56,12 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
     <div className="stage-viewport animate-page-zoom relative">
       {/* Background Gradient - Behind all elements including sidebar */}
       <div
-        className="fixed inset-0 w-full h-full bg-gradient-to-b from-slate-600 to-gray-900 z-0"
+        className="fixed inset-0 w-full h-full z-0 transition-colors duration-300"
+        style={{
+          background: theme === "dark" 
+            ? "linear-gradient(to bottom, #475569, #111827)"
+            : "linear-gradient(to bottom,rgb(185, 201, 220),rgb(172, 199, 254))"
+        }}
         aria-hidden="true"
       />
       <div className="stage-shell relative z-10 -translate-y-[10px]">

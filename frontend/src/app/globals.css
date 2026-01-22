@@ -5,6 +5,15 @@
 :root {
   --font-sans: var(--font-body);
   --font-display: var(--font-heading);
+  --container-max: 1200px;
+  --right-bar-width: clamp(240px, 22vw, 300px);
+  --shell-pad: clamp(16px, 3vw, 32px);
+  --frame-pad: clamp(16px, 2vw, 24px);
+  --grid-gap: clamp(12px, 2vw, 18px);
+}
+
+/* Dark mode (default) */
+:root.dark {
   --bg0: #060708;
   --bg1: #0a0b0d;
   --panel: rgba(255, 255, 255, 0.04);
@@ -15,11 +24,42 @@
   --text-muted: rgba(255, 255, 255, 0.65);
   --icon-muted: rgba(255, 255, 255, 0.55);
   --icon-active: #ffffff;
-  --container-max: 1200px;
-  --right-bar-width: clamp(240px, 22vw, 300px);
-  --shell-pad: clamp(16px, 3vw, 32px);
-  --frame-pad: clamp(16px, 2vw, 24px);
-  --grid-gap: clamp(12px, 2vw, 18px);
+  --bg-primary: #06080b;
+  --bg-secondary: #0e1116;
+  --bg-tertiary: #0a0c10;
+  --bg-card: #000000;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.6);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --gradient-from: #475569;
+  --gradient-to: #111827;
+  --body-bg: #2a2a2a;
+}
+
+/* Light mode */
+:root.light {
+  --bg0: #f9fafb;
+  --bg1: #f3f4f6;
+  --panel: rgba(0, 0, 0, 0.04);
+  --panel2: rgba(0, 0, 0, 0.06);
+  --stroke: rgba(0, 0, 0, 0.1);
+  --stroke2: rgba(0, 0, 0, 0.06);
+  --text: rgba(0, 0, 0, 0.92);
+  --text-muted: rgba(0, 0, 0, 0.65);
+  --icon-muted: rgba(0, 0, 0, 0.55);
+  --icon-active: #000000;
+  --bg-primary: #f9fafb;
+  --bg-secondary: #f1f3f5;
+  --bg-tertiary: #f5f7f9;
+  --bg-card: #ffffff;
+  --text-primary: #000000;
+  --text-secondary: rgba(0, 0, 0, 0.7);
+  --text-tertiary: rgba(0, 0, 0, 0.6);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --gradient-from: #cbd5e1;
+  --gradient-to: #e5e7eb;
+  --body-bg: #f5f5f5;
 }
 
 @theme inline {
@@ -30,10 +70,11 @@
 body {
   font-family: var(--font-body), sans-serif;
   color: var(--text);
-  background: #2a2a2a;
+  background: var(--body-bg);
   min-height: 100vh;
   margin: 0;
   overflow-x: clip;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 html {
@@ -91,4 +132,280 @@ html {
   height: 900px;
   transform: scale(min(calc(100vw / 1440), calc(100vh / 900)));
   transform-origin: center;
+}
+
+/* Theme-aware utility classes */
+.bg-theme-primary {
+  background-color: var(--bg-primary);
+}
+
+.bg-theme-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.bg-theme-tertiary {
+  background-color: var(--bg-tertiary);
+}
+
+.bg-theme-card {
+  background-color: var(--bg-card);
+}
+
+.text-theme-primary {
+  color: var(--text-primary);
+}
+
+.text-theme-secondary {
+  color: var(--text-secondary);
+}
+
+.text-theme-tertiary {
+  color: var(--text-tertiary);
+}
+
+.border-theme {
+  border-color: var(--border-color);
+}
+
+/* Theme-aware opacity classes */
+.dark .text-white\/70 {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.light .text-white\/70 {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.dark .bg-white\/30 {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.light .bg-white\/30 {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.dark .border-white\/50 {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.light .border-white\/50 {
+  border-color: rgba(0, 0, 0, 0.5);
+}
+
+.dark .text-white\/60 {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.light .text-white\/60 {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Theme-aware image visibility */
+.theme-image-dark {
+  display: block;
+}
+
+.theme-image-light {
+  display: none;
+}
+
+.light .theme-image-dark {
+  display: none;
+}
+
+.light .theme-image-light {
+  display: block;
+}
+
+/* Theme-aware card gradient */
+.theme-card-gradient {
+  background: linear-gradient(to bottom, #0e1116, #0a0c10, #06080b) !important;
+}
+
+.light .theme-card-gradient {
+  background: linear-gradient(to bottom, #f1f3f5, #f5f7f9, #f9fafb) !important;
+}
+
+/* Theme-aware dot */
+.theme-dot {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.light .theme-dot {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Theme-aware divider */
+.theme-divider {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05), transparent);
+}
+
+.light .theme-divider {
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.05), transparent);
+}
+
+/* Theme-aware icon border */
+.theme-icon-border {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.light .theme-icon-border {
+  border-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Theme-aware SVG stroke */
+.theme-stroke {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.light .theme-stroke {
+  stroke: rgba(0, 0, 0, 0.1);
+}
+
+.dark .text-white\/45 {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.light .text-white\/45 {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.dark .text-white\/50 {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.light .text-white\/50 {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.dark .text-white\/65 {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.light .text-white\/65 {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.dark .border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark .border-white\/50 {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.light .border-white\/50 {
+  border-color: rgba(0, 0, 0, 0.5);
+}
+
+.dark .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.light .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark .bg-white\/15 {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.light .bg-white\/15 {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.dark .bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.light .bg-white\/20 {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.dark .bg-white\/30 {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.light .bg-white\/30 {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.dark .hover\:bg-white\/15:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.light .hover\:bg-white\/15:hover {
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+.dark .hover\:bg-white\/10:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.light .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark .hover\:bg-white\/20:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.light .hover\:bg-white\/20:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.dark .hover\:text-white:hover {
+  color: #ffffff;
+}
+
+.light .hover\:text-white:hover {
+  color: #000000;
+}
+
+/* SVG fill colors */
+.dark svg path[fill="#000000"] {
+  fill: #000000;
+}
+
+.light svg path[fill="#000000"] {
+  fill: #ffffff;
+}
+
+.dark svg path[fill="white"],
+.dark svg path[fill="#ffffff"] {
+  fill: #ffffff;
+}
+
+.light svg path[fill="white"],
+.light svg path[fill="#ffffff"] {
+  fill: #000000;
+}
+
+.dark svg circle[fill="black"] {
+  fill: #000000;
+}
+
+.light svg circle[fill="black"] {
+  fill: #ffffff;
+}
+
+/* Stroke colors */
+.dark svg path[stroke="white"] {
+  stroke: #ffffff;
+}
+
+.light svg path[stroke="white"] {
+  stroke: #000000;
 }

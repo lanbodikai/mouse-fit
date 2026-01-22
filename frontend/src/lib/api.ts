@@ -91,3 +91,54 @@ export function mlPredict(payload: {
     body: JSON.stringify(payload),
   });
 }
+
+export async function yoloPredict(imageData: string | HTMLCanvasElement | ImageData, options?: {
+  conf?: number;
+  iou?: number;
+  maxDet?: number;
+}): Promise<Array<{
+  box: [number, number, number, number]; // x1, y1, x2, y2
+  score: number;
+  class: number;
+}>> {
+  let imageBase64: string;
+  
+  if (typeof imageData === 'string') {
+    imageBase64 = imageData;
+  } else if (imageData instanceof HTMLCanvasElement) {
+    imageBase64 = imageData.toDataURL('image/jpeg', 0.9).split(',')[1];
+  } else {
+    // ImageData - convert to canvas first
+    const canvas = document.createElement('canvas');
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.putImageData(imageData, 0, 0);
+      imageBase64 = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+    } else {
+      throw new Error('Could not create canvas context');
+    }
+  }
+
+  const response = await request<{
+    detections: Array<{
+      box: [number, number, number, number];
+      score: number;
+      class: number;
+    }>;
+  }>("/api/ml/yolo", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      image: imageBase64,
+      conf: options?.conf ?? 0.22,
+      iou: options?.iou ?? 0.45,
+      max_det: options?.maxDet ?? 50,
+    }),
+  });
+
+  return response.detections;
+}
