@@ -2,11 +2,12 @@ import Script from "next/script";
 
 const styles = `
 :root{
-  --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8;
+  --bg:#06080b; --fg:#eaf0ff; --sub:#a6b0c8;
   --border:rgba(255,255,255,.10);
   --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
-  --stage-offset-y: 0px;
+  --stage-offset-y: -120px;
   --stage-offset-x: 0px;
+  --dock-offset-y: -105px;
   --guides-left:4%; --guides-right:4%; --guides-top:4%; --guides-bottom:4%;
   --dock-scale:1;
 }
@@ -32,7 +33,7 @@ const styles = `
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 10px;
   gap: 20px;
   overflow: hidden;
   height: 100%;
@@ -41,16 +42,16 @@ const styles = `
 /* Bounded capture area */
 .stage{
   position:relative;
-  width: min(700px, 55vw);
-  height: 100%;
-  max-height: none;
-  aspect-ratio:16/9;
+  width: min(720px, 70vw);
+  height: 72%;
+  max-height: 800px;
+  aspect-ratio:16/10;
   border-radius:30px;
   overflow:hidden;
   border: 1px solid rgba(255,255,255,.1);
-  box-shadow: 0 30px 60px rgba(0,0,0,.45);
-  background: #000;
+  background: var(--bg);
   flex-shrink: 0;
+  transform: translate(var(--stage-offset-x), var(--stage-offset-y));
 }
 
 /* Media fills stage */
@@ -58,30 +59,30 @@ const styles = `
 
 /* Overlays */
 .stage .guides{ position:absolute; left:var(--guides-left); right:var(--guides-right); top:var(--guides-top); bottom:var(--guides-bottom); display:flex; align-items:center; justify-content:center; pointer-events:auto; touch-action:none; z-index:2; }
-.stage .guide{ border:3px dashed rgba(255,255,255,.65); border-radius:14px; background:rgba(255,255,255,.06); position:relative; }
+.stage .guide{ border:3px dashed rgba(255,255,255,.65); border-radius:14px; background:transparent; position:relative; }
 .stage #handGuide{ flex:3 1 0; min-height:94%; }
-.stage .label{ position:absolute; top:-14px; left:14px; background:#000; border:1px solid rgba(255,255,255,.1); color:#fff; font-size:12px; font-weight:700; padding:3px 8px; border-radius:999px; }
-.stage .badge{ position:absolute; right:10px; top:10px; background:#000; border:1px solid rgba(255,255,255,.1); color:#fff; font-size:12px; padding:4px 8px; border-radius:999px; z-index:6 }
-.stage .toast{ position:absolute; top:12px; left:50%; transform:translateX(-50%); background:#000; border:1px solid rgba(255,255,255,.1); color:#fff; padding:8px 12px; border-radius:20px; font-size:13px; display:none; z-index:7 }
+.stage .label{ position:absolute; top:-14px; left:14px; background:var(--bg); border:1px solid rgba(255,255,255,.1); color:#fff; font-size:12px; font-weight:700; padding:3px 8px; border-radius:999px; }
+.stage .badge{ position:absolute; right:10px; top:10px; background:var(--bg); border:1px solid rgba(255,255,255,.1); color:#fff; font-size:12px; padding:4px 8px; border-radius:999px; z-index:6 }
+.stage .toast{ position:absolute; top:12px; left:50%; transform:translateX(-50%); background:var(--bg); border:1px solid rgba(255,255,255,.1); color:#fff; padding:8px 12px; border-radius:20px; font-size:13px; display:none; z-index:7 }
 .stage .countdown{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); font-size:22vmin; font-weight:900; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.6); pointer-events:none; z-index:8 }
 
 /* Draggable points */
-.point{ position:absolute; width:18px; height:18px; border-radius:50%; border:2px solid #e5f8ff; background:#0b2a33aa; box-shadow:0 0 0 2px rgba(0,0,0,.3); transform:translate(-50%,-50%); touch-action:none; cursor:grab; pointer-events:auto; display:none; z-index:10 }
+.point{ position:absolute; width:18px; height:18px; border-radius:50%; border:2px solid #e5f8ff; background:#0b2a33aa; transform:translate(-50%,-50%); touch-action:none; cursor:grab; pointer-events:auto; display:none; z-index:10 }
 .point.green{ border-color:#a3ffb0; background:#0b3316aa }
 .point.blue{  border-color:#9fe9ff; background:#0b2b44aa }
 
 /* Control Dock */
-.control-dock{ position:relative; display:flex; flex-direction:column; gap:16px; z-index:50; padding:0; background:none; flex-shrink: 0; height: 100%; }
-.panel{ width:380px; flex:1; overflow:auto; border:1px solid rgba(255,255,255,.1); background: #000; backdrop-filter: blur(8px); border-radius:30px; box-shadow: 0 30px 60px rgba(0,0,0,.45); padding:20px; transform: scale(var(--dock-scale)); transform-origin: top right; touch-action:none; scrollbar-width: none; }
+.control-dock{ position:relative; display:flex; flex-direction:column; gap:16px; z-index:50; padding:0; background:none; flex-shrink: 0; height: 75%; transform: translateY(var(--dock-offset-y)); }
+.panel{ width:380px; flex:0 0 58%; overflow:auto; border:1px solid rgba(255,255,255,.1); background: var(--bg); backdrop-filter: blur(8px); border-radius:30px; padding:20px; transform: scale(var(--dock-scale)); transform-origin: top right; touch-action:none; scrollbar-width: none; }
 .panel::-webkit-scrollbar{ width:0; height:0; }
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.toolbar{display:flex;flex-direction:column;gap:12px;margin-top:12px;padding:12px;border-radius:24px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);}
-.btn-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.btn-group button{width:100%}
+.toolbar{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:10px;border-radius:20px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);}
+.btn-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.btn-group button{width:100%; min-height:36px}
 .meta{display:flex; flex-direction: row; gap: 8px; flex-wrap:wrap;}
 .meta .pill { flex:1; text-align: center; min-width:0; }
 .pill{padding:6px 10px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:11px;color:#fff;font-weight:600;}
-button{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:10px 12px;font-weight:600;cursor:pointer;transition:all 0.2s;font-size:13px;}
+button{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:8px 10px;font-weight:600;cursor:pointer;transition:all 0.2s;font-size:12px;letter-spacing:.1px;}
 button:hover{background:rgba(255,255,255,.2);}
 button.primary{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);}
 select{background:#000;color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:10px 12px;font-size:14px;}
@@ -89,7 +90,7 @@ select{background:#000;color:#fff;border:1px solid rgba(255,255,255,.1);border-r
 
 /* Coach / Handle */
 .dock-handle{ display:none; }
-.coach{ position: relative; width: 380px; padding: 16px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,.1); background: #000; backdrop-filter: blur(10px); box-shadow: 0 30px 60px rgba(0,0,0,.45); color: var(--fg); z-index: 60; }
+.coach{ height: 35%; flex:0 0 35%; position: relative; width: 380px; padding: 16px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,.1); background: var(--bg); backdrop-filter: blur(10px); color: var(--fg); z-index: 60; }
 .coach.hidden{ display:none; }
 .coach-bar{ display: flex; align-items: center; padding: 0; margin: 0 0 12px 0; border:none; background: none; user-select: none; }
 .coach-bar strong{ font-size:15px; font-weight:700; color:#fff; }

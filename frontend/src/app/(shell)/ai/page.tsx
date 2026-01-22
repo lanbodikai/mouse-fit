@@ -3,7 +3,7 @@ import Script from "next/script";
 const styles = `
 /* ============ LAYOUT & THEME ============ */
 :root{
-  --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.07);
+  --bg:#06080b; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.07);
   --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
 }
 .tool-shell, .tool-shell *{box-sizing:border-box}
@@ -56,8 +56,7 @@ const styles = `
 .chat-card{
   border:1px solid rgba(255,255,255,.1);
   border-radius:30px;
-  background:#000;
-  box-shadow: 0 30px 60px rgba(0,0,0,.45);
+  background:var(--bg);
   overflow:hidden;
   display: flex;
   flex-direction: column;

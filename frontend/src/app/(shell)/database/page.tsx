@@ -2,7 +2,7 @@ import Script from "next/script";
 
 const styles = `
 :root{
-  --deep:#05060a; --ink:#071022; --roy:#0a1c3a;
+  --bg:#06080b; --deep:#05060a; --ink:#071022; --roy:#0a1c3a;
   --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.07);
   --neon:linear-gradient(90deg,#7c3aed 0%,#22d3ee 50%,#a78bfa 100%);
 }
@@ -49,13 +49,12 @@ const styles = `
 .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .pill {
   display:flex; flex-direction:column; gap:8px; padding:18px; border-radius:30px;
-  background: #000; border: 1px solid rgba(255,255,255,.1);
-  cursor:pointer; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+  background: var(--bg); border: 1px solid rgba(255,255,255,.1);
+  cursor:pointer; transition: transform .2s ease, border-color .2s ease, background .2s ease;
 }
 .pill:hover {
   transform: translateY(-2px);
   border-color: rgba(255,255,255,.2);
-  box-shadow: 0 30px 60px rgba(0,0,0,.45);
   background: rgba(255,255,255,.05);
 }
 .pill h3 { margin:0; font-size: 1.05rem; font-weight:700; letter-spacing:0.02em; color:#fff; }
@@ -71,8 +70,8 @@ const styles = `
 /* Sidebar */
 #details.card {
   position:sticky; top: 80px;
-  background: #000; border: 1px solid rgba(255,255,255,.1); border-radius: 30px; padding: 24px;
-  box-shadow: 0 30px 60px rgba(0,0,0,.45); backdrop-filter: blur(10px);
+  background: var(--bg); border: 1px solid rgba(255,255,255,.1); border-radius: 30px; padding: 24px;
+  backdrop-filter: blur(10px);
 }
 #details h2 { margin-top:0; font-size:1.4rem; color:#fff; }
 #details .muted { color: var(--sub); line-height:1.6; }

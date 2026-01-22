@@ -520,6 +520,11 @@ function loopLive(){
   await initCameraLayer();
   applyGuideScale();
   applyPanelScale();
+  if (!sessionStorage.getItem('mf:grip:guide:seen')) {
+    sessionStorage.setItem('mf:grip:guide:seen', '1');
+    guideVisible = true;
+    localStorage.setItem(PREF_GUIDE_VIS, '1');
+  }
   setGuideVisibility(guideVisible);
   wireUI();
   updateViewUI();

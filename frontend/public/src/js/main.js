@@ -990,6 +990,11 @@ function showToast(msg, durationMs = 2200) {
 /* ================== Guides + Dock: restore + pinch ================== */
 function restoreGuidesPrefs(){
   try{
+    if (!sessionStorage.getItem('mf:guides:seen')) {
+      sessionStorage.setItem('mf:guides:seen', '1');
+      if (guides) guides.style.display = '';
+      localStorage.setItem('mf:guides:hidden', '0');
+    }
     const hidden = localStorage.getItem('mf:guides:hidden') === '1';
     if (hidden && guides) guides.style.display = 'none';
     const L = localStorage.getItem('mf:guides:left');

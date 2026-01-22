@@ -6,7 +6,7 @@ import ReportStoreSync from "@/components/shell/ReportStoreSync";
 
 const styles = `
 :root{
-  --bg:#05060a; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.10);
+  --bg:#06080b; --fg:#eaf0ff; --sub:#a6b0c8; --border:rgba(255,255,255,.10);
   --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
   --neon:linear-gradient(90deg,#7c3aed 0%,#22d3ee 50%,#a78bfa 100%);
 }
@@ -30,12 +30,11 @@ const styles = `
   padding:16px 28px;
   border:1px solid rgba(255,255,255,.1);
   border-radius:30px;
-  background:#000;
+  background:var(--bg);
   backdrop-filter:blur(16px);
   color:#fff;
   margin:12px auto;
   max-width:1200px;
-  box-shadow: 0 30px 60px rgba(0,0,0,.45);
 }
 .nav-placeholder__logo{
   font-weight:800;
@@ -68,8 +67,7 @@ const styles = `
 .blob{
   aspect-ratio: 4/3; border-radius:30px; position:relative; overflow:hidden;
   border:1px solid rgba(255,255,255,.1);
-  background: #000;
-  box-shadow: 0 30px 60px rgba(0,0,0,.45);
+  background: var(--bg);
 }
 .blob::after{
   content:""; position:absolute; inset:0;
@@ -124,8 +122,7 @@ body[data-revealed="true"]  .grip-thumbs img{ filter:none }
 
 .ai-card{
   margin-top: 14px; border: 1px solid rgba(255,255,255,.1); border-radius: 30px;
-  padding: 20px; background: #000;
-  box-shadow: 0 30px 60px rgba(0,0,0,.45);
+  padding: 20px; background: var(--bg);
 }
 .ai-card h3{ margin:0 0 6px; font-size:18px; font-weight: 700; }
 .para{ white-space: pre-wrap; line-height: 1.5; }

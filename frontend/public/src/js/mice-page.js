@@ -4,10 +4,18 @@
 import { MICE } from './mice.js';
 
 const $ = (sel) => document.querySelector(sel);
-const grid = $('#grid');
-const q = $('#q');
-const clearBtn = $('#clear');
-const detail = $('#detailContent');
+let grid = null;
+let q = null;
+let clearBtn = null;
+let detail = null;
+
+function bindDom() {
+  grid = $('#grid');
+  q = $('#q');
+  clearBtn = $('#clear');
+  detail = $('#detailContent');
+  return Boolean(grid && q && clearBtn && detail);
+}
 
 // --- utils ---
 function mm(v) { return (v || v === 0) ? `${v} mm` : '—'; }
@@ -196,26 +204,39 @@ function localFilter(query, items) {
   });
 }
 
-// Build normalized array once
-let all = Array.isArray(MICE) ? MICE.map(normalize).filter(Boolean) : [];
-renderGrid(all);
+function boot() {
+  if (!bindDom()) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot, { once: true });
+    } else {
+      setTimeout(boot, 50);
+    }
+    return;
+  }
 
-function handleQueryInput() {
-  const query = q.value.trim();
-  const filtered = localFilter(query, all);
-  renderGrid(filtered);
+  // Build normalized array once
+  const all = Array.isArray(MICE) ? MICE.map(normalize).filter(Boolean) : [];
+  renderGrid(all);
+
+  const handleQueryInput = () => {
+    const query = q.value.trim();
+    const filtered = localFilter(query, all);
+    renderGrid(filtered);
+  };
+
+  let debounceTimer = null;
+  q.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(handleQueryInput, 200);
+  });
+  clearBtn.addEventListener('click', () => { q.value = ''; handleQueryInput(); });
+
+  // Deep-link support: /htmls/mouse-db.html?q=lightweight claw <70g
+  const urlQ = new URLSearchParams(location.search).get('q');
+  if (urlQ) { q.value = urlQ; handleQueryInput(); }
+
+  // Optional: pre-select first item
+  if (all[0]) showDetails(all[0]);
 }
 
-let debounceTimer = null;
-q.addEventListener('input', () => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(handleQueryInput, 200);
-});
-clearBtn.addEventListener('click', () => { q.value = ''; handleQueryInput(); });
-
-// Deep-link support: /htmls/mouse-db.html?q=lightweight claw <70g
-const urlQ = new URLSearchParams(location.search).get('q');
-if (urlQ) { q.value = urlQ; handleQueryInput(); }
-
-// Optional: pre-select first item
-if (all[0]) showDetails(all[0]);
+boot();
