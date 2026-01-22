@@ -16,8 +16,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mouse-Fit",
-  description: "Mouse-Fit v2.",
+  title: "MouseFit",
+  description: "MouseFit v2.",
+  icons: {
+    icon: "/10.png",
+  },
 };
 
 export default function RootLayout({

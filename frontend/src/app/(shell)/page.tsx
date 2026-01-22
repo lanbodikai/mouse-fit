@@ -1,12 +1,22 @@
 "use client";
 
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import HomeSwipeCard from "@/components/shell/HomeSwipeCard";
+import type { BestMouse } from "@/lib/reportStore";
+import { buildBestMouseFromStorage } from "@/lib/reportStore";
 
-const chips = ["Database", "About", "Contact"];
+const chips = ["Features", "About", "Contact"];
 
 export default function Home() {
+  const [bestMouse, setBestMouse] = useState<BestMouse | null>(null);
+
+  useEffect(() => {
+    setBestMouse(buildBestMouseFromStorage());
+  }, []);
+
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden">
+    <div className="relative flex h-full w-full flex-col overflow-hidden animate-page-zoom">
       {/* Main Content Area - Now has TWO columns side by side */}
       <div className="flex flex-1 w-full gap-0">
         {/* LEFT COLUMN: SVG Container */}
@@ -22,7 +32,7 @@ export default function Home() {
             >
               <defs>
                 <clipPath id="centerart-clip">
-                  <path d="M353.5 562.5V736.5C353.5 756 371 764.5 385 764.5H1065.5C1081.5 764.5 1091 744.5 1091 716V62.5C1091 40 1061 0.50003 1038.5 0.500009H782.5L701 70H507L428 0.500009H53C13 0.499979 0.500038 20.5 0.500012 40V469C0.500012 469 7.00002 519.5 53 513.5H303C325 513.5 353.5 537 353.5 562.5Z" />
+                  <path d="M353.5 562.5V702C353.5 721.5 371 736.5 385 736.5H1065.5C1081.5 736.5 1091.5 717 1091.5 688.5C1091.5 660 1091 85 1091 62.5C1091 40 1061 0.50003 1038.5 0.500009H782.5L701 70H507L428 0.500009H53C13 0.499979 0.500038 20.5 0.500012 40V469C0.500012 469 7.00002 519.5 53 513.5H303C325 513.5 353.5 537 353.5 562.5Z" />
                 </clipPath>
               </defs>
 
@@ -35,7 +45,7 @@ export default function Home() {
               </defs>
               {/* SVG Background Fill - Plain Black with Rounded Corners */}
               <path
-                d="M353.5 562.5V736.5C353.5 756 371 764.5 385 764.5H1065.5C1081.5 764.5 1091 744.5 1091 716V62.5C1091 40 1061 0.50003 1038.5 0.500009H782.5L701 70H507L428 0.500009H53C13 0.499979 0.500038 20.5 0.500012 40V469C0.500012 469 7.00002 519.5 53 513.5H303C325 513.5 353.5 537 353.5 562.5Z"
+                d="M353.5 562.5V702C353.5 721.5 371 736.5 385 736.5H1065.5C1081.5 736.5 1091.5 717 1091.5 688.5C1091.5 660 1091 85 1091 62.5C1091 40 1061 0.50003 1038.5 0.500009H782.5L701 70H507L428 0.500009H53C13 0.499979 0.500038 20.5 0.500012 40V469C0.500012 469 7.00002 519.5 53 513.5H303C325 513.5 353.5 537 353.5 562.5Z"
                 fill="#000000"
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -43,24 +53,21 @@ export default function Home() {
               />
 
               <foreignObject
-                x="400"
-                y="200"
-                width="600"
-                height="450"
+                x="0"
+                y="0"
+                width="1200"
+                height="800"
                 clipPath="url(#centerart-clip)"
               >
-                <video
+                <img
                   className="h-full w-full object-cover animate-fade-in"
-                  src="/centerart.mp4"
-                  autoPlay={true}
-                  loop={true}
-                  muted
-                  playsInline
+                  src="/16.png"
+                  alt="Center art"
                 />
               </foreignObject>
 
               <path
-                d="M353.5 562.5V736.5C353.5 756 371 764.5 385 764.5H1065.5C1081.5 764.5 1091 744.5 1091 716V62.5C1091 40 1061 0.50003 1038.5 0.500009H782.5L701 70H507L428 0.500009H53C13 0.499979 0.500038 20.5 0.500012 40V469C0.500012 469 7.00002 519.5 53 513.5H303C325 513.5 353.5 537 353.5 562.5Z"
+                d="M353.5 562.5V702C353.5 721.5 371 736.5 385 736.5H1065.5C1081.5 736.5 1091.5 717 1091.5 688.5C1091.5 660 1091 85 1091 62.5C1091 40 1061 0.50003 1038.5 0.500009H782.5L701 70H507L428 0.500009H53C13 0.499979 0.500038 20.5 0.500012 40V469C0.500012 469 7.00002 519.5 53 513.5H303C325 513.5 353.5 537 353.5 562.5Z"
                 stroke="white"
                 fill="none"
                 strokeWidth="1"
@@ -84,15 +91,17 @@ export default function Home() {
             </nav>
 
             {/* Logo/Brand */}
-            <div className="absolute top-1.5 left-105 z-10">
-              <div className="text-sm font-semibold uppercase tracking-[0.4em] text-white/80">
-                Mousefit
-              </div>
+            <div className="absolute left-105 z-10">
+              <img
+                className="h-10 w-[120px] opacity-60 [filter:brightness(0)_invert(1)]"
+                src="/21.png"
+                alt="Mousefit"
+              />
             </div>
           </div>
 
           {/* Product Info Card */}
-          <div className="mt-6 ml-0 w-[260px] h-[170px]">
+          <div className="mt-6 ml-0 w-[275px] h-[175px]">
             <HomeSwipeCard />
           </div>
         </div>
@@ -100,45 +109,35 @@ export default function Home() {
         {/* RIGHT CARDS: Overflowing onto SVG */}
         <div className="absolute right-2 top-0 flex h-full w-[250px] flex-col gap-3 z-30 pointer-events-none overflow-hidden">
           {/* TOP CARD */}
-          <div className="rounded-3xl bg-black p-4 backdrop-blur-sm border border-white/10 pointer-events-auto shrink-0">
-            <h3 className="text-lg font-bold uppercase mb-2 text-white">
-              Your Best Gaming Mouse
-            </h3>
-            <p className="text-xs text-white/70 mb-3">
-              6 Watts Peak/3 Watts RMS power delivers clear stereo sound from the dual 2" driver design.
-            </p>
-            
-            {/* Audio Waveform Visualization */}
-            <div className="h-16 mb-3 flex items-end gap-1">
-              {Array.from({ length: 40 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-white rounded-t"
-                  style={{
-                    height: `${Math.random() * 60 + 20}%`,
-                    opacity: 0.8,
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Pagination Dots */}
-            <div className="flex justify-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-white" />
-              <div className="w-2 h-2 rounded-full bg-white/30" />
-              <div className="w-2 h-2 rounded-full bg-white/30" />
-              <div className="w-2 h-2 rounded-full bg-white/30" />
-            </div>
+          <div className="rounded-3xl h-[240px] bg-[#06080b] p-4 backdrop-blur-sm border border-white/10 pointer-events-auto shrink-0">
+            {bestMouse ? (
+              <>
+                <h3 className="text-lg font-bold uppercase mb-2 text-white">Your bestfit mouse</h3>
+                <div className="text-sm font-semibold text-white">{bestMouse.name}</div>
+                <ul className="mt-2 space-y-1 text-xs text-white/70">
+                  <li>Match score {Math.round(bestMouse.score)}%</li>
+                  <li>Hand size {bestMouse.size}</li>
+                  <li>Grip {bestMouse.recommendedGrip}</li>
+                </ul>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold uppercase mb-2 text-white">Find your fit to see results</h3>
+                <Link className="text-xs text-white/70 underline hover:text-white" href="/measure">
+                  Go to measurement
+                </Link>
+              </>
+            )}
           </div>
 
           {/* BOTTOM CARD */}
-          <div className="rounded-3xl bg-black p-4 backdrop-blur-sm border border-white/10 relative pointer-events-auto shrink-0">
+          <div className="rounded-3xl h-[335px] bg-[#06080b] p-4 backdrop-blur-sm border border-white/10 relative pointer-events-auto shrink-0">
             {/* Small icon in top right */}
             <div className="absolute top-3 right-3 w-5 h-5 rounded-full border-2 border-white/50" />
             
             {/* Circular Control Graphic */}
             <div className="flex justify-center items-center my-4">
-              <svg className="w-24 h-50" viewBox="0 0 100 100">
+              <svg className="w-24 h-46" viewBox="0 0 100 100">
                 <circle
                   cx="50"
                   cy="50"
@@ -162,10 +161,10 @@ export default function Home() {
             </div>
 
             <h3 className="text-lg font-bold uppercase mb-2 text-white text-center">
-              EASY CONTROLS
+              Coming Soon
             </h3>
             <p className="text-xs text-white/70 text-center">
-              Easily access power, volume, headphone jack and auxiliary jack on the right speaker.
+              We're working on it!
             </p>
           </div>
         </div>
