@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import Script from "next/script";
-import NotchedPanel from "@/components/shell/NotchedPanel";
 import ReportStoreSync from "@/components/shell/ReportStoreSync";
 
 const styles = `
@@ -29,13 +28,14 @@ const styles = `
   justify-content:space-between;
   gap:24px;
   padding:16px 28px;
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:18px;
-  background:rgba(8,12,24,.65);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:30px;
+  background:#000;
   backdrop-filter:blur(16px);
   color:#fff;
   margin:12px auto;
   max-width:1200px;
+  box-shadow: 0 30px 60px rgba(0,0,0,.45);
 }
 .nav-placeholder__logo{
   font-weight:800;
@@ -66,14 +66,10 @@ const styles = `
 @media (max-width:980px){ .hero{grid-template-columns:1fr; gap:18px} }
 
 .blob{
-  aspect-ratio: 4/3; border-radius:18px; position:relative; overflow:hidden;
-  border:1px solid rgba(255,255,255,.08);
-  background:
-    radial-gradient(120% 120% at 20% 10%, rgba(124,58,237,.45), transparent 40%),
-    radial-gradient(80% 80% at 80% 20%, rgba(34,211,238,.35), transparent 45%),
-    radial-gradient(100% 120% at 60% 80%, rgba(167,139,250,.35), transparent 55%),
-    #0b0f1c;
-  box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 0 60px rgba(255,255,255,.05);
+  aspect-ratio: 4/3; border-radius:30px; position:relative; overflow:hidden;
+  border:1px solid rgba(255,255,255,.1);
+  background: #000;
+  box-shadow: 0 30px 60px rgba(0,0,0,.45);
 }
 .blob::after{
   content:""; position:absolute; inset:0;
@@ -98,16 +94,17 @@ const styles = `
 }
 .stats{  margin-top:8px; display:grid; gap:6px; transition:filter .25s ease, opacity .25s ease; }
 .stats .row{ display:flex; gap:10px; align-items:center; font-size:14px }
-.pill{padding:6px 10px;border-radius:999px;background:#0f1524;border:1px solid #2a2f40;font-size:12px;color:#cfe9f6}
+.pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:12px;color:#fff}
 
 /* Grip thumbs */
 .grip-thumbs{display:none; gap:10px; margin-top:12px}
-.grip-thumbs img{width:84px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #2a2f40;background:#0b0b0f;transition:filter .25s ease}
+.grip-thumbs img{width:84px;height:56px;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);transition:filter .25s ease}
 
 /* Action buttons */
-.btn{background:#101626;color:var(--fg);border:1px solid #223049;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
-.btn.neon{background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));border-color:transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
-.btn.neon:hover{filter:brightness(1.05)}
+.btn{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.btn:hover{background:rgba(255,255,255,.2);}
+.btn.neon{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);}
+.btn.neon:hover{background:rgba(255,255,255,.2);}
 .reveal-bar{ display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap }
 
 /* Reveal/Hide blur states */
@@ -126,9 +123,9 @@ body[data-revealed="true"]  .grip-thumbs img{ filter:none }
 .status{ font-size:12px; color:var(--sub); min-height:18px; white-space:pre-wrap }
 
 .ai-card{
-  margin-top: 14px; border: 1px solid var(--border); border-radius: 14px;
-  padding: 14px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  margin-top: 14px; border: 1px solid rgba(255,255,255,.1); border-radius: 30px;
+  padding: 20px; background: #000;
+  box-shadow: 0 30px 60px rgba(0,0,0,.45);
 }
 .ai-card h3{ margin:0 0 6px; font-size:18px; font-weight: 700; }
 .para{ white-space: pre-wrap; line-height: 1.5; }
@@ -247,12 +244,12 @@ export default function ReportPage() {
   }, []);
 
   return (
-    <NotchedPanel className="p-0" contentClassName="h-full">
+    <div className="h-full">
       <style dangerouslySetInnerHTML={{ __html: styles }} />
       <ReportStoreSync />
       <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
       <Script src="/src/js/report-inline.js" strategy="afterInteractive" />
       <Script type="module" src="/src/js/report-module.js" strategy="afterInteractive" />
-    </NotchedPanel>
+    </div>
   );
 }

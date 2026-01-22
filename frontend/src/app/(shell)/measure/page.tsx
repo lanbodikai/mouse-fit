@@ -1,5 +1,4 @@
 import Script from "next/script";
-import NotchedPanel from "@/components/shell/NotchedPanel";
 
 const styles = `
 :root{
@@ -28,29 +27,30 @@ const styles = `
 
 /* ===== App Wrapper ===== */
 .wrap {
-  flex: 1 1 auto; /* Fills remaining space */
+  flex: 1 1 auto;
   position: relative;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 16px;
-  overflow: hidden; /* Contain the stage */
+  gap: 20px;
+  overflow: hidden;
+  height: 100%;
 }
 
 /* Bounded capture area */
 .stage{
   position:relative;
-  width:min(1000px, 88vw);
-  /* Dynamic height to fit available space minus padding */
+  width: min(700px, 55vw);
   height: 100%;
-  max-height: 80vh;
+  max-height: none;
   aspect-ratio:16/9;
-  border-radius:18px;
+  border-radius:30px;
   overflow:hidden;
-  border: 2px solid rgba(167,139,250,.55);
-  box-shadow:
-    inset 0 0 0 2px rgba(34,211,238,.22),
-    0 16px 50px rgba(12,20,35,.60),
-    0 0 34px rgba(124,58,237,.28);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 30px 60px rgba(0,0,0,.45);
+  background: #000;
+  flex-shrink: 0;
 }
 
 /* Media fills stage */
@@ -60,9 +60,9 @@ const styles = `
 .stage .guides{ position:absolute; left:var(--guides-left); right:var(--guides-right); top:var(--guides-top); bottom:var(--guides-bottom); display:flex; align-items:center; justify-content:center; pointer-events:auto; touch-action:none; z-index:2; }
 .stage .guide{ border:3px dashed rgba(255,255,255,.65); border-radius:14px; background:rgba(255,255,255,.06); position:relative; }
 .stage #handGuide{ flex:3 1 0; min-height:94%; }
-.stage .label{ position:absolute; top:-14px; left:14px; background:#0b1224; border:1px solid #263041; color:#cfe9f6; font-size:12px; font-weight:700; padding:3px 8px; border-radius:999px; }
-.stage .badge{ position:absolute; right:10px; top:10px; background:#0e1424; border:1px solid #263041; color:#9fcde2; font-size:12px; padding:4px 8px; border-radius:999px; z-index:6 }
-.stage .toast{ position:absolute; top:12px; left:50%; transform:translateX(-50%); background:#0e1424; border:1px solid #2a3442; color:#cdd8e4; padding:8px 12px; border-radius:10px; font-size:13px; display:none; z-index:7 }
+.stage .label{ position:absolute; top:-14px; left:14px; background:#000; border:1px solid rgba(255,255,255,.1); color:#fff; font-size:12px; font-weight:700; padding:3px 8px; border-radius:999px; }
+.stage .badge{ position:absolute; right:10px; top:10px; background:#000; border:1px solid rgba(255,255,255,.1); color:#fff; font-size:12px; padding:4px 8px; border-radius:999px; z-index:6 }
+.stage .toast{ position:absolute; top:12px; left:50%; transform:translateX(-50%); background:#000; border:1px solid rgba(255,255,255,.1); color:#fff; padding:8px 12px; border-radius:20px; font-size:13px; display:none; z-index:7 }
 .stage .countdown{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); font-size:22vmin; font-weight:900; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.6); pointer-events:none; z-index:8 }
 
 /* Draggable points */
@@ -71,37 +71,40 @@ const styles = `
 .point.blue{  border-color:#9fe9ff; background:#0b2b44aa }
 
 /* Control Dock */
-.control-dock{ position:absolute; top:50%; right:16px; transform:translateY(-50%); z-index:50; padding:0; background:none; }
-.panel{ width:360px; max-height:min(84vh, 720px); overflow:auto; border:1px solid rgba(167,139,250,.25); background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.28)), rgba(9,12,22,.84); backdrop-filter: blur(8px); border-radius:14px; box-shadow: inset 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(0,0,0,.35); padding:12px; transform: scale(var(--dock-scale)); transform-origin: top right; touch-action:none; }
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;margin-top:8px}
-.btn-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
-.meta{display:flex; flex-direction: column; gap: 10px; justify-content:flex-end}
-.meta .pill { width: 100%; text-align: center; }
-.pill{padding:4px 10px;border-radius:999px;background:#0f1524;border:1px solid #2a2f40;font-size:12px;color:#cfe9f6}
-button{background:#101626;color:var(--fg);border:1px solid #223049;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
-button.primary{background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));border-color:transparent;box-shadow:0 0 18px rgba(124,58,237,.35),0 0 28px rgba(34,211,238,.22)}
-select{background:#0e1220;color:#e8eef7;border:1px solid #2b3241;border-radius:10px;padding:8px}
-.hint{font-size:14px;color:var(--sub);margin:6px 0 2px}
+.control-dock{ position:relative; display:flex; flex-direction:column; gap:16px; z-index:50; padding:0; background:none; flex-shrink: 0; height: 100%; }
+.panel{ width:380px; flex:1; overflow:auto; border:1px solid rgba(255,255,255,.1); background: #000; backdrop-filter: blur(8px); border-radius:30px; box-shadow: 0 30px 60px rgba(0,0,0,.45); padding:20px; transform: scale(var(--dock-scale)); transform-origin: top right; touch-action:none; scrollbar-width: none; }
+.panel::-webkit-scrollbar{ width:0; height:0; }
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toolbar{display:flex;flex-direction:column;gap:12px;margin-top:12px;padding:12px;border-radius:24px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);}
+.btn-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.btn-group button{width:100%}
+.meta{display:flex; flex-direction: row; gap: 8px; flex-wrap:wrap;}
+.meta .pill { flex:1; text-align: center; min-width:0; }
+.pill{padding:6px 10px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);font-size:11px;color:#fff;font-weight:600;}
+button{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:10px 12px;font-weight:600;cursor:pointer;transition:all 0.2s;font-size:13px;}
+button:hover{background:rgba(255,255,255,.2);}
+button.primary{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);}
+select{background:#000;color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:10px 12px;font-size:14px;}
+.hint{font-size:13px;color:var(--sub);margin:4px 0 8px;line-height:1.4;}
 
 /* Coach / Handle */
-.dock-handle{ cursor:move; height:22px; margin:-4px -4px 8px -4px; border-radius:10px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#cfe9f6; letter-spacing:.02em; }
-.dock-handle::after{ content:"Drag me"; opacity:.85; }
-.coach{ position: absolute; top: 24px; left: 24px; width: 320px; padding: 0 12px 12px; border-radius: 16px; border: 1px solid rgba(167,139,250,.30); background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.28)), rgba(9,12,22,.84); backdrop-filter: blur(10px); box-shadow: inset 0 0 0 1px rgba(34,211,238,.12), 0 8px 30px rgba(0,0,0,.35); color: var(--fg); z-index: 60; }
+.dock-handle{ display:none; }
+.coach{ position: relative; width: 380px; padding: 16px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,.1); background: #000; backdrop-filter: blur(10px); box-shadow: 0 30px 60px rgba(0,0,0,.45); color: var(--fg); z-index: 60; }
 .coach.hidden{ display:none; }
-.coach-bar{ height: 36px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 12px; margin: 8px 0 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.20); background: rgba(255,255,255,.10); cursor: move; user-select: none; }
-.coach-close{ width: 28px; height: 28px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.12); color: #fff; font-weight: 800; line-height: 1; display: grid; place-items: center; cursor: pointer; }
-.coach-content p{ margin: 6px 2px; color: #cfd6ee; line-height: 1.35; }
+.coach-bar{ display: flex; align-items: center; padding: 0; margin: 0 0 12px 0; border:none; background: none; user-select: none; }
+.coach-bar strong{ font-size:15px; font-weight:700; color:#fff; }
+.coach-close{ display:none; }
+.coach-content p{ margin: 4px 0; color: #cfd6ee; line-height: 1.5; font-size:13px; }
 
 @media (max-width: 820px){
   .tool-shell{ overflow:auto; overscroll-behavior:y contain; display: block; }
-  .wrap{ height:auto; min-height:calc(100dvh - 60px); padding:12px 12px calc(88px + env(safe-area-inset-bottom)); }
-  .stage{ width:min(100%, 96vw); max-height:none; aspect-ratio: 16/9; translate: 0 0; }
+  .wrap{ height:auto; min-height:calc(100dvh - 60px); padding:12px 12px calc(88px + env(safe-area-inset-bottom)); flex-direction:column; }
+  .stage{ width:min(100%, 96vw); max-height:none; aspect-ratio: 16/9; }
   .guides{ left:3%; right:3%; top:3%; bottom:3%; }
-  .control-dock{ position:sticky; left:0; right:0; bottom:0; top:auto; transform:none; padding:0 8px calc(8px + env(safe-area-inset-bottom)); }
-  .panel{ width:auto; max-width:none; max-height:48dvh; border-radius:16px 16px 12px 12px; padding:10px; margin:0 auto; }
-  .toolbar{ grid-template-columns:1fr; }
-  .meta{ justify-content:flex-start; }
+  .control-dock{ position:sticky; left:0; right:0; bottom:0; top:auto; transform:none; padding:0 8px calc(8px + env(safe-area-inset-bottom)); width:100%; }
+  .coach{ width:100%; }
+  .panel{ width:auto; max-width:none; max-height:48dvh; border-radius:30px; padding:16px; margin:0 auto; }
+  .meta{ flex-direction:column; }
 }
 `;
 
@@ -133,8 +136,16 @@ const bodyHtml = `
     </div>
 
     <div class="control-dock">
+      <div class="coach" id="coach" data-key="mf:coach:measure" role="dialog">
+        <div class="coach-bar"><strong>Guide</strong></div>
+        <div class="coach-content">
+          <p>1) Position hand & card inside the box.</p>
+          <p>2) Press <b>Space</b> to capture.</p>
+          <p>3) Double click card corners if needed.</p>
+        </div>
+      </div>
+
       <div class="panel">
-        <div class="dock-handle"></div>
         <div class="row" style="gap:12px; margin-bottom:6px;">
           <label>Camera:</label>
           <select id="cameraSelect"></select>
@@ -174,15 +185,6 @@ const bodyHtml = `
 
   <button id="startCamBtn" style="position:absolute; inset:auto 12px 12px auto; z-index:30; background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3)); color:#fff; border:0; padding:10px 14px; border-radius:12px; display:none;">Tap to start camera</button>
 
-  <div class="coach" id="coach" data-key="mf:coach:measure" role="dialog">
-    <div class="coach-bar"><strong>Guide</strong><button class="coach-close">×</button></div>
-    <div class="coach-content">
-      <p>1) Position hand & card inside the box.</p>
-      <p>2) Press <b>Space</b> to capture.</p>
-      <p>3) Double click card corners if needed.</p>
-    </div>
-  </div>
-
   <footer class="foot" style="text-align:center; padding:10px; font-size:12px; color:var(--sub);">
     <span>© <span id="y"></span> Mouse-Fit</span>
   </footer>
@@ -190,7 +192,7 @@ const bodyHtml = `
 
 export default function MeasurePage() {
   return (
-    <NotchedPanel className="p-0" contentClassName="h-full">
+    <div className="h-full">
       <style dangerouslySetInnerHTML={{ __html: styles }} />
       <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
       <Script type="module" src="/src/js/main.js" strategy="afterInteractive" />
@@ -201,6 +203,6 @@ export default function MeasurePage() {
           __html: `window.finishMeasurement = (l, w) => {\n  sessionStorage.setItem('mf:length_mm', String(l));\n  sessionStorage.setItem('mf:width_mm', String(w));\n  location.href = '/report';\n};`,
         }}
       />
-    </NotchedPanel>
+    </div>
   );
 }

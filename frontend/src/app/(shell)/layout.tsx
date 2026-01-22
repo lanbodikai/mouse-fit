@@ -1,18 +1,10 @@
 import Sidebar from "@/components/shell/Sidebar";
-import RightStack from "@/components/shell/RightStack";
 
 export default function ShellLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="shell-root">
-      <div className="device-frame">
-        <div className="device-grid">
-          <Sidebar />
-          <main className="device-center">{children}</main>
-          <aside className="device-right">
-            <RightStack />
-          </aside>
-        </div>
-      </div>
+    <div className="flex h-screen w-screen gap-4 p-4 overflow-hidden">
+      <Sidebar />
+      <main className="flex-1 overflow-hidden">{children}</main>
     </div>
   );
 }

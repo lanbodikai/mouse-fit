@@ -1,5 +1,4 @@
 import Script from "next/script";
-import NotchedPanel from "@/components/shell/NotchedPanel";
 
 const styles = `
 /* ============ LAYOUT & THEME ============ */
@@ -56,9 +55,9 @@ const styles = `
 }
 .chat-card{
   border:1px solid rgba(255,255,255,.1);
-  border-radius:22px;
-  background:rgba(255,255,255,.03);
-  box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  border-radius:30px;
+  background:#000;
+  box-shadow: 0 30px 60px rgba(0,0,0,.45);
   overflow:hidden;
   display: flex;
   flex-direction: column;
@@ -69,15 +68,15 @@ const styles = `
 .card-head{
   display:flex; align-items:center; justify-content:space-between;
   padding:16px 20px;
-  border-bottom:1px solid rgba(255,255,255,.06);
-  background:rgba(0,0,0,.2);
+  border-bottom:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);
 }
 .clear-btn{
-  padding:8px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.12);
-  background:rgba(255,255,255,.05); color:#cfe9f6; cursor:pointer;
-  font-family:inherit; font-size:13px;
+  padding:8px 14px; border-radius:20px; border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.1); color:#fff; cursor:pointer;
+  font-family:inherit; font-size:13px; transition:all 0.2s;
 }
-.clear-btn:hover{ background:rgba(255,255,255,.1); }
+.clear-btn:hover{ background:rgba(255,255,255,.2); }
 
 .messages{
   height: min(56vh, 620px);
@@ -90,15 +89,15 @@ const styles = `
 .msg{ max-width:80%; padding:12px 16px; border-radius:16px; line-height:1.5; font-size:15px; }
 .msg.user{
   margin-left:auto;
-  background: rgba(34,211,238,.15);
-  border: 1px solid rgba(34,211,238,.2);
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.1);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
 .msg.assistant{
   margin-right:auto;
   background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
   color: var(--fg);
   border-bottom-left-radius: 4px;
 }
@@ -108,25 +107,24 @@ const styles = `
 .inputbar{
   display:flex; gap:10px; align-items:center;
   padding:16px;
-  border-top:1px solid rgba(255,255,255,.06);
-  background:rgba(0,0,0,.2);
+  border-top:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);
 }
 textarea{
   flex:1; min-height:48px; padding:14px;
-  border-radius:14px; border:1px solid rgba(255,255,255,.12);
-  background:rgba(0,0,0,.2); color:#fff; outline:none;
-  font-family:inherit; resize: none;
+  border-radius:20px; border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05); color:#fff; outline:none;
+  font-family:inherit; resize: none; transition:all 0.2s;
 }
-textarea:focus{ border-color:rgba(34,211,238,.5); }
+textarea:focus{ border-color:rgba(255,255,255,.2); background:rgba(255,255,255,.1); }
 
 .send{
-  width:50px; height:50px; border-radius:14px; border:none; cursor:pointer;
-  background:linear-gradient(135deg,var(--g1),var(--g2));
+  width:50px; height:50px; border-radius:20px; border:1px solid rgba(255,255,255,.1); cursor:pointer;
+  background:rgba(255,255,255,.1);
   color:#fff; font-size:18px; display:grid; place-items:center;
-  box-shadow:0 0 15px rgba(124,58,237,.3);
-  transition: filter 0.2s;
+  transition: all 0.2s;
 }
-.send:hover{ filter: brightness(1.1); }
+.send:hover{ background:rgba(255,255,255,.2); }
 
 /* Recommendations List Styling (injected by JS) */
 .recommendations { padding-left: 20px; margin: 10px 0; }
@@ -205,7 +203,7 @@ const bodyHtml = `
 
 export default function AiPage() {
   return (
-    <NotchedPanel className="p-0" contentClassName="h-full">
+    <div className="h-full">
       <style dangerouslySetInnerHTML={{ __html: styles }} />
       <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
       <Script
@@ -214,6 +212,6 @@ export default function AiPage() {
         dangerouslySetInnerHTML={{ __html: "document.getElementById('y').textContent = new Date().getFullYear();" }}
       />
       <Script type="module" src="/src/js/ai.js" strategy="afterInteractive" />
-    </NotchedPanel>
+    </div>
   );
 }

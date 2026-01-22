@@ -31,7 +31,7 @@ export default function RightStack() {
             </div>
             <div className="text-2xl font-semibold text-white">{display.name}</div>
             <div className="text-sm text-white/70">Match score {Math.round(display.score)}%</div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-white/65">
+            <div className="rounded-2xl bg-white/5 p-3 text-xs text-white/65">
               {display.notes}
             </div>
           </div>
@@ -58,7 +58,7 @@ export default function RightStack() {
             <div className="space-y-2 text-sm text-white/70">
               {display.alternatives.length ? (
                 display.alternatives.map((alt) => (
-                  <div key={alt} className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+                  <div key={alt} className="rounded-2xl bg-white/5 px-3 py-2">
                     {alt}
                   </div>
                 ))
@@ -75,7 +75,7 @@ export default function RightStack() {
 
   return (
     <div className="flex h-full flex-col gap-5">
-      <div className="rounded-[28px] border border-white/10 bg-[color:var(--panel)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <div className="rounded-[28px] bg-[color:var(--panel)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
         <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/45">
           <span>Best Fit Result</span>
           <span>{isDemo ? "Demo" : "Swipe"}</span>
@@ -85,7 +85,7 @@ export default function RightStack() {
         </div>
       </div>
 
-      <div className="flex-1 rounded-[28px] border border-white/10 bg-[color:var(--panel)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" />
+      <div className="flex-1 rounded-[28px] bg-[color:var(--panel)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" />
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import Script from "next/script";
-import NotchedPanel from "@/components/shell/NotchedPanel";
 
 const styles = `
 :root{
@@ -29,54 +28,53 @@ const styles = `
     gap: 16px;
 }
 .search-bar input[type="text"] {
-  flex:1; min-width: 240px; padding:12px 16px; border-radius:14px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid var(--border);
+  flex:1; min-width: 240px; padding:12px 16px; border-radius:20px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
   color: #fff; font-family:inherit;
   transition: all .2s ease;
 }
 .search-bar input[type="text"]:focus {
-  outline:none; border-color: rgba(34,211,238,.45);
-  background: rgba(255,255,255,.07);
-  box-shadow: 0 0 0 3px rgba(34,211,238,.15);
+  outline:none; border-color: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.1);
 }
 .btn {
-  padding:12px 18px; border-radius:14px; font-weight:700; cursor:pointer;
-  border:1px solid var(--border); background:rgba(255,255,255,.06); color:#fff;
-  transition: filter .2s;
+  padding:12px 18px; border-radius:20px; font-weight:700; cursor:pointer;
+  border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.1); color:#fff;
+  transition: all .2s;
 }
-.btn:hover { filter: brightness(1.2); }
+.btn:hover { background:rgba(255,255,255,.2); }
 
 /* Grid */
 .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .pill {
-  display:flex; flex-direction:column; gap:8px; padding:18px; border-radius:18px;
-  background: rgba(255,255,255,.03); border: 1px solid var(--border);
-  cursor:pointer; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  display:flex; flex-direction:column; gap:8px; padding:18px; border-radius:30px;
+  background: #000; border: 1px solid rgba(255,255,255,.1);
+  cursor:pointer; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
 }
 .pill:hover {
   transform: translateY(-2px);
-  border-color: rgba(124,58,237,.35);
-  box-shadow: 0 10px 40px rgba(0,0,0,.35);
+  border-color: rgba(255,255,255,.2);
+  box-shadow: 0 30px 60px rgba(0,0,0,.45);
   background: rgba(255,255,255,.05);
 }
 .pill h3 { margin:0; font-size: 1.05rem; font-weight:700; letter-spacing:0.02em; color:#fff; }
 .specs { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
 .chip {
-  padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;
-  background: rgba(255,255,255,.08); color: #dce4ff;
+  padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;
+  background: rgba(255,255,255,.1); color: #fff;
   border: 1px solid rgba(255,255,255,.1);
 }
-.chip--weight { color: #93c5fd; border-color: rgba(147,197,253,.2); }
-.chip--shape  { color: #86efac; border-color: rgba(134,239,172,.2); }
+.chip--weight { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.15); }
+.chip--shape  { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.15); }
 
 /* Sidebar */
 #details.card {
   position:sticky; top: 80px;
-  background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 22px; padding: 24px;
-  box-shadow: 0 30px 80px rgba(0,0,0,.45); backdrop-filter: blur(10px);
+  background: #000; border: 1px solid rgba(255,255,255,.1); border-radius: 30px; padding: 24px;
+  box-shadow: 0 30px 60px rgba(0,0,0,.45); backdrop-filter: blur(10px);
 }
-#details h2 { margin-top:0; font-size:1.4rem; background:var(--neon); -webkit-background-clip:text; color:transparent; }
+#details h2 { margin-top:0; font-size:1.4rem; color:#fff; }
 #details .muted { color: var(--sub); line-height:1.6; }
 `;
 
@@ -107,7 +105,7 @@ const bodyHtml = `
 
 export default function DatabasePage() {
   return (
-    <NotchedPanel className="p-0" contentClassName="h-full">
+    <div className="h-full">
       <style dangerouslySetInnerHTML={{ __html: styles }} />
       <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
       <Script
@@ -116,6 +114,6 @@ export default function DatabasePage() {
         dangerouslySetInnerHTML={{ __html: "document.getElementById('y').textContent = new Date().getFullYear();" }}
       />
       <Script type="module" src="/src/js/mice-page.js" strategy="afterInteractive" />
-    </NotchedPanel>
+    </div>
   );
 }
