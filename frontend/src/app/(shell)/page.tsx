@@ -21,7 +21,7 @@ export default function Home() {
         {/* LEFT COLUMN: SVG Container */}
         <div className="flex flex-1 flex-col relative">
           {/* SVG Container with chips and logo inside */}
-          <div className="relative flex-1 w-5/6 min-h-[635px] overflow-visible">
+          <div className="relative flex-1 w-5/6 max-h-[635px] overflow-visible">
             {/* SVG acts as the video placeholder */}
             <svg
               className="absolute inset-0 z-10 h-full w-full"
