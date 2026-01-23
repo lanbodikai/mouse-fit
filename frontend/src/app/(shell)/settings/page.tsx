@@ -1,48 +1,134 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { Sun, Moon, Bell, Shield, Palette, Info } from "lucide-react";
 import { useTheme } from "@/lib/theme";
-import { Sun, Moon } from "lucide-react";
+import { ShellNav } from "@/components/shell/ShellNav";
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="h-full w-full p-8">
-      <div className="mx-auto w-full max-w-[72ch] space-y-6">
-        <div className="rounded-[30px] bg-theme-card p-8 border border-white/10 transition-colors">
-          <h1 className="text-3xl font-semibold text-theme-primary [font-family:var(--font-heading)] mb-4">
-            Settings
-          </h1>
-          <p className="text-white/60 leading-relaxed mb-6">Configure your preferences.</p>
-          <div className="space-y-4">
-            <div className="rounded-[20px] bg-white/5 p-4 border border-white/10 transition-colors">
-              <div className="flex items-center justify-between">
+    <>
+      <ShellNav currentPage="settings" />
+      
+      <div className="px-6 md:px-12 lg:px-20 max-w-3xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl md:text-4xl font-light text-white mb-2">Settings</h1>
+          <p className="text-white/50">Configure your preferences</p>
+        </motion.div>
+
+        {/* Settings Cards */}
+        <div className="space-y-4">
+          {/* Theme Setting */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                  <Palette className="w-5 h-5 text-green-500" />
+                </div>
                 <div>
-                  <h3 className="text-theme-primary font-semibold mb-2">Theme</h3>
-                  <p className="text-white/60 text-sm">
-                    {theme === "dark" ? "Dark mode is currently enabled." : "Light mode is currently enabled."}
+                  <h3 className="text-white font-medium mb-1">Appearance</h3>
+                  <p className="text-sm text-white/50">
+                    {theme === "dark" ? "Dark mode enabled" : "Light mode enabled"}
                   </p>
                 </div>
-                <button
-                  onClick={toggleTheme}
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:bg-white/10"
-                  aria-label="Toggle theme"
-                >
-                  {theme === "dark" ? (
-                    <Sun className="h-5 w-5 text-theme-primary" />
-                  ) : (
-                    <Moon className="h-5 w-5 text-theme-primary" />
-                  )}
-                </button>
+              </div>
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                {theme === "dark" ? (
+                  <>
+                    <Sun className="w-4 h-4 text-yellow-500" />
+                    <span className="text-white/80 text-sm">Light</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4 text-blue-400" />
+                    <span className="text-white/80 text-sm">Dark</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Notifications Setting */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="text-white font-medium mb-1">Notifications</h3>
+                  <p className="text-sm text-white/50">Manage notification preferences</p>
+                </div>
+              </div>
+              <div className="w-12 h-6 rounded-full bg-green-500/20 border border-green-500/30 relative cursor-pointer">
+                <div className="absolute right-1 top-1 w-4 h-4 rounded-full bg-green-500" />
               </div>
             </div>
-            <div className="rounded-[20px] bg-white/5 p-4 border border-white/10 transition-colors">
-              <h3 className="text-theme-primary font-semibold mb-2">Notifications</h3>
-              <p className="text-white/60 text-sm">Manage your notification preferences.</p>
+          </motion.div>
+
+          {/* Privacy Setting */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="text-white font-medium mb-1">Privacy</h3>
+                  <p className="text-sm text-white/50">Data is stored locally on your device</p>
+                </div>
+              </div>
+              <span className="text-xs text-green-500 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+                Secure
+              </span>
             </div>
-          </div>
+          </motion.div>
+
+          {/* About */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                <Info className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <h3 className="text-white font-medium mb-1">About MouseFit</h3>
+                <p className="text-sm text-white/50">Version 2.1 • CV & AI powered mouse fitting</p>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

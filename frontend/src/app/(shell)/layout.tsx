@@ -1,13 +1,10 @@
 "use client";
 
-import Sidebar from "@/components/shell/Sidebar";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useTheme } from "@/lib/theme";
 
 export default function ShellLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { theme } = useTheme();
 
   useEffect(() => {
     // Stop camera when not on measure or grip pages
@@ -44,32 +41,40 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             video.srcObject = null;
           }
         });
-        
-        // Also stop any tracks from navigator.mediaDevices.getUserMedia calls
-        // Note: We can't enumerate active streams directly, but we can stop tracks
-        // that are attached to video elements (done above)
       }
     }
   }, [pathname]);
 
   return (
-    <div className="stage-viewport animate-page-zoom relative">
-      {/* Background Gradient - Behind all elements including sidebar */}
-      <div
-        className="fixed inset-0 w-full h-full z-0 transition-colors duration-300"
+    <div className="relative min-h-screen w-full overflow-x-hidden">
+      {/* Background gradient - consistent dark green theme */}
+      <div 
+        className="fixed inset-0 -z-10"
         style={{
-          background: theme === "dark" 
-            ? "linear-gradient(to bottom, #475569, #111827)"
-            : "linear-gradient(to bottom,rgb(185, 201, 220),rgb(172, 199, 254))"
+          background: "linear-gradient(135deg, #030806 0%, #061208 25%, #0a1a0f 50%, #071510 75%, #030806 100%)",
         }}
-        aria-hidden="true"
       />
-      <div className="stage-shell relative z-10 -translate-y-[10px]">
-        <div className="flex h-full w-full gap-4 p-4 overflow-hidden">
-          <Sidebar />
-          <main className="flex-1 overflow-hidden">{children}</main>
-        </div>
-      </div>
+
+      {/* Subtle ambient glow */}
+      <div 
+        className="fixed inset-0 -z-10"
+        style={{
+          background: "radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.08) 0%, transparent 60%), radial-gradient(ellipse at 50% 100%, rgba(34, 197, 94, 0.05) 0%, transparent 50%)",
+        }}
+      />
+
+      {/* Noise texture overlay */}
+      <div
+        className="fixed inset-0 -z-10 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Main content */}
+      <main className="relative z-10 min-h-screen pt-20 pb-24">
+        {children}
+      </main>
     </div>
   );
 }

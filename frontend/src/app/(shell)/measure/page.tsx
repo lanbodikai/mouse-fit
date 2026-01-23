@@ -2,29 +2,23 @@
 
 import Script from "next/script";
 import { useEffect } from "react";
+import { ShellNav } from "@/components/shell/ShellNav";
 
 const styles = `
-:root.dark{
-  --bg:#06080b; --fg:#eaf0ff; --sub:#a6b0c8;
-  --border:rgba(255,255,255,.10);
-  --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
+:root {
+  --bg: #030806;
+  --fg: #eaf0ff;
+  --sub: #6b8068;
+  --border: rgba(34, 197, 94, 0.15);
+  --accent: #22c55e;
+  --g1: #22c55e;
+  --g2: #10b981;
+  --g3: #14b8a6;
 }
-:root.light{
-  --bg:#f9fafb; --fg:#1a1a1a; --sub:#6b7280;
-  --border:rgba(0,0,0,.10);
-  --g1:#7c3aed; --g2:#22d3ee; --g3:#a78bfa;
-}
-:root{
-  --stage-offset-y: -120px;
-  --stage-offset-x: 0px;
-  --dock-offset-y: -105px;
-  --guides-left:4%; --guides-right:4%; --guides-top:4%; --guides-bottom:4%;
-  --dock-scale:1;
-}
-.tool-shell, .tool-shell *{box-sizing:border-box}
 
-/* Flexbox Layout inside the shell panel */
-.tool-shell{
+.tool-shell, .tool-shell * { box-sizing: border-box; }
+
+.tool-shell {
   height: 100%;
   margin: 0;
   overflow: hidden;
@@ -36,87 +30,254 @@ const styles = `
   position: relative;
 }
 
-/* ===== App Wrapper ===== */
 .wrap {
   flex: 1 1 auto;
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  gap: 20px;
+  justify-content: center;
+  padding: 20px;
+  gap: 24px;
   overflow: hidden;
   height: 100%;
 }
 
-/* Bounded capture area */
-.stage{
-  position:relative;
-  width: min(720px, 70vw);
-  height: 72%;
-  max-height: 800px;
-  aspect-ratio:16/10;
-  border-radius:30px;
-  overflow:hidden;
+.stage {
+  position: relative;
+  width: min(640px, 55vw);
+  height: 70%;
+  max-height: 600px;
+  aspect-ratio: 16/10;
+  border-radius: 24px;
+  overflow: hidden;
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
   flex-shrink: 0;
-  transform: translate(var(--stage-offset-x), var(--stage-offset-y));
 }
 
-/* Media fills stage */
-.stage > video, .stage > canvas{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.stage > video, .stage > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-/* Overlays */
-.stage .guides{ position:absolute; left:var(--guides-left); right:var(--guides-right); top:var(--guides-top); bottom:var(--guides-bottom); display:flex; align-items:center; justify-content:center; pointer-events:auto; touch-action:none; z-index:2; }
-.stage .guide{ border:3px dashed rgba(255,255,255,.65); border-radius:14px; background:transparent; position:relative; }
-.stage #handGuide{ flex:3 1 0; min-height:94%; }
-.stage .label{ position:absolute; top:-14px; left:14px; background:var(--bg); border:1px solid rgba(255,255,255,.1); color:#fff; font-size:12px; font-weight:700; padding:3px 8px; border-radius:999px; }
-.stage .badge{ position:absolute; right:10px; top:10px; background:var(--bg); border:1px solid rgba(255,255,255,.1); color:#fff; font-size:12px; padding:4px 8px; border-radius:999px; z-index:6 }
-.stage .toast{ position:absolute; top:12px; left:50%; transform:translateX(-50%); background:var(--bg); border:1px solid rgba(255,255,255,.1); color:#fff; padding:8px 12px; border-radius:20px; font-size:13px; display:none; z-index:7 }
-.stage .countdown{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); font-size:22vmin; font-weight:900; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.6); pointer-events:none; z-index:8 }
+.stage .guides {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 4%;
+  bottom: 4%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 2;
+}
 
-/* Draggable points */
-.point{ position:absolute; width:18px; height:18px; border-radius:50%; border:2px solid #e5f8ff; background:#0b2a33aa; transform:translate(-50%,-50%); touch-action:none; cursor:grab; pointer-events:auto; display:none; z-index:10 }
-.point.green{ border-color:#a3ffb0; background:#0b3316aa }
-.point.blue{  border-color:#9fe9ff; background:#0b2b44aa }
+.stage .guide {
+  border: 2px dashed rgba(34, 197, 94, 0.6);
+  border-radius: 16px;
+  background: transparent;
+  position: relative;
+}
 
-/* Control Dock */
-.control-dock{ position:relative; display:flex; flex-direction:column; gap:16px; z-index:50; padding:0; background:none; flex-shrink: 0; height: 75%; transform: translateY(var(--dock-offset-y)); }
-.panel{ width:380px; flex:0 0 58%; overflow:auto; border:1px solid var(--border); background: var(--bg); backdrop-filter: blur(8px); border-radius:30px; padding:20px; transform: scale(var(--dock-scale)); transform-origin: top right; touch-action:none; scrollbar-width: none; }
-.panel::-webkit-scrollbar{ width:0; height:0; }
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0;}
-.row > * {min-width:0;flex-shrink:1;}
-.toolbar{display:flex;flex-direction:column;gap:10px;margin-top:10px;padding:10px;border-radius:20px;border:1px solid var(--border);background:var(--border);opacity:0.5;}
-.btn-group{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-.btn-group button{width:100%; min-height:36px}
-.meta{display:flex; flex-direction: row; gap: 8px; flex-wrap:wrap;}
-.meta .pill { flex:1; text-align: center; min-width:0; }
-.pill{padding:6px 10px;border-radius:16px;background:var(--border);border:1px solid var(--border);font-size:11px;color:var(--fg);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:100%;}
-button{background:var(--border);color:var(--fg);border:1px solid var(--border);border-radius:14px;padding:8px 10px;font-weight:600;cursor:pointer;transition:all 0.2s;font-size:12px;letter-spacing:.1px;}
-button:hover{background:var(--border);opacity:0.8;}
-button.primary{background:var(--border);border:1px solid var(--border);opacity:0.9;}
-select{background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:20px;padding:10px 12px;font-size:14px;}
-.hint{font-size:13px;color:var(--sub);margin:4px 0 8px;line-height:1.4;}
+.stage #handGuide {
+  flex: 3 1 0;
+  min-height: 94%;
+}
 
-/* Coach / Handle */
-.dock-handle{ display:none; }
-.coach{ height: 35%; flex:0 0 35%; position: relative; width: 380px; padding: 16px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--bg); backdrop-filter: blur(10px); color: var(--fg); z-index: 60; display: block !important; visibility: visible !important; opacity: 1 !important; }
-.coach.hidden{ display: block !important; visibility: visible !important; }
-.coach-bar{ display: flex; align-items: center; padding: 0; margin: 0 0 12px 0; border:none; background: none; user-select: none; }
-.coach-bar strong{ font-size:15px; font-weight:700; color:#fff; }
-.coach-close{ display:none; }
-.coach-content p{ margin: 4px 0; color: var(--sub); line-height: 1.5; font-size:13px; }
+.stage .label {
+  position: absolute;
+  top: -12px;
+  left: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
 
-@media (max-width: 820px){
-  .tool-shell{ overflow:auto; overscroll-behavior:y contain; display: block; }
-  .wrap{ height:auto; min-height:calc(100dvh - 60px); padding:12px 12px calc(88px + env(safe-area-inset-bottom)); flex-direction:column; }
-  .stage{ width:min(100%, 96vw); max-height:none; aspect-ratio: 16/9; }
-  .guides{ left:3%; right:3%; top:3%; bottom:3%; }
-  .control-dock{ position:sticky; left:0; right:0; bottom:0; top:auto; transform:none; padding:0 8px calc(8px + env(safe-area-inset-bottom)); width:100%; }
-  .coach{ width:100%; }
-  .panel{ width:auto; max-width:none; max-height:48dvh; border-radius:30px; padding:16px; margin:0 auto; }
-  .meta{ flex-direction:column; }
+.stage .badge {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  z-index: 6;
+}
+
+.stage .toast {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid var(--border);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  display: none;
+  z-index: 7;
+}
+
+.stage .countdown {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  font-size: 20vmin;
+  font-weight: 900;
+  color: var(--accent);
+  text-shadow: 0 2px 20px rgba(34, 197, 94, 0.5);
+  pointer-events: none;
+  z-index: 8;
+}
+
+.point {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: rgba(34, 197, 94, 0.2);
+  transform: translate(-50%, -50%);
+  touch-action: none;
+  cursor: grab;
+  pointer-events: auto;
+  display: none;
+  z-index: 10;
+}
+
+.point.green { border-color: #22c55e; background: rgba(34, 197, 94, 0.3); }
+.point.blue { border-color: #3b82f6; background: rgba(59, 130, 246, 0.3); }
+
+.control-dock {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 50;
+  padding: 0;
+  background: none;
+  flex-shrink: 0;
+  height: 70%;
+  max-height: 600px;
+}
+
+.panel {
+  width: 340px;
+  flex: 1;
+  overflow: auto;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 20px;
+  scrollbar-width: none;
+}
+
+.panel::-webkit-scrollbar { width: 0; height: 0; }
+
+.coach {
+  width: 340px;
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  color: var(--fg);
+  z-index: 60;
+}
+
+.coach.hidden { display: none; }
+.coach-bar { display: flex; align-items: center; padding: 0; margin: 0 0 12px 0; border: none; background: none; }
+.coach-bar strong { font-size: 14px; font-weight: 700; color: var(--accent); }
+.coach-close { display: none; }
+.coach-content p { margin: 6px 0; color: var(--sub); line-height: 1.5; font-size: 13px; }
+.coach-content b { color: var(--accent); }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; min-width: 0; }
+.row > * { min-width: 0; flex-shrink: 1; }
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.btn-group { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.btn-group button { width: 100%; min-height: 36px; }
+
+.meta { display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; }
+.meta .pill { flex: 1; text-align: center; min-width: 0; }
+
+.pill {
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--fg);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+}
+
+button:hover { background: rgba(34, 197, 94, 0.2); border-color: var(--accent); }
+button.primary { background: rgba(34, 197, 94, 0.2); border-color: var(--accent); }
+
+select {
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.hint { font-size: 12px; color: var(--sub); margin: 6px 0 10px; line-height: 1.5; }
+.hint b { color: var(--accent); }
+
+label { font-size: 13px; color: var(--sub); }
+
+@media (max-width: 900px) {
+  .tool-shell { overflow: auto; overscroll-behavior: y contain; display: block; }
+  .wrap { height: auto; min-height: calc(100dvh - 120px); padding: 16px; flex-direction: column; gap: 16px; }
+  .stage { width: 100%; max-width: 100%; height: auto; aspect-ratio: 16/10; }
+  .control-dock { width: 100%; height: auto; flex-direction: column; }
+  .coach, .panel { width: 100%; }
 }
 `;
 
@@ -149,21 +310,21 @@ const bodyHtml = `
 
     <div class="control-dock">
       <div class="coach" id="coach" data-key="mf:coach:measure" role="dialog">
-        <div class="coach-bar"><strong>Guide</strong></div>
+        <div class="coach-bar"><strong>Quick Guide</strong></div>
         <div class="coach-content">
-          <p>1) Position hand & card inside the box.</p>
-          <p>2) Press <b>Space</b> to capture.</p>
-          <p>3) Double click card corners if needed.</p>
+          <p>1. Position hand & card inside the box</p>
+          <p>2. Press <b>Space</b> to capture</p>
+          <p>3. Double click card corners if needed</p>
         </div>
       </div>
 
       <div class="panel">
-        <div class="row" style="gap:12px; margin-bottom:6px;">
+        <div class="row" style="gap:10px; margin-bottom:8px;">
           <label>Camera:</label>
           <select id="cameraSelect"></select>
           <button id="refreshCams">Refresh</button>
-          <span id="camName" class="pill">—</span>
         </div>
+        <span id="camName" class="pill" style="display:block; margin-bottom:8px;">—</span>
         <div id="hint" class="hint">Tip: Press <b>Space</b> to capture. Keep hand and card in view.</div>
 
         <div class="toolbar" id="liveBtns">
@@ -192,25 +353,18 @@ const bodyHtml = `
     </div>
   </div>
 
-  <button id="startCamBtn" style="position:absolute; inset:auto 12px 12px auto; z-index:30; background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3)); color:#fff; border:0; padding:10px 14px; border-radius:12px; display:none;">Tap to start camera</button>
-
-  <footer class="foot" style="text-align:center; padding:10px; font-size:12px; color:var(--sub);">
-    <span>© <span id="y"></span> Mouse-Fit</span>
-  </footer>
+  <button id="startCamBtn" style="position:absolute; inset:auto 16px 16px auto; z-index:30; background:linear-gradient(90deg,var(--g1),var(--g2)); color:#000; font-weight:600; border:0; padding:12px 16px; border-radius:16px; display:none;">Tap to start camera</button>
 `;
 
 export default function MeasurePage() {
   useEffect(() => {
-    // Ensure coach element is visible on navigation
     const ensureCoachVisible = () => {
       const coach = document.getElementById('coach');
       if (coach) {
-        // Remove hidden class if present and ensure it's displayed
         coach.classList.remove('hidden');
         coach.style.display = '';
         coach.style.visibility = 'visible';
         coach.style.opacity = '1';
-        // Trigger setup if script hasn't run yet
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('measure-page-ready'));
         }
@@ -219,7 +373,6 @@ export default function MeasurePage() {
       return false;
     };
 
-    // Try multiple times to ensure DOM is ready
     let attempts = 0;
     const maxAttempts = 20;
     const trySetup = () => {
@@ -227,21 +380,10 @@ export default function MeasurePage() {
       const found = ensureCoachVisible();
       if (!found && attempts < maxAttempts) {
         setTimeout(trySetup, 50);
-      } else if (found) {
-        // Once found, ensure it stays visible
-        const coach = document.getElementById('coach');
-        if (coach) {
-          // Force visibility
-          coach.style.display = '';
-          coach.style.visibility = 'visible';
-          coach.style.opacity = '1';
-          coach.classList.remove('hidden');
-        }
       }
     };
     
-    // Use MutationObserver to watch for coach element being added
-    const observer = new MutationObserver((mutations) => {
+    const observer = new MutationObserver(() => {
       const coach = document.getElementById('coach');
       if (coach) {
         ensureCoachVisible();
@@ -249,56 +391,44 @@ export default function MeasurePage() {
       }
     });
     
-    // Start observing the document body
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+    observer.observe(document.body, { childList: true, subtree: true });
     
-    // Start immediately and also after delays
     trySetup();
     const timeoutId1 = setTimeout(trySetup, 100);
     const timeoutId2 = setTimeout(trySetup, 300);
     const timeoutId3 = setTimeout(trySetup, 500);
 
-    // Cleanup camera on unmount
     return () => {
       observer.disconnect();
       clearTimeout(timeoutId1);
       clearTimeout(timeoutId2);
       clearTimeout(timeoutId3);
       if (typeof window !== 'undefined' && (window as any).stopCam) {
-        try {
-          (window as any).stopCam();
-        } catch (e) {
-          // Ignore errors
-        }
+        try { (window as any).stopCam(); } catch (e) {}
       }
-      // Also try to stop any active media streams
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ video: true })
-          .then(stream => {
-            stream.getTracks().forEach(track => track.stop());
-          })
-          .catch(() => {
-            // Ignore errors
-          });
+          .then(stream => stream.getTracks().forEach(track => track.stop()))
+          .catch(() => {});
       }
     };
   }, []);
 
   return (
-    <div className="h-full">
-      <style dangerouslySetInnerHTML={{ __html: styles }} />
-      <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-      <Script type="module" src="/src/js/main.js" strategy="afterInteractive" key="main-js" />
-      <Script
-        id="measure-finish"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `window.finishMeasurement = (l, w) => {\n  sessionStorage.setItem('mf:length_mm', String(l));\n  sessionStorage.setItem('mf:width_mm', String(w));\n  location.href = '/report';\n};`,
-        }}
-      />
-    </div>
+    <>
+      <ShellNav currentPage="measure" />
+      <div className="h-full">
+        <style dangerouslySetInnerHTML={{ __html: styles }} />
+        <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+        <Script type="module" src="/src/js/main.js" strategy="afterInteractive" key="main-js" />
+        <Script
+          id="measure-finish"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.finishMeasurement = (l, w) => {\n  sessionStorage.setItem('mf:length_mm', String(l));\n  sessionStorage.setItem('mf:width_mm', String(w));\n  location.href = '/report';\n};`,
+          }}
+        />
+      </div>
+    </>
   );
 }
