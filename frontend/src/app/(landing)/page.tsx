@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { VideoBackdrop } from "@/components/landing/VideoBackdrop";
+import { ContactModal } from "@/components/landing/ContactModal";
 import { 
   HERO_BG_MP4, 
   ABOUT_BG_MP4, 
@@ -43,8 +45,18 @@ const zoomVariants = {
 };
 
 export default function LandingPage() {
+  const router = useRouter();
   const [currentSection, setCurrentSection] = useState<SectionId>("hero");
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const productScrollRef = useRef<HTMLElement | null>(null);
+  const navLockRef = useRef(false);
+
+  const openContactModal = useCallback(() => setIsContactModalOpen(true), []);
+  const closeContactModal = useCallback(() => setIsContactModalOpen(false), []);
+  const setProductScrollEl = useCallback((el: HTMLElement | null) => {
+    productScrollRef.current = el;
+  }, []);
 
   // Navigate to a specific section with zoom animation
   const navigateToSection = useCallback((sectionId: SectionId) => {
@@ -59,7 +71,7 @@ export default function LandingPage() {
     }, 800);
   }, [isTransitioning, currentSection]);
 
-  // Navigate to next section
+  // Navigate to next sectionG
   const goToNextSection = useCallback(() => {
     const currentIndex = sections.indexOf(currentSection);
     if (currentIndex < sections.length - 1) {
@@ -75,8 +87,124 @@ export default function LandingPage() {
     }
   }, [currentSection, navigateToSection]);
 
+  // Keyboard + wheel navigation for the landing home "sections" (hero/services/product/contact).
+  // - Wheel: switches sections, but lets the Product section scroll until you hit its edges.
+  // - ArrowUp/ArrowDown: same as wheel (with scroll within Product until edges).
+  // - ArrowLeft/ArrowRight: cycles navbar pages (/, /services, /product, /about-us).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const navRoutes = ["/", "/services", "/product", "/about-us"] as const;
+
+    const isTypingTarget = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      if (!el) return false;
+      const tag = (el.tagName || "").toLowerCase();
+      return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
+    };
+
+    const lock = () => {
+      navLockRef.current = true;
+      window.setTimeout(() => {
+        navLockRef.current = false;
+      }, 800);
+    };
+
+    const atProductTop = () => {
+      const el = productScrollRef.current;
+      if (!el) return true;
+      return el.scrollTop <= 2;
+    };
+
+    const atProductBottom = () => {
+      const el = productScrollRef.current;
+      if (!el) return true;
+      return el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+    };
+
+    const scrollProductBy = (delta: number) => {
+      const el = productScrollRef.current;
+      if (!el) return;
+      el.scrollBy({ top: delta, behavior: "smooth" });
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isContactModalOpen) return;
+      if (isTypingTarget(e.target)) return;
+      if (isTransitioning || navLockRef.current) return;
+
+      if (e.key === "ArrowDown") {
+        if (currentSection === "product" && !atProductBottom()) {
+          e.preventDefault();
+          scrollProductBy(220);
+          return;
+        }
+        e.preventDefault();
+        lock();
+        goToNextSection();
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        if (currentSection === "product" && !atProductTop()) {
+          e.preventDefault();
+          scrollProductBy(-220);
+          return;
+        }
+        e.preventDefault();
+        lock();
+        goToPrevSection();
+        return;
+      }
+
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        const dir = e.key === "ArrowRight" ? 1 : -1;
+        const idx = 0; // this component is always mounted at "/"
+        const next = (idx + dir + navRoutes.length) % navRoutes.length;
+        router.push(navRoutes[next]);
+      }
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (isContactModalOpen) return;
+      if (isTypingTarget(e.target)) return;
+      if (isTransitioning || navLockRef.current) return;
+
+      // Ignore tiny trackpad jitter.
+      if (Math.abs(e.deltaY) < 10) return;
+
+      const down = e.deltaY > 0;
+
+      // Let Product scroll naturally until top/bottom, then switch sections.
+      if (currentSection === "product") {
+        if (down && !atProductBottom()) return;
+        if (!down && !atProductTop()) return;
+      }
+
+      e.preventDefault();
+      lock();
+      if (down) goToNextSection();
+      else goToPrevSection();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("wheel", onWheel);
+    };
+  }, [
+    router,
+    currentSection,
+    goToNextSection,
+    goToPrevSection,
+    isContactModalOpen,
+    isTransitioning,
+  ]);
+
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-black">
+    <div className="relative h-screen w-screen overflow-hidden">
       {/* Video Backdrop - Changes based on current section */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -85,14 +213,14 @@ export default function LandingPage() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.6, ease: "easeInOut" }}
-          className="fixed inset-0 -z-10"
+          className="fixed inset-0 z-0 pointer-events-none"
         >
           <VideoBackdrop src={sectionVideos[currentSection]} />
         </motion.div>
       </AnimatePresence>
 
       {/* Navigation */}
-      <LandingNavigation isTransitioning={isTransitioning} />
+      <LandingNavigation isTransitioning={isTransitioning} onContactClick={openContactModal} />
 
       {/* Section Content with Zoom Transitions */}
       <AnimatePresence mode="wait">
@@ -106,7 +234,7 @@ export default function LandingPage() {
             duration: 0.6, 
             ease: [0.22, 1, 0.36, 1] // Custom easing for smooth zoom
           }}
-          className="h-screen w-screen"
+          className="relative z-10 h-screen w-screen"
         >
           {currentSection === "hero" && (
             <HeroSection onNext={goToNextSection} onNavigate={navigateToSection} />
@@ -115,10 +243,15 @@ export default function LandingPage() {
             <ServicesSection onNext={goToNextSection} onPrev={goToPrevSection} onNavigate={navigateToSection} />
           )}
           {currentSection === "product" && (
-            <ProductSection onNext={goToNextSection} onPrev={goToPrevSection} onNavigate={navigateToSection} />
+            <ProductSection
+              onNext={goToNextSection}
+              onPrev={goToPrevSection}
+              onNavigate={navigateToSection}
+              scrollRef={setProductScrollEl}
+            />
           )}
           {currentSection === "contact" && (
-            <ContactSection onPrev={goToPrevSection} />
+            <ContactSection onPrev={goToPrevSection} onContactClick={openContactModal} />
           )}
         </motion.div>
       </AnimatePresence>
@@ -158,12 +291,20 @@ export default function LandingPage() {
           </motion.div>
         </motion.button>
       )}
+
+      <ContactModal isOpen={isContactModalOpen} onClose={closeContactModal} />
     </div>
   );
 }
 
 // Navigation Component - Home active, links to other pages
-function LandingNavigation({ isTransitioning }: { isTransitioning: boolean }) {
+function LandingNavigation({
+  isTransitioning,
+  onContactClick,
+}: {
+  isTransitioning: boolean;
+  onContactClick: () => void;
+}) {
   return (
     <>
       {/* Top Navigation Bar */}
@@ -176,7 +317,7 @@ function LandingNavigation({ isTransitioning }: { isTransitioning: boolean }) {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <span className="text-lg font-bold tracking-wide text-white">
-            <span className="text-green-500">DC</span> MOUSEFIT
+            <span className="text-green-500">MSF</span> STUDIO
           </span>
         </Link>
 
@@ -184,7 +325,7 @@ function LandingNavigation({ isTransitioning }: { isTransitioning: boolean }) {
         <button
           disabled={isTransitioning}
           className="flex items-center gap-3 text-white text-sm disabled:opacity-50 group"
-          onClick={() => window.location.href = "mailto:contact@mousefit.com"}
+          onClick={onContactClick}
         >
           <span className="opacity-80 group-hover:opacity-100 transition-opacity">Contact us</span>
           <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center group-hover:bg-green-400 transition-colors">
@@ -308,7 +449,7 @@ function HeroSection({
           >
             <div className="text-right space-y-2">
               <p className="text-4xl md:text-5xl lg:text-6xl font-extralight text-white/90">
-                built by
+                Built by
               </p>
               <p className="text-4xl md:text-5xl lg:text-6xl font-extralight text-white/90">
                 gamers.{" "}
@@ -408,13 +549,15 @@ function ProductSection({
   onNext,
   onPrev,
   onNavigate,
+  scrollRef,
 }: { 
   onNext: () => void;
   onPrev: () => void;
   onNavigate: (section: SectionId) => void;
+  scrollRef?: (el: HTMLElement | null) => void;
 }) {
   return (
-    <main className="relative h-full overflow-y-auto scrollbar-hide">
+    <main ref={scrollRef} className="relative h-full overflow-y-auto scrollbar-hide">
       {/* Padding for fixed nav bars: top ~80px, bottom ~100px */}
       <div className="min-h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24 py-28 md:py-24">
         <div className="w-full max-w-5xl mx-auto">
@@ -519,10 +662,13 @@ function ProductSection({
 }
 
 // Contact Section (fourth part of home)
-function ContactSection({ onPrev }: { onPrev: () => void }) {
-  const handleContactClick = () => {
-    window.location.href = "mailto:contact@mousefit.com";
-  };
+function ContactSection({
+  onPrev,
+  onContactClick,
+}: {
+  onPrev: () => void;
+  onContactClick: () => void;
+}) {
 
   return (
     <main className="relative h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24">
@@ -551,8 +697,7 @@ function ContactSection({ onPrev }: { onPrev: () => void }) {
             transition={{ duration: 0.6, delay: 0.6 }}
             className="text-white/50 text-sm md:text-base max-w-md mx-auto leading-relaxed"
           >
-            Whenever you have queries, require expert advice, or
-            need prompt support, we are just a click away.
+            Need help finding your fit or understanding your results? We’re one click away.
           </motion.p>
 
           <motion.div
@@ -562,7 +707,7 @@ function ContactSection({ onPrev }: { onPrev: () => void }) {
             className="pt-4 flex justify-center"
           >
             <button
-              onClick={handleContactClick}
+              onClick={onContactClick}
               className="group flex items-center gap-3 px-6 py-3 bg-white/10 hover:bg-white/15 border border-white/20 rounded-full transition-all duration-200"
             >
               <span className="text-white text-sm">Contact us</span>

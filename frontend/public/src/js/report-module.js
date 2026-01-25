@@ -1,3 +1,5 @@
+import { loadMice as loadMiceApi } from "./mice-api.js";
+
 const $status = document.getElementById("status");
 const $p1 = document.getElementById("p1");
 const $p2 = document.getElementById("p2");
@@ -34,18 +36,15 @@ const profile = scrapeProfileFromPage();
 let handLength = profile.length_mm || 180;
 let handWidth  = profile.width_mm  || 90;
 
-// ---- pull mice from /src/js/mice.js ----
+// ---- load mice from the backend API ----
 async function loadMice(){
-  try{
-    // Dynamically import to ensure we get the data
-    const mod = await import("/src/js/mice.js");
-    if (Array.isArray(mod.MICE)) return mod.MICE;
-    if (Array.isArray(mod.mice)) return mod.mice;
-    if (Array.isArray(mod.default)) return mod.default;
-  }catch(e){
-    console.warn("Mice import failed", e);
+  try {
+    const mice = await loadMiceApi();
+    if (Array.isArray(mice) && mice.length) return mice;
+  } catch (e) {
+    console.warn("Mice API fetch failed", e);
   }
-  // fallback to global if already loaded via script tag
+  // fallback to global if already loaded via another script
   return window.MICE || window.mice || [];
 }
 

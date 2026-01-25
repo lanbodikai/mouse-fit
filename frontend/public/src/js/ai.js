@@ -1,4 +1,4 @@
-import { MICE } from './mice.js'
+import { loadMice } from "./mice-api.js";
 
 const $ = (selector) => document.querySelector(selector)
 const messagesEl = $('#messages')
@@ -61,7 +61,7 @@ const session = {
 
 
 const history = []
-const DATASET = Array.isArray(MICE) ? MICE.filter((m) => m && m.model) : []
+let DATASET = []
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
@@ -126,6 +126,17 @@ function updateBadge() {
   if (!badgeEl) return
   const total = DATASET.length
   badgeEl.textContent = `Local dataset: ${total} mice`
+}
+
+async function initDataset() {
+  try {
+    const mice = await loadMice()
+    DATASET = Array.isArray(mice) ? mice.filter((m) => m && m.model) : []
+  } catch (e) {
+    console.warn('AI: failed to load mice from API (dataset empty)', e)
+    DATASET = []
+  }
+  updateBadge()
 }
 
 function askCurrentStep() {
@@ -636,7 +647,7 @@ function handleClear() {
 }
 
 function boot() {
-  updateBadge()
+  initDataset()
   startSession()
 }
 

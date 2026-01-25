@@ -1,7 +1,7 @@
-// MouseFit • Mouse Database page (no API / no rerank).
-// Works with varied dataset shapes by normalizing common key names.
+// MouseFit • Mouse Database page.
+// Loads mice from the backend API and normalizes varied dataset shapes.
 
-import { MICE } from './mice.js';
+import { loadMice } from "./mice-api.js";
 
 const $ = (sel) => document.querySelector(sel);
 let grid = null;
@@ -207,7 +207,7 @@ function localFilter(query, items) {
 let initialized = false;
 let all = null;
 
-function boot() {
+async function boot() {
   if (!bindDom()) {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', boot, { once: true });
@@ -220,7 +220,13 @@ function boot() {
   // Only initialize once, but re-render on navigation
   if (!initialized) {
     // Build normalized array once
-    all = Array.isArray(MICE) ? MICE.map(normalize).filter(Boolean) : [];
+    try {
+      const mice = await loadMice();
+      all = Array.isArray(mice) ? mice.map(normalize).filter(Boolean) : [];
+    } catch (e) {
+      console.warn("Failed to load mice from API; showing empty list.", e);
+      all = [];
+    }
 
     const handleQueryInput = () => {
       const query = q.value.trim();

@@ -1,178 +1,211 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Sparkles, QrCode } from "lucide-react";
+import { motion } from "framer-motion";
 import { PageNav } from "@/components/landing/PageNav";
+
+function SectionDivider() {
+  return (
+    <div className="my-12 md:my-16">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+    </div>
+  );
+}
 
 export default function AboutUsPage() {
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Background gradient - dark with green tint */}
-      <div 
-        className="absolute inset-0 -z-10"
+    <div className="relative min-h-screen w-screen overflow-x-hidden bg-black">
+      {/* Background */}
+      <div
+        className="fixed inset-0 -z-10"
         style={{
-          background: "linear-gradient(135deg, #020804 0%, #081510 30%, #0a1a12 50%, #061008 70%, #020804 100%)",
+          background:
+            "linear-gradient(135deg, #020804 0%, #081510 30%, #0a1a12 50%, #061008 70%, #020804 100%)",
+        }}
+      />
+      <div
+        className="fixed inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse at 20% 50%, rgba(34, 197, 94, 0.12) 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, rgba(34, 197, 94, 0.06) 0%, transparent 60%)",
+        }}
+      />
+      <div
+        className="fixed inset-0 -z-10 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")',
         }}
       />
 
-      {/* Ambient light effect from left */}
-      <div 
-        className="absolute inset-0 -z-10"
-        style={{
-          background: "radial-gradient(ellipse at 20% 50%, rgba(34, 197, 94, 0.12) 0%, transparent 50%)",
-        }}
-      />
-
-      {/* Navigation */}
       <PageNav currentPage="about" />
 
-      {/* Left side - Profile Image Placeholder */}
-      <motion.div
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 1, delay: 0.2 }}
-        className="absolute left-0 top-0 bottom-0 w-2/5 hidden lg:block"
-      >
-        {/* Image placeholder with gradient overlay */}
-        <div className="relative w-full h-full">
-          <div 
-            className="absolute inset-0"
-            style={{
-              background: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.9) 100%)",
-            }}
-          />
-          
-          {/* Silhouette placeholder */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white/20">
-              <div className="w-48 h-72 bg-gradient-to-b from-green-900/20 to-transparent rounded-t-full flex items-end justify-center pb-6">
-                <p className="text-xs uppercase tracking-wider">[Profile Image]</p>
-              </div>
+      <main className="relative z-10 mx-auto w-full max-w-5xl px-6 pt-24 pb-28 md:px-10">
+        {/* 1) Header / Hero */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="h-px w-10 bg-gradient-to-r from-transparent to-white/25" />
+            <p className="text-xs tracking-[0.35em] text-white/50 uppercase">
+              BRAND INTRODUCTION
+            </p>
+          </div>
+
+          <div className="mt-6 md:mt-8">
+            <h1 className="text-5xl font-light tracking-tight text-white md:text-6xl lg:text-7xl">
+              MOUSEFIT
+            </h1>
+            <div className="mt-3 flex items-center gap-3">
+              <div className="h-px w-8 bg-white/15" />
+              <h2 className="text-2xl font-light tracking-wide text-white/70 md:text-3xl">
+                ABOUT
+              </h2>
             </div>
           </div>
 
-          {/* Vertical text on left edge */}
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-            <div 
-              className="text-[10px] tracking-[0.4em] text-white/30 uppercase"
-              style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+          <p className="mt-6 max-w-2xl text-sm leading-relaxed text-white/55 md:text-base">
+            We built MouseFit because we noticed a real problem: a poorly fitting mouse can
+            contribute to wrist strain over time and make aim feel inconsistent.
+            Our mission is to improve comfort and help you stay steady in long sessions.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-5">
+            <Link
+              href="/measure"
+              className="inline-flex items-center justify-center rounded-full bg-green-500 px-6 py-3 text-sm font-medium text-black hover:bg-green-400 transition-colors"
             >
-              [ MOUSEFIT 2024 ]
+              Start Scan
+            </Link>
+            <Link
+              href="#learn-more"
+              className="text-sm text-white/60 hover:text-white transition-colors"
+            >
+              Learn More
+            </Link>
+          </div>
+        </motion.section>
+
+        <SectionDivider />
+
+        {/* 2) The Problem (Health + Performance) */}
+        <section id="learn-more" className="scroll-mt-24">
+          <div className="flex items-baseline justify-between gap-6">
+            <h3 className="text-xl font-light tracking-[0.2em] text-white uppercase">
+              THE PROBLEM
+            </h3>
+            <div className="hidden md:block h-px flex-1 bg-white/10" />
+          </div>
+
+          <div className="mt-6 grid gap-8 md:grid-cols-2">
+            <div className="space-y-4">
+              <p className="text-sm leading-relaxed text-white/55">
+                When a mouse doesn&apos;t match your hand, small compensations add up.
+                Over time, that mismatch can contribute to wrist pain and strain.
+              </p>
+              <p className="text-sm leading-relaxed text-white/55">
+                A bad fit can also make aim inconsistent and increase fatigue during long sessions,
+                especially when you&apos;re constantly re-gripping or squeezing for control.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+              <p className="text-xs tracking-[0.25em] text-white/45 uppercase">
+                Common outcomes
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-white/60">
+                <li className="flex items-start gap-3">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500/70" />
+                  Wrist strain risk
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500/70" />
+                  Reduced control
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500/70" />
+                  Faster fatigue
+                </li>
+              </ul>
             </div>
           </div>
-        </div>
-      </motion.div>
+        </section>
 
-      {/* Right side - Content */}
-      <main className="relative h-full flex items-center justify-end px-8 md:px-16 lg:px-20 pt-20 pb-24">
-        <div className="w-full lg:w-3/5 lg:pl-16">
-          {/* Brand Introduction Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="mb-8"
-          >
-            {/* Decorative line and subtitle */}
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-px w-12 bg-gradient-to-r from-transparent to-white/30" />
-              <span className="text-xs tracking-[0.3em] text-white/40 uppercase">Brand Introduction</span>
-            </div>
+        <SectionDivider />
 
-            {/* Large M letter */}
-            <div className="flex items-start gap-4">
-              <span className="text-6xl md:text-7xl lg:text-8xl font-bold text-white/10 leading-none">M</span>
-              <div className="pt-2 md:pt-4">
-                <h1 className="text-xl md:text-2xl lg:text-3xl font-light text-white tracking-wide">
-                  OUSEFIT
-                </h1>
-                <h2 className="text-xl md:text-2xl lg:text-3xl font-light text-white/60 tracking-wide">
-                  INTRODUCTION
-                </h2>
-              </div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex items-center gap-4 md:gap-6 mt-4">
-              <div className="flex items-center gap-2 text-xs text-white/50">
-                <div className="w-12 h-px bg-gradient-to-r from-green-500 to-transparent" />
-                <span>MFT</span>
-              </div>
-              <Link 
-                href="/services" 
-                className="flex items-center gap-2 text-xs text-white/60 hover:text-green-500 transition-colors"
-              >
-                <span className="w-5 h-5 rounded-full border border-white/30 flex items-center justify-center">
-                  <ArrowRight className="w-3 h-3" />
-                </span>
-                <span className="uppercase tracking-wider">Features</span>
-              </Link>
-            </div>
-          </motion.div>
-
-          {/* Description paragraphs */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="space-y-3 mb-8 max-w-md"
-          >
-            <p className="text-xs md:text-sm text-white/40 leading-relaxed">
-              MouseFit is a precision mouse fitting platform that uses advanced AI and computer vision 
-              technology to analyze your hand dimensions and grip style.
-            </p>
-            <p className="text-xs md:text-sm text-white/40 leading-relaxed">
-              Founded with a mission to eliminate the guesswork from mouse selection, we&apos;ve helped 
-              thousands find their ideal pointing device.
-            </p>
-          </motion.div>
-
-          {/* About Us Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.7 }}
-            className="mb-6"
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-2xl md:text-3xl font-light text-white">ABOUT</h3>
-              <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
-            </div>
-            <h3 className="text-2xl md:text-3xl font-light text-white mb-4">US</h3>
-            
-            <div className="w-8 h-px bg-white/20 mb-4" />
-            
-            <p className="text-xs text-white/30 uppercase tracking-[0.3em]">TRENDING</p>
-          </motion.div>
-
-          {/* QR Code placeholder */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.9 }}
-            className="flex items-center gap-4"
-          >
-            <div className="w-12 h-12 border border-white/10 rounded flex items-center justify-center bg-black/50">
-              <QrCode className="w-6 h-6 text-white/20" />
-            </div>
-            <div className="text-xs text-white/30">
-              <p>Scan to learn more</p>
-              <p className="text-green-500/60">mousefit.io</p>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Right side vertical text */}
-        <div className="fixed right-8 top-1/2 -translate-y-1/2 hidden xl:block">
-          <div 
-            className="text-[10px] tracking-[0.4em] text-white/20 uppercase"
-            style={{ writingMode: "vertical-rl" }}
-          >
-            Precision Mouse Fitting
+        {/* 3) The Insight (Fit matters) */}
+        <section>
+          <div className="flex items-baseline justify-between gap-6">
+            <h3 className="text-xl font-light tracking-[0.2em] text-white uppercase">
+              WHY FIT MATTERS
+            </h3>
+            <div className="hidden md:block h-px flex-1 bg-white/10" />
           </div>
-        </div>
+
+          <p className="mt-6 max-w-3xl text-sm leading-relaxed text-white/55">
+            Different mouse shapes and sizes are designed for different hand sizes and grip styles.
+            A fit that feels natural reduces unnecessary tension and helps you keep consistent control.
+          </p>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+              <p className="text-xs tracking-[0.25em] text-white/45 uppercase">Hand Size</p>
+              <p className="mt-3 text-sm text-white/60">
+                Your hand length and width change how you anchor and reach for buttons.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+              <p className="text-xs tracking-[0.25em] text-white/45 uppercase">Grip Style</p>
+              <p className="mt-3 text-sm text-white/60">
+                Palm, claw, and fingertip grips benefit from different support and contours.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+              <p className="text-xs tracking-[0.25em] text-white/45 uppercase">Mouse Shape</p>
+              <p className="mt-3 text-sm text-white/60">
+                Hump height, width, and side curves define stability and comfort.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <SectionDivider />
+
+        {/* 4) How MouseFit Works */}
+        <section>
+          <div className="flex items-baseline justify-between gap-6">
+            <h3 className="text-xl font-light tracking-[0.2em] text-white uppercase">
+              HOW MOUSEFIT WORKS
+            </h3>
+            <div className="hidden md:block h-px flex-1 bg-white/10" />
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <StepperCard step="01" title="Scan" body="Use your camera to measure hand dimensions." />
+            <StepperCard step="02" title="Analyze" body="AI + computer vision interpret size and grip." />
+            <StepperCard step="03" title="Recommend" body="Get mice that match your fit and play style." />
+          </div>
+        </section>
+
+        <SectionDivider />
+
       </main>
+    </div>
+  );
+}
+
+function StepperCard({ step, title, body }: { step: string; title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/40 text-xs font-semibold tracking-[0.2em] text-white/70">
+          {step}
+        </div>
+        <p className="text-base font-light text-white">{title}</p>
+      </div>
+      <p className="mt-4 text-sm leading-relaxed text-white/55">{body}</p>
     </div>
   );
 }

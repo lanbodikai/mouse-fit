@@ -44,9 +44,9 @@ const styles = `
 
 .stage {
   position: relative;
-  width: min(640px, 55vw);
-  height: 70%;
-  max-height: 600px;
+  width: min(1000px, 65vw);
+  min-height: 500px;
+  max-height: 80vh;
   aspect-ratio: 16/10;
   border-radius: 24px;
   overflow: hidden;

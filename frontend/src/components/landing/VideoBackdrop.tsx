@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
 
 interface VideoBackdropProps {
   src: string;
@@ -18,42 +18,44 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
   const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !src) return;
+    if (!src) {
+      if (isDev) {
+        console.log("VideoBackdrop: Missing video src");
+      }
+      return;
+    }
 
+    if (isDev) {
+      console.log("VideoBackdrop: Loading video", src);
+    }
+  }, [src, isDev]);
+
+  const handleVideoReady = useCallback(() => {
     setHasError(false);
-    setIsLoaded(false);
+    setIsLoaded(true);
 
-    const handleCanPlay = () => {
-      setIsLoaded(true);
-      video.play().catch(() => {
-        // Autoplay may be blocked, that's okay
-      });
-    };
+    const video = videoRef.current;
+    if (!video) return;
 
-    const handleError = () => {
+    video.play().catch((err) => {
+      if (isDev) {
+        console.log("Video autoplay blocked:", err);
+      }
+    });
+  }, [isDev]);
+
+  const handleVideoError = useCallback(
+    (event: SyntheticEvent<HTMLVideoElement>) => {
+      console.error("Video loading error:", event);
       setHasError(true);
-    };
-
-    video.addEventListener("canplay", handleCanPlay);
-    video.addEventListener("error", handleError);
-
-    // Attempt to load the video
-    video.load();
-
-    return () => {
-      video.removeEventListener("canplay", handleCanPlay);
-      video.removeEventListener("error", handleError);
-      video.pause();
-      video.src = "";
-      video.load();
-    };
-  }, [src]);
+    },
+    []
+  );
 
   const showFallback = !src || hasError;
 
   return (
-    <div className={`fixed inset-0 -z-10 overflow-hidden ${className}`}>
+    <div className={`absolute inset-0 overflow-hidden ${className}`}>
       {/* Gradient fallback - Dark green/black like DOTDNA */}
       <div
         className={`absolute inset-0 transition-opacity duration-500 ${
@@ -91,13 +93,23 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
       {src && !hasError && (
         <video
           ref={videoRef}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+          src={src}
+          onLoadStart={() => {
+            // Show the fallback while the new src is fetching/decoding.
+            setHasError(false);
+            setIsLoaded(false);
+          }}
+          onCanPlay={handleVideoReady}
+          onLoadedData={handleVideoReady}
+          onError={handleVideoError}
+          className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${
             isLoaded ? "opacity-100" : "opacity-0"
           }`}
           muted
           loop
           playsInline
           preload="auto"
+          autoPlay
         >
           <source src={src} type="video/mp4" />
         </video>

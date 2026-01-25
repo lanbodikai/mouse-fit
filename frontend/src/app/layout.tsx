@@ -29,9 +29,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${sora.variable} ${lexend.variable} ${jetbrainsMono.variable} antialiased`}>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  window.__MOUSEFIT_API_BASE__ = ${JSON.stringify(apiBase)};
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

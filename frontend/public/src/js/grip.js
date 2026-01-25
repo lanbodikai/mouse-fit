@@ -1108,6 +1108,8 @@ function ensureSkeletonReady(){
 }
 function drawSkeletonLive(){
   if (!handLandmarker || video.readyState < 2) return;
+  // Guard: ensure video has valid dimensions before detection
+  if (!video.videoWidth || !video.videoHeight || video.videoWidth <= 0 || video.videoHeight <= 0) return;
   let saved = false;
   try {
     const result = handLandmarker.detectForVideo(video, performance.now());

@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Local build/dev artifacts
+**/.next.bak-*/
+**/dev.log
+

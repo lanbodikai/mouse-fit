@@ -1,36 +1,13 @@
 /* docs/js/main.js — drop-in fixed build */
 
-// ===== (optional) mouse DB; safe if missing =====
+import { loadMice } from "./mice-api.js";
+
+// ===== mouse DB (backend API) =====
 let MICE = [];
 try {
-  const mod = await import("./mice.js");
-  MICE = mod.MICE || [];
-} catch (_) {
-  console.warn("mice.js not found — recommendations will be skipped (ok for now).");
-}
-/* ---- DB compatibility shim ---- */
-if (!MICE.length) {
-  try {
-    const mod2 = await import("./mice.js");
-    const raw = mod2.MICE || mod2.mice || mod2.default || [];
-    const norm = (x) => ({
-      brand: x.brand || x.Brand || "",
-      model: x.model || x.Model || "",
-      length_mm: Number(x.length_mm ?? x.length ?? x.len ?? 0),
-      width_mm:  Number(x.width_mm  ?? x.width  ?? x.wid ?? 0),
-      height_mm: Number(x.height_mm ?? x.height ?? x.ht  ?? 0),
-      weight_g:  Number(x.weight_g  ?? x.weight ?? x.mass ?? 0),
-      shape: (() => {
-        const s = String(x.shape || x.Shape || "").toLowerCase();
-        if (s.includes("sym")) return "sym";
-        if (s.includes("ergo")) return "ergo";
-        return s || "sym";
-      })(),
-      hump: x.hump || x.Hump || "",
-      tags: x.tags || x.Tags || []
-    });
-    MICE = Array.isArray(raw) ? raw.map(norm).filter(m => m.length_mm && m.width_mm) : [];
-  } catch {}
+  MICE = await loadMice();
+} catch (e) {
+  console.warn("Failed to load mice from API — recommendations will be skipped (ok for now).", e);
 }
 
 /* ================== constants ================== */
@@ -434,6 +411,10 @@ async function startSkeleton() {
 }
 
 function drawSkeletonLive() {
+  // Guard: ensure video has valid dimensions before detection
+  if (!video.videoWidth || !video.videoHeight || video.videoWidth <= 0 || video.videoHeight <= 0) {
+    return;
+  }
   try {
     const result = handLandmarker.detectForVideo(video, performance.now());
     const lm = result?.landmarks?.[0];

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, ArrowLeft } from "lucide-react";
 
@@ -19,6 +20,48 @@ export function PageNav({ currentPage }: PageNavProps) {
   const handleBack = () => {
     router.back();
   };
+
+  // Arrow key navigation between landing pages:
+  // - Up/Down: previous/next page
+  // - Left/Right: previous/next page (matches navbar order)
+  useEffect(() => {
+    const pages = ["home", "services", "product", "about"] as const;
+    const routes: Record<(typeof pages)[number], string> = {
+      home: "/",
+      services: "/services",
+      product: "/product",
+      about: "/about-us",
+    };
+
+    const isTypingTarget = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      if (!el) return false;
+      const tag = (el.tagName || "").toLowerCase();
+      return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e.target)) return;
+
+      const idx = pages.indexOf(currentPage);
+      if (idx < 0) return;
+
+      const prevKeys = new Set(["ArrowUp", "ArrowLeft"]);
+      const nextKeys = new Set(["ArrowDown", "ArrowRight"]);
+
+      if (!prevKeys.has(e.key) && !nextKeys.has(e.key)) return;
+      e.preventDefault();
+
+      const nextIdx = prevKeys.has(e.key)
+        ? (idx - 1 + pages.length) % pages.length
+        : (idx + 1) % pages.length;
+
+      router.push(routes[pages[nextIdx]]);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [currentPage, router]);
 
   return (
     <>

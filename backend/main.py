@@ -183,8 +183,18 @@ def init_db() -> None:
     )
     conn.commit()
 
-    cur.execute("SELECT COUNT(*) AS count FROM mice")
-    if cur.fetchone()["count"] == 0:
+    # Seed mice into SQLite from data/mice.json (only when needed by default).
+    # This keeps the database as the source of truth after the initial import.
+    seed_mode = os.getenv("MOUSEFIT_SEED_MICE", "if_empty").strip().lower()
+    if seed_mode not in {"never", "if_empty", "always"}:
+        seed_mode = "if_empty"
+
+    should_seed = seed_mode == "always"
+    if seed_mode == "if_empty":
+        cur.execute("SELECT 1 FROM mice LIMIT 1")
+        should_seed = cur.fetchone() is None
+
+    if should_seed:
         seed_mice(conn)
     conn.close()
 
@@ -231,6 +241,20 @@ def seed_mice(conn: sqlite3.Connection) -> None:
             id, brand, model, variant, length_mm, width_mm, height_mm, weight_g,
             shape, hump, grips, hands, product_url, image_url
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            brand=excluded.brand,
+            model=excluded.model,
+            variant=excluded.variant,
+            length_mm=excluded.length_mm,
+            width_mm=excluded.width_mm,
+            height_mm=excluded.height_mm,
+            weight_g=excluded.weight_g,
+            shape=excluded.shape,
+            hump=excluded.hump,
+            grips=excluded.grips,
+            hands=excluded.hands,
+            product_url=excluded.product_url,
+            image_url=excluded.image_url
         """,
         rows,
     )
