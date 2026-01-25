@@ -8,8 +8,10 @@
 // - Clear logging for debugging model output
 
 /* ================== constants ================== */
+const MP_VERSION = "0.10.32";
 const TASK_URL   = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
-const VISION_MJS = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs";
+const VISION_MJS = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/vision_bundle.mjs`;
+const VISION_WASM = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/wasm`;
 const VIEWS = ["Top","Right","Left"];
 
 // ---- YOLO config (edit path if needed) ----
@@ -162,6 +164,7 @@ function getStoredNumber(key, fallback = 1, min, max){
 let stream = null, currentDeviceId = null;
 let frameData = null;
 let handLandmarker = null, runMode = null;
+let mpFailed = false;
 let skeletonLive = getStoredBool(PREF_SKELETON, true);
 let guideVisible = getStoredBool(PREF_GUIDE_VIS, true);
 let guideScale   = getStoredNumber(PREF_GUIDE_SCALE, 1, 0.6, 1.4);
@@ -612,18 +615,25 @@ async function drawFrozenOverlayThrottled(){
 }
 
 function loopLive(){
-  ensureCanvasSizes();
+  try {
+    ensureCanvasSizes();
 
-  if (!isFrozen){
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    // No mouse detection pre-capture; optional hand skeleton OK
-    if (skeletonLive) drawSkeletonLive();
-  } else if (frameData){
-    ctx.putImageData(frameData, 0, 0);
-    // After capture we draw a single outline in capture(); no continuous detection here
+    if (!isFrozen){
+      // Guard: drawImage can throw if video hasn't produced a frame yet.
+      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // No mouse detection pre-capture; optional hand skeleton OK
+        if (skeletonLive) drawSkeletonLive();
+      }
+    } else if (frameData){
+      ctx.putImageData(frameData, 0, 0);
+      // After capture we draw a single outline in capture(); no continuous detection here
+    }
+  } catch (err) {
+    if (console?.debug) console.debug("[Grip] loopLive draw error", err);
+  } finally {
+    requestAnimationFrame(loopLive);
   }
-
-  requestAnimationFrame(loopLive);
 }
 
 /* ================== boot ================== */
@@ -1095,11 +1105,19 @@ function acceptShot(){
 
 /* ================== MediaPipe (hand skeleton) ================== */
 async function mp(mode){
+  if (mpFailed) return null;
   if (handLandmarker && runMode===mode) return handLandmarker;
-  const vision = await import(/* @vite-ignore */ VISION_MJS);
-  const files  = await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
-  handLandmarker = await vision.HandLandmarker.createFromOptions(files, { baseOptions:{ modelAssetPath:TASK_URL }, numHands:1, runningMode:mode });
-  runMode = mode; return handLandmarker;
+  try {
+    const vision = await import(/* @vite-ignore */ VISION_MJS);
+    const files  = await vision.FilesetResolver.forVisionTasks(VISION_WASM);
+    handLandmarker = await vision.HandLandmarker.createFromOptions(files, { baseOptions:{ modelAssetPath:TASK_URL }, numHands:1, runningMode:mode });
+    runMode = mode; return handLandmarker;
+  } catch (err) {
+    mpFailed = true;
+    console.error("[MediaPipe] init failed", err);
+    showToast("Hand model failed to load. Check network for vision_bundle.mjs / wasm / hand_landmarker.task.");
+    return null;
+  }
 }
 async function startSkeleton(){ await mp("VIDEO"); }
 function ensureSkeletonReady(){
@@ -1761,8 +1779,6 @@ window.YOLO = {
   conf: () => YOLO_CONF,
   setConf: (v) => { YOLO_CONF = Number(v); console.log('YOLO_CONF =', YOLO_CONF); }
 };
-
-
 
 
 

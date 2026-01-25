@@ -3,7 +3,7 @@
 const mfTools = [
   { label: "Hand Measure", href: "/htmls/measure.html" },
   { label: "Grip", href: "/htmls/grip.html" },
-  { label: "Report Page", href: "/htmls/report.html" },
+  { label: "Report Page", href: "/report" },
   { label: "Mouse Database", href: "/htmls/mouse-db.html" },
 ];
 

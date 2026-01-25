@@ -28,7 +28,6 @@ export async function loadMice() {
     shape: m.shape || "",
     hump: m.hump || "",
     // Optional/legacy fields
-    price: m.price ?? null,
     tags: m.tags || [],
   }));
 
@@ -39,4 +38,3 @@ export async function loadMice() {
 
   return normalized;
 }
-

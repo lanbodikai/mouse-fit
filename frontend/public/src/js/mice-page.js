@@ -20,12 +20,6 @@ function bindDom() {
 // --- utils ---
 function mm(v) { return (v || v === 0) ? `${v} mm` : '—'; }
 function g(v) { return (v || v === 0) ? `${v} g` : '—'; }
-function usd(v) {
-  if (v == null || v === '') return '—';
-  if (typeof v === 'number' && Number.isFinite(v)) return `$${v.toFixed(0)}`;
-  const maybeNum = Number(v);
-  return Number.isFinite(maybeNum) ? `$${maybeNum.toFixed(0)}` : '—';
-}
 function cmFrom(mmVal) { return (mmVal || mmVal === 0) ? (mmVal/10).toFixed(1) + ' cm' : '—'; }
 
 function pick(m, keys, fallback='') {
@@ -60,13 +54,12 @@ function normalize(m) {
 
   const shape  = pick(m, ['shape','form','ergonomics'], undefined);
   const sensor = pick(m, ['sensor','sensor_model','sensorName'], undefined);
-  const price_usd = toNumber(pick(m, ['price_usd','price','usd','msrp']));
   const images = pick(m, ['images','imgs','photos'], []) || [];
   const notes  = pick(m, ['notes','summary','desc','description'], undefined);
   const scoreHints = pick(m, ['scoreHints','gripHints','tags'], undefined);
   const id = (pick(m, ['id','sku','slug'], `${brand||''}-${name||''}`)).toString();
 
-  return { id, brand, name, weight_g, length_mm, width_mm, height_mm, shape, sensor, price_usd, images, notes, scoreHints, _raw: m };
+  return { id, brand, name, weight_g, length_mm, width_mm, height_mm, shape, sensor, images, notes, scoreHints, _raw: m };
 }
 
 function primarySpecs(m) {
@@ -74,7 +67,6 @@ function primarySpecs(m) {
     { label: `${g(m.weight_g)}`,           kind: 'weight' },
     m.length_mm ? { label: `${mm(m.length_mm)} L`, kind: 'dim' } : null,
     m.width_mm  ? { label: `${mm(m.width_mm)} W`,  kind: 'dim' } : null,
-    (m.price_usd != null) ? { label: usd(m.price_usd), kind: 'price' } : null,
   ].filter(Boolean);
 }
 
@@ -132,7 +124,6 @@ function showDetails(m) {
       <div><strong>Dimensions</strong><br>L ${mm(m.length_mm)} · W ${mm(m.width_mm)} · H ${mm(m.height_mm)}</div>
       <div><strong>Shape</strong><br>${m.shape || '—'}</div>
       <div><strong>Sensor</strong><br>${m.sensor || '—'}</div>
-      <div><strong>Price</strong><br>${usd(m.price_usd)}</div>
       <div><strong>Notes</strong><br>${m.notes || '—'}</div>
     </div>
     <div style="display:flex; gap:8px; flex-wrap: wrap;">
@@ -144,7 +135,6 @@ function showDetails(m) {
     const text = `${m.brand || ''} ${m.name || ''}\n` +
       `Weight: ${g(m.weight_g)}, Size: L ${mm(m.length_mm)}, W ${mm(m.width_mm)}, H ${mm(m.height_mm)}\n` +
       `Shape: ${m.shape || '—'}, Sensor: ${m.sensor || '—'}\n` +
-      (m.price_usd ? `Price: ${usd(m.price_usd)}\n` : '') +
       (m.notes ? `Notes: ${m.notes}\n` : '');
     try { await navigator.clipboard.writeText(text); toast('Copied to clipboard'); } catch { console.log('Clipboard blocked'); }
   });

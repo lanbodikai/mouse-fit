@@ -46,6 +46,8 @@ class Mouse(BaseModel):
     width_mm: Optional[float] = None
     height_mm: Optional[float] = None
     weight_g: Optional[float] = None
+    ergo: Optional[bool] = None
+    wired: Optional[bool] = None
     shape: Optional[str] = None
     hump: Optional[str] = None
     grips: List[str] = Field(default_factory=list)
@@ -138,6 +140,8 @@ def init_db() -> None:
             width_mm REAL,
             height_mm REAL,
             weight_g REAL,
+            ergo INTEGER,
+            wired INTEGER,
             shape TEXT,
             hump TEXT,
             grips TEXT,
@@ -147,6 +151,13 @@ def init_db() -> None:
         )
         """
     )
+    # Lightweight migrations for older DBs.
+    cur.execute("PRAGMA table_info(mice)")
+    existing_cols = {row[1] for row in cur.fetchall()}
+    if "ergo" not in existing_cols:
+        cur.execute("ALTER TABLE mice ADD COLUMN ergo INTEGER")
+    if "wired" not in existing_cols:
+        cur.execute("ALTER TABLE mice ADD COLUMN wired INTEGER")
     cur.execute(
         """
         CREATE TABLE IF NOT EXISTS measurements (
@@ -216,6 +227,10 @@ def seed_mice(conn: sqlite3.Connection) -> None:
         if variant:
             base_id = f"{base_id}-{variant}"
         mouse_id = slugify(base_id)
+        ergo = item.get("ergo")
+        wired = item.get("wired")
+        ergo_i = None if ergo is None else int(bool(ergo))
+        wired_i = None if wired is None else int(bool(wired))
         rows.append(
             (
                 mouse_id,
@@ -226,6 +241,8 @@ def seed_mice(conn: sqlite3.Connection) -> None:
                 item.get("width_mm"),
                 item.get("height_mm"),
                 item.get("weight_g"),
+                ergo_i,
+                wired_i,
                 item.get("shape"),
                 item.get("hump"),
                 json.dumps(item.get("grips") or []),
@@ -238,9 +255,9 @@ def seed_mice(conn: sqlite3.Connection) -> None:
     conn.executemany(
         """
         INSERT INTO mice (
-            id, brand, model, variant, length_mm, width_mm, height_mm, weight_g,
+            id, brand, model, variant, length_mm, width_mm, height_mm, weight_g, ergo, wired,
             shape, hump, grips, hands, product_url, image_url
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             brand=excluded.brand,
             model=excluded.model,
@@ -249,6 +266,8 @@ def seed_mice(conn: sqlite3.Connection) -> None:
             width_mm=excluded.width_mm,
             height_mm=excluded.height_mm,
             weight_g=excluded.weight_g,
+            ergo=excluded.ergo,
+            wired=excluded.wired,
             shape=excluded.shape,
             hump=excluded.hump,
             grips=excluded.grips,
@@ -276,6 +295,8 @@ def row_to_mouse(row: sqlite3.Row) -> Mouse:
         width_mm=row["width_mm"],
         height_mm=row["height_mm"],
         weight_g=row["weight_g"],
+        ergo=(None if row["ergo"] is None else bool(row["ergo"])),
+        wired=(None if row["wired"] is None else bool(row["wired"])),
         shape=row["shape"],
         hump=row["hump"],
         grips=json.loads(row["grips"] or "[]"),

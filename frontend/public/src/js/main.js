@@ -16,8 +16,10 @@ const PX_PER_MM = 10;
 const DEST_W = Math.round(CARD_W_MM * PX_PER_MM);
 const DEST_H = Math.round(CARD_H_MM * PX_PER_MM);
 
+const MP_VERSION = "0.10.32";
 const TASK_URL   = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
-const VISION_MJS = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs";
+const VISION_MJS = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/vision_bundle.mjs`;
+const VISION_WASM = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/wasm`;
 
 const EDGE_SEARCH   = 140;  // px to scan outward for palm edges
 const TIP_EXTENSION = 0.35; // extra beyond detected middle fingertip
@@ -77,6 +79,7 @@ let H = null;          // homography matrix
 let wrist = null, tip = null, palmL = null, palmR = null;
 
 let handLandmarker = null, runMode = null;
+let mpFailed = false;
 
 // live skeleton state + user preference (remember across resets)
 let skeletonLive = false;
@@ -370,43 +373,58 @@ function resize() {
 }
 
 function loopLive() {
-  if (!isFrozen) {
-    // live: draw camera + (optional) skeleton
-    resize();
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    if (skeletonLive) drawSkeletonLive();
-  } else if (frameData) {
-    // frozen: keep showing the captured frame + overlays
-    ctx.putImageData(frameData, 0, 0);
-    drawCardOverlay();
-    drawMeasureLines();
+  try {
+    if (!isFrozen) {
+      // live: draw camera + (optional) skeleton
+      // Guard: drawImage can throw if video hasn't produced a frame yet.
+      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+        resize();
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        if (skeletonLive) drawSkeletonLive();
+      }
+    } else if (frameData) {
+      // frozen: keep showing the captured frame + overlays
+      ctx.putImageData(frameData, 0, 0);
+      drawCardOverlay();
+      drawMeasureLines();
 
-    // Keep handles visible whenever they have coordinates
-    for (const el of [...pEls, wL, wR, hA, hB]) {
-      if (el.dataset.x) el.style.display = "block";
+      // Keep handles visible whenever they have coordinates
+      for (const el of [...pEls, wL, wR, hA, hB]) {
+        if (el.dataset.x) el.style.display = "block";
+      }
     }
+  } catch (err) {
+    if (console?.debug) console.debug("[Measure] loopLive draw error", err);
+  } finally {
+    requestAnimationFrame(loopLive);
   }
-  requestAnimationFrame(loopLive);
 }
 
 /* ================== MediaPipe ================== */
 async function mp(mode) {
+  if (mpFailed) return null;
   if (handLandmarker && runMode === mode) return handLandmarker;
-  const vision = await import(/* @vite-ignore */ VISION_MJS);
-  const files = await vision.FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-  );
-  handLandmarker = await vision.HandLandmarker.createFromOptions(files, {
-    baseOptions: { modelAssetPath: TASK_URL },
-    numHands: 1,
-    runningMode: mode
-  });
-  runMode = mode;
-  return handLandmarker;
+  try {
+    const vision = await import(/* @vite-ignore */ VISION_MJS);
+    const files = await vision.FilesetResolver.forVisionTasks(VISION_WASM);
+    handLandmarker = await vision.HandLandmarker.createFromOptions(files, {
+      baseOptions: { modelAssetPath: TASK_URL },
+      numHands: 1,
+      runningMode: mode
+    });
+    runMode = mode;
+    return handLandmarker;
+  } catch (err) {
+    mpFailed = true;
+    console.error("[MediaPipe] init failed", err);
+    showToast("Hand model failed to load. Check network for vision_bundle.mjs / wasm / hand_landmarker.task.");
+    return null;
+  }
 }
 
 async function startSkeleton() {
-  await mp("VIDEO");
+  const lm = await mp("VIDEO");
+  if (!lm) return;
   skeletonLive = true;
 }
 
@@ -416,6 +434,7 @@ function drawSkeletonLive() {
     return;
   }
   try {
+    if (!handLandmarker) return;
     const result = handLandmarker.detectForVideo(video, performance.now());
     const lm = result?.landmarks?.[0];
     if (!lm) return;
@@ -502,8 +521,14 @@ function confirmCard() {
     return;
   }
   computeH();             // homography from card
-  computeAndStore();      // save results + snapshot
-  window.location.href = "./report.html";
+  const measure = computeAndStore();      // save results + snapshot
+  try {
+    if (measure && typeof window.finishMeasurement === "function") {
+      window.finishMeasurement(measure.lengthMm, measure.widthMm);
+      return;
+    }
+  } catch {}
+  window.location.href = "/report";
 }
 
 function resetAll() {
@@ -700,7 +725,7 @@ function computeH() {
 
 function computeAndStore() {
   wrist = getXY(hA); tip = getXY(hB); palmL = getXY(wL); palmR = getXY(wR);
-  if (!H || !wrist || !tip || !palmL || !palmR) return;
+  if (!H || !wrist || !tip || !palmL || !palmR) return null;
 
   const wristW = applyH(wrist);
   const tipW   = applyH(tip);
@@ -736,6 +761,8 @@ function computeAndStore() {
     "mousefit:grip_pref",
     "mousefit:grip_done_session"
   ].forEach(k => localStorage.removeItem(k));
+
+  return { lengthMm, widthMm };
 }
 
 /* ================== Drawing (frozen) ================== */

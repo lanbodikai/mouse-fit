@@ -8,7 +8,7 @@ const links = [
     isActive: ({ path }) =>
       path.endsWith('/htmls/mouse-db.html'),
   },
-  { href: '/htmls/report.html', label: 'Report' },
+  { href: '/report', label: 'Report' },
 ];
 
 const buildNav = () => {
