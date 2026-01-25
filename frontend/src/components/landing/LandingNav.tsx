@@ -2,7 +2,7 @@
 
 import { useTransition } from "@/context/TransitionContext";
 import { motion } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
+import { User } from "lucide-react";
 
 interface LandingNavProps {
   currentPage?: string;
@@ -41,16 +41,14 @@ export function LandingNav({ currentPage = "Home" }: LandingNavProps) {
           </span>
         </button>
 
-        {/* Contact Button - Top Right */}
+        {/* Profile Button - Top Right */}
         <button
-          onClick={handleNavClick("/contact")}
+          onClick={handleNavClick("/user")}
           disabled={isTransitioning}
-          className="flex items-center gap-3 text-white text-sm disabled:opacity-50 group"
+          className="flex items-center gap-2 px-3 py-2 rounded-full transition-all text-white/60 hover:text-white hover:bg-white/5 disabled:opacity-50"
         >
-          <span className="opacity-80 group-hover:opacity-100 transition-opacity">Contact us</span>
-          <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center group-hover:bg-green-400 transition-colors">
-            <ArrowUpRight className="w-4 h-4 text-black" />
-          </div>
+          <User className="w-4 h-4" />
+          <span className="text-sm hidden md:inline">Profile</span>
         </button>
       </motion.nav>
 

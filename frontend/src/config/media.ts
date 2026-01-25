@@ -9,7 +9,7 @@
  */
 
 // Background MP4s for each page (looping)
-export const HERO_BG_MP4 = "/videos/fp-1.mp4";
+export const HERO_BG_MP4 = "/videos/lp1.mp4";
 export const ABOUT_BG_MP4 = "/videos/test2.mp4";
 export const NAV_BG_MP4 = "";
 export const CONTACT_BG_MP4 = "";

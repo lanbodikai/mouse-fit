@@ -12,7 +12,7 @@ import {
   NAV_BG_MP4, 
   CONTACT_BG_MP4 
 } from "@/config/media";
-import { ArrowUpRight, Circle, Sparkles, Pencil, ChevronDown } from "lucide-react";
+import { ArrowUpRight, Circle, Sparkles, Pencil, ChevronDown, User } from "lucide-react";
 
 type SectionId = "hero" | "services" | "product" | "contact";
 
@@ -220,7 +220,7 @@ export default function LandingPage() {
       </AnimatePresence>
 
       {/* Navigation */}
-      <LandingNavigation isTransitioning={isTransitioning} onContactClick={openContactModal} />
+      <LandingNavigation isTransitioning={isTransitioning} />
 
       {/* Section Content with Zoom Transitions */}
       <AnimatePresence mode="wait">
@@ -237,21 +237,16 @@ export default function LandingPage() {
           className="relative z-10 h-screen w-screen"
         >
           {currentSection === "hero" && (
-            <HeroSection onNext={goToNextSection} onNavigate={navigateToSection} />
+            <HeroSection />
           )}
           {currentSection === "services" && (
-            <ServicesSection onNext={goToNextSection} onPrev={goToPrevSection} onNavigate={navigateToSection} />
+            <ServicesSection onNavigate={navigateToSection} />
           )}
           {currentSection === "product" && (
-            <ProductSection
-              onNext={goToNextSection}
-              onPrev={goToPrevSection}
-              onNavigate={navigateToSection}
-              scrollRef={setProductScrollEl}
-            />
+            <ProductSection onNavigate={navigateToSection} scrollRef={setProductScrollEl} />
           )}
           {currentSection === "contact" && (
-            <ContactSection onPrev={goToPrevSection} onContactClick={openContactModal} />
+            <ContactSection onContactClick={openContactModal} />
           )}
         </motion.div>
       </AnimatePresence>
@@ -300,10 +295,8 @@ export default function LandingPage() {
 // Navigation Component - Home active, links to other pages
 function LandingNavigation({
   isTransitioning,
-  onContactClick,
 }: {
   isTransitioning: boolean;
-  onContactClick: () => void;
 }) {
   return (
     <>
@@ -321,17 +314,22 @@ function LandingNavigation({
           </span>
         </Link>
 
-        {/* Contact Button - Top Right */}
-        <button
-          disabled={isTransitioning}
-          className="flex items-center gap-3 text-white text-sm disabled:opacity-50 group"
-          onClick={onContactClick}
+        {/* Profile Button - Top Right */}
+        <Link
+          href="/user"
+          onClick={(e) => {
+            if (isTransitioning) e.preventDefault();
+          }}
+          aria-disabled={isTransitioning}
+          className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all ${
+            isTransitioning
+              ? "opacity-50 pointer-events-none text-white/60"
+              : "text-white/60 hover:text-white hover:bg-white/5"
+          }`}
         >
-          <span className="opacity-80 group-hover:opacity-100 transition-opacity">Contact us</span>
-          <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center group-hover:bg-green-400 transition-colors">
-            <ArrowUpRight className="w-4 h-4 text-black" />
-          </div>
-        </button>
+          <User className="w-4 h-4" />
+          <span className="text-sm hidden md:inline">Profile</span>
+        </Link>
       </motion.nav>
 
       {/* Bottom Navigation Bar */}
@@ -385,13 +383,7 @@ function LandingNavigation({
 }
 
 // Hero Section
-function HeroSection({ 
-  onNext,
-  onNavigate,
-}: { 
-  onNext: () => void;
-  onNavigate: (section: SectionId) => void;
-}) {
+function HeroSection() {
   return (
     <main className="relative h-full flex items-center px-8 md:px-16 lg:px-24">
       <div className="w-full max-w-7xl mx-auto">
@@ -428,15 +420,15 @@ function HeroSection({
               transition={{ duration: 0.6, delay: 0.7 }}
               className="pt-4"
             >
-              <button
-                onClick={() => onNavigate("contact")}
-                className="group flex items-center gap-3 px-6 py-3 bg-white/10 hover:bg-white/15 border border-white/20 rounded-full transition-all duration-200"
+              <Link
+                href="/services"
+                className="group inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/20 rounded-full transition-all duration-200"
               >
-                <span className="text-white text-sm">Contact us</span>
-                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center group-hover:bg-green-400 transition-colors">
+                <span className="text-white text-sm">Try now</span>
+                <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center group-hover:bg-green-400 transition-colors">
                   <ArrowUpRight className="w-4 h-4 text-black" />
                 </div>
-              </button>
+              </Link>
             </motion.div>
           </motion.div>
 
@@ -464,12 +456,8 @@ function HeroSection({
 
 // Services Section (second part of home)
 function ServicesSection({ 
-  onNext,
-  onPrev,
   onNavigate,
 }: { 
-  onNext: () => void;
-  onPrev: () => void;
   onNavigate: (section: SectionId) => void;
 }) {
   return (
@@ -546,13 +534,9 @@ function ServicesSection({
 
 // Product Section (third part of home) - Scrollable
 function ProductSection({ 
-  onNext,
-  onPrev,
   onNavigate,
   scrollRef,
 }: { 
-  onNext: () => void;
-  onPrev: () => void;
   onNavigate: (section: SectionId) => void;
   scrollRef?: (el: HTMLElement | null) => void;
 }) {
@@ -663,10 +647,8 @@ function ProductSection({
 
 // Contact Section (fourth part of home)
 function ContactSection({
-  onPrev,
   onContactClick,
 }: {
-  onPrev: () => void;
   onContactClick: () => void;
 }) {
 

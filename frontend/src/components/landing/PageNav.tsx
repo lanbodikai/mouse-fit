@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowLeft } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
 
 interface PageNavProps {
   currentPage: "home" | "services" | "product" | "about";
@@ -95,16 +95,14 @@ export function PageNav({ currentPage }: PageNavProps) {
           </Link>
         </div>
 
-        {/* Contact Button - Top Right */}
-        <button
-          className="flex items-center gap-3 text-white text-sm group"
-          onClick={() => window.location.href = "mailto:contact@mousefit.com"}
+        {/* Profile Button - Top Right */}
+        <Link
+          href="/user"
+          className="flex items-center gap-2 px-3 py-2 rounded-full transition-all text-white/60 hover:text-white hover:bg-white/5"
         >
-          <span className="opacity-80 group-hover:opacity-100 transition-opacity hidden sm:inline">Contact us</span>
-          <div className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center group-hover:bg-green-400 transition-colors">
-            <ArrowUpRight className="w-4 h-4 text-black" />
-          </div>
-        </button>
+          <User className="w-4 h-4" />
+          <span className="text-sm hidden md:inline">Profile</span>
+        </Link>
       </motion.nav>
 
       {/* Bottom Navigation Bar */}

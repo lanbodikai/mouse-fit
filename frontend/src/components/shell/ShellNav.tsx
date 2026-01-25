@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, 
   Home, 
@@ -13,7 +12,6 @@ import {
   FileText, 
   Settings, 
   User,
-  ArrowUpRight
 } from "lucide-react";
 
 interface ShellNavProps {
@@ -35,8 +33,6 @@ const secondaryItems = [
 ];
 
 export function ShellNav({ currentPage }: ShellNavProps) {
-  const router = useRouter();
-
   return (
     <>
       {/* Top Navigation Bar */}
@@ -65,7 +61,7 @@ export function ShellNav({ currentPage }: ShellNavProps) {
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-wide text-white">
-              <span className="text-green-500">DC</span> MOUSEFIT
+              <span className="text-green-500">MSF</span> STUDIO
             </span>
           </Link>
         </div>
