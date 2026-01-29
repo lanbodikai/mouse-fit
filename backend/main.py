@@ -135,7 +135,13 @@ def _parse_cors_origins(value: str | None) -> list[str]:
 EXTRA_CORS_ORIGINS = _parse_cors_origins(os.getenv("CORS_ALLOW_ORIGINS"))
 CORS_ORIGIN_REGEX = os.getenv(
     "CORS_ALLOW_ORIGIN_REGEX",
-    r"^https://(mouse-fit|mousefit)(?:-[a-z0-9-]+)?\.vercel\.app$",
+    # Allow Vercel preview deploys + any production subdomain(s).
+    # Examples:
+    # - https://mouse-fit.vercel.app
+    # - https://mousefit-abc123.vercel.app
+    # - https://mousefit.pro
+    # - https://www.mousefit.pro
+    r"^https://((mouse-fit|mousefit)(?:-[a-z0-9-]+)?\.vercel\.app|([a-z0-9-]+\.)?mousefit\.pro)$",
 )
 
 app.add_middleware(
