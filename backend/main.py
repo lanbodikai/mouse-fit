@@ -107,15 +107,41 @@ app = FastAPI(title="MouseFit v2 API")
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+DEFAULT_CORS_ORIGINS = [
+    # Local dev
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    # Docker dev
+    "http://frontend:3000",
+    # Production
+    "https://mousefit.pro",
+    "https://www.mousefit.pro",
+]
+
+
+def _parse_cors_origins(value: str | None) -> list[str]:
+    if not value:
+        return []
+    out: list[str] = []
+    for item in value.split(","):
+        origin = item.strip()
+        if origin:
+            out.append(origin)
+    return out
+
+
+EXTRA_CORS_ORIGINS = _parse_cors_origins(os.getenv("CORS_ALLOW_ORIGINS"))
+CORS_ORIGIN_REGEX = os.getenv(
+    "CORS_ALLOW_ORIGIN_REGEX",
+    r"^https://(mouse-fit|mousefit)(?:-[a-z0-9-]+)?\.vercel\.app$",
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://frontend:3000",
-    ],
+    allow_origins=[*DEFAULT_CORS_ORIGINS, *EXTRA_CORS_ORIGINS],
+    allow_origin_regex=CORS_ORIGIN_REGEX or None,
     allow_credentials=True,
-    allow_methods=["*"] ,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
