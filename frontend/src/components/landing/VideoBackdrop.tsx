@@ -15,6 +15,8 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [allowVideo, setAllowVideo] = useState(true);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
@@ -30,6 +32,38 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
     }
   }, [src, isDev]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const prefersReducedMotion =
+      typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const saveData = Boolean((navigator as unknown as { connection?: { saveData?: boolean } })?.connection?.saveData);
+    setAllowVideo(!(prefersReducedMotion || saveData));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!allowVideo || !src) {
+      setShouldLoadVideo(false);
+      return;
+    }
+
+    setShouldLoadVideo(false);
+    const start = () => setShouldLoadVideo(true);
+
+    // Let hydration/first paint happen before downloading large MP4s.
+    const requestIdleCallback = (globalThis as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number })
+      .requestIdleCallback;
+    const cancelIdleCallback = (globalThis as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+
+    if (typeof requestIdleCallback === "function") {
+      const id = requestIdleCallback(start, { timeout: 1200 });
+      return () => cancelIdleCallback?.(id);
+    }
+
+    const t = setTimeout(start, 250);
+    return () => clearTimeout(t);
+  }, [allowVideo, src]);
+
   const handleVideoReady = useCallback(() => {
     setHasError(false);
     setIsLoaded(true);
@@ -37,12 +71,15 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
     const video = videoRef.current;
     if (!video) return;
 
+    if (!allowVideo) return;
+    if (!video.paused) return;
+
     video.play().catch((err) => {
       if (isDev) {
         console.log("Video autoplay blocked:", err);
       }
     });
-  }, [isDev]);
+  }, [allowVideo, isDev]);
 
   const handleVideoError = useCallback(
     (event: SyntheticEvent<HTMLVideoElement>) => {
@@ -52,7 +89,7 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
     []
   );
 
-  const showFallback = !src || hasError;
+  const showFallback = !allowVideo || !src || hasError;
 
   return (
     <div className={`absolute inset-0 overflow-hidden ${className}`}>
@@ -84,23 +121,21 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
         {/* Dev hint when src is empty */}
         {isDev && showFallback && (
           <div className="absolute bottom-4 left-4 text-xs text-white/20 font-mono">
-            {!src ? "Missing video src" : "Video failed to load"}
+            {!allowVideo ? "Video disabled (reduced motion / data saver)" : !src ? "Missing video src" : "Video failed to load"}
           </div>
         )}
       </div>
 
       {/* Video element */}
-      {src && !hasError && (
+      {allowVideo && shouldLoadVideo && src && !hasError && (
         <video
           ref={videoRef}
-          src={src}
           onLoadStart={() => {
             // Show the fallback while the new src is fetching/decoding.
             setHasError(false);
             setIsLoaded(false);
           }}
           onCanPlay={handleVideoReady}
-          onLoadedData={handleVideoReady}
           onError={handleVideoError}
           className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${
             isLoaded ? "opacity-100" : "opacity-0"
@@ -108,7 +143,7 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           autoPlay
         >
           <source src={src} type="video/mp4" />

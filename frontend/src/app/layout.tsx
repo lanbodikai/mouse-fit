@@ -29,7 +29,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.mousefit.pro").replace(/\/+$/, "");
 
   return (
     <html lang="en" className="dark" suppressHydrationWarning>

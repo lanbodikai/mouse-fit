@@ -7,6 +7,8 @@
 // - Robust capture → still image (no black)
 // - Clear logging for debugging model output
 
+import { apiJson } from "./api-client.js";
+
 /* ================== constants ================== */
 const MP_VERSION = "0.10.32";
 const TASK_URL   = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
@@ -26,15 +28,7 @@ const YOLO_CLASSES = 1;
 const SHOW_GUIDE_OVERLAY = false;
 
 // Backend-based YOLO - no TFJS needed
-// API base URL will be set from Next.js environment or default
-const getApiBase = () => {
-  if (typeof window !== 'undefined' && window.API_BASE_URL) {
-    return window.API_BASE_URL;
-  }
-  // Try to get from meta tag or default
-  const meta = document.querySelector('meta[name="api-base-url"]');
-  return meta ? meta.getAttribute('content') : 'http://localhost:8000';
-};
+// API base URL is resolved by ./api-client.js via window.__MOUSEFIT_API_BASE__
 
 /* ================== DOM ================== */
 const video        = document.getElementById("cam");
@@ -222,14 +216,10 @@ async function yoloDetectBackend(imageLike, { preferGuide = true } = {}) {
     const content = { x1: dx, y1: dy, x2: dx + nw, y2: dy + nh };
     
     const imageBase64 = prep.toDataURL('image/jpeg', 0.9).split(',')[1];
-    const API_BASE = getApiBase();
     
     // Call backend API
-    const response = await fetch(`${API_BASE}/api/ml/yolo`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const data = await apiJson("/api/ml/yolo", {
+      method: "POST",
       body: JSON.stringify({
         image: imageBase64,
         conf: YOLO_CONF,
@@ -237,12 +227,6 @@ async function yoloDetectBackend(imageLike, { preferGuide = true } = {}) {
         max_det: YOLO_MAX_DET,
       }),
     });
-
-    if (!response.ok) {
-      throw new Error(`Backend API error: ${response.status}`);
-    }
-
-    const data = await response.json();
     const detections = data.detections || [];
 
     // Convert backend detections (in 640x640 space) back to original coordinates
@@ -731,7 +715,7 @@ if (typeof window !== 'undefined') {
 }
 function handleGUMError(e){ showToast("Camera error: " + (e?.message || e)); }
 async function initCameraLayer() {
-  if (!(location.protocol==="https:" || location.hostname==="localhost" || location.hostname==="127.0.0.1")) {
+  if (!(location.protocol==="https:" || location.hostname==="localhost")) {
     showToast("Use HTTPS or localhost (not file://) for camera."); return;
   }
   video.setAttribute("playsinline",""); video.playsInline = true; video.muted = true;
@@ -1779,8 +1763,6 @@ window.YOLO = {
   conf: () => YOLO_CONF,
   setConf: (v) => { YOLO_CONF = Number(v); console.log('YOLO_CONF =', YOLO_CONF); }
 };
-
-
 
 
 

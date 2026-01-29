@@ -59,7 +59,15 @@ function normalize(m) {
   const scoreHints = pick(m, ['scoreHints','gripHints','tags'], undefined);
   const id = (pick(m, ['id','sku','slug'], `${brand||''}-${name||''}`)).toString();
 
-  return { id, brand, name, weight_g, length_mm, width_mm, height_mm, shape, sensor, images, notes, scoreHints, _raw: m };
+  const dimsText = [
+    length_mm && `${length_mm}mm length`,
+    width_mm && `${width_mm}mm width`,
+    height_mm && `${height_mm}mm height`,
+  ].filter(Boolean).join(', ');
+  const gripHints = Array.isArray(scoreHints) ? scoreHints.join(', ') : (scoreHints || '');
+  const searchText = `${brand || ''} ${name || ''} ${dimsText} ${weight_g ? `weight ${weight_g}g` : ''} ${shape || ''} ${sensor || ''} ${gripHints} ${notes || ''}`.toLowerCase();
+
+  return { id, brand, name, weight_g, length_mm, width_mm, height_mm, shape, sensor, images, notes, scoreHints, _search: searchText, _raw: m };
 }
 
 function primarySpecs(m) {
@@ -71,13 +79,6 @@ function primarySpecs(m) {
 }
 
 
-
-function describe(m) {
-  const dims = [m.length_mm && `${m.length_mm}mm length`, m.width_mm && `${m.width_mm}mm width`, m.height_mm && `${m.height_mm}mm height`]
-    .filter(Boolean).join(', ');
-  const gripHints = Array.isArray(m.scoreHints) ? m.scoreHints.join(', ') : (m.scoreHints || '');
-  return `${m.brand || ''} ${m.name || ''}. ${dims}. Weight ${m.weight_g || ''}g. Shape ${m.shape || ''}. Sensor ${m.sensor || ''}. ${gripHints}. ${m.notes || ''}`.trim();
-}
 
 function chipHTML(s) {
   // use class per kind for color styling
@@ -101,16 +102,17 @@ function pill(m) {
 }
 
 function renderGrid(list) {
-  grid.innerHTML = '';
   if (!list || list.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'muted';
     empty.style.padding = '12px';
     empty.textContent = 'No matches. Try broader terms like "small", "ergonomic", or a brand name.';
-    grid.appendChild(empty);
+    grid.replaceChildren(empty);
     return;
   }
-  for (const m of list) grid.appendChild(pill(m));
+  const frag = document.createDocumentFragment();
+  for (const m of list) frag.appendChild(pill(m));
+  grid.replaceChildren(frag);
 }
 
 function showDetails(m) {
@@ -162,7 +164,7 @@ function localFilter(query, items) {
   const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
 
   return items.filter(m => {
-    const hay = `${m.brand || ''} ${m.name || ''} ${describe(m)}`.toLowerCase();
+    const hay = m._search || '';
 
     // numeric shortcuts: <70g, <=120mm, >125mm
     for (const tok of tokens) {

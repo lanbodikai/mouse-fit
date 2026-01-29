@@ -13,6 +13,7 @@ import {
   Settings, 
   User,
 } from "lucide-react";
+import { ApiStatus } from "@/components/ApiStatus";
 
 interface ShellNavProps {
   currentPage: string;
@@ -68,6 +69,7 @@ export function ShellNav({ currentPage }: ShellNavProps) {
 
         {/* Right side - Secondary nav */}
         <div className="flex items-center gap-3">
+          <ApiStatus />
           {secondaryItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;

@@ -104,7 +104,6 @@ const styles = `
   border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.2s ease;
-  backdrop-filter: blur(10px);
 }
 
 .pill:hover {

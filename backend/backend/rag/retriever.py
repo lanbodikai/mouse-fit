@@ -39,6 +39,12 @@ def _get_collection():
     return _collection
 
 
+def warmup() -> None:
+    """Preload embedder / vector store to avoid first-request latency."""
+    _get_collection()
+    _get_embedder()
+
+
 def _load_docs(path: Path) -> List[Dict[str, Any]]:
     if not path.exists():
         return []

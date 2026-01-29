@@ -1,19 +1,10 @@
 // Shared loader for the mice dataset from the backend API.
 // This replaces bundling a large mice list into the frontend bundle.
 
-function apiBase() {
-  // `window.__MOUSEFIT_API_BASE__` is injected by Next.js layout.tsx.
-  if (typeof window !== "undefined" && window.__MOUSEFIT_API_BASE__) {
-    return String(window.__MOUSEFIT_API_BASE__);
-  }
-  return "http://localhost:8000";
-}
+import { apiJson } from "./api-client.js";
 
 export async function loadMice() {
-  const base = apiBase().replace(/\/+$/, "");
-  const res = await fetch(`${base}/api/mice`, { credentials: "omit" });
-  if (!res.ok) throw new Error(`Failed to fetch mice: ${res.status}`);
-  const data = await res.json();
+  const data = await apiJson("/api/mice", { credentials: "omit" });
   const mice = Array.isArray(data) ? data : [];
 
   // Normalize backend -> legacy front-end shape used by existing JS tools.

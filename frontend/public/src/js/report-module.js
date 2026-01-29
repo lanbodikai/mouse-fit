@@ -1,4 +1,5 @@
 import { loadMice as loadMiceApi } from "./mice-api.js";
+import { apiJson } from "./api-client.js";
 
 const $status = document.getElementById("status");
 const $p1 = document.getElementById("p1");
@@ -176,9 +177,7 @@ async function fetchFlags(mice){
   try{
     const candidates = mice.map(m=>({ id:m.id, brand:"", model:m.name }));
     const body = { profile: { grip: profile.grip||null, length_mm: handLength, width_mm: handWidth }, candidates };
-    const r = await fetch("/api/rerank", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body) });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || "rerank failed");
+    const data = await apiJson("/api/rerank", { method:"POST", body: JSON.stringify(body) });
     return collectFlags(data.ranked||[]);
   }catch(e){
     console.warn("RAG flags unavailable:", e.message||e);
@@ -241,18 +240,13 @@ async function generateReport(){
     setStatus("Summarizing…");
     try{
       const body = { profile, candidates: mice.map(({id,name})=>({id,brand:"",model:name})) };
-      const r = await fetch("/api/report",{ method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body) });
-      if(r.ok) {
-           const data = await r.json();
-           const [a,b] = sanitizeReport(data.report||"");
-           $p1.textContent = a; $p2.textContent = b;
-      } else {
-           // Fallback text if API fails or isn't set up
-           $p1.textContent = "Analysis complete. Review the ranked lists below for your best mouse options.";
-      }
+      const data = await apiJson("/api/report",{ method:"POST", body: JSON.stringify(body) });
+      const [a,b] = sanitizeReport(data.report||"");
+      $p1.textContent = a; $p2.textContent = b;
       setStatus("");
     }catch(e){
-      $p1.textContent = "Analysis complete.";
+      // Fallback text if API fails or isn't set up
+      $p1.textContent = "Analysis complete. Review the ranked lists below for your best mouse options.";
       setStatus("");
     }
   } catch (e) {

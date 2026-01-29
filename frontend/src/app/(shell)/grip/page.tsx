@@ -389,13 +389,6 @@ export default function GripPage() {
         <style dangerouslySetInnerHTML={{ __html: styles }} />
         <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
         <Script
-          id="grip-api-base"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `window.API_BASE_URL = "${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'}";`,
-          }}
-        />
-        <Script
           id="grip-thumbs"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{

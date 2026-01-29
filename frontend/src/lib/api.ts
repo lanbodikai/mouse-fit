@@ -1,34 +1,47 @@
 import type { Grip, Measurement, Mouse, Report } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, "") || "https://api.mousefit.pro";
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers || {}),
-    },
-  });
+function joinUrl(base: string, path: string) {
+  const baseTrimmed = base.replace(/\/+$/, "");
+  const pathTrimmed = path.startsWith("/") ? path : `/${path}`;
+  return `${baseTrimmed}${pathTrimmed}`;
+}
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `Request failed: ${res.status}`);
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const url = /^https?:\/\//.test(path) ? path : joinUrl(API_BASE, path);
+
+  const headers = new Headers(options.headers);
+  if (options.body != null && typeof options.body === "string" && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
+  const res = await fetch(url, { ...options, headers });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const statusText = res.statusText ? ` ${res.statusText}` : "";
+    throw new Error(`API request failed (${res.status}${statusText}): ${text || "(empty response body)"}`);
+  }
+
+  return res;
+}
+
+export async function apiJson<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await apiFetch(path, options);
   return (await res.json()) as T;
 }
 
 export function getHealth(): Promise<{ ok: boolean }> {
-  return request("/api/health");
+  return apiJson("/api/health");
 }
 
 export function getMice(): Promise<Mouse[]> {
-  return request("/api/mice");
+  return apiJson("/api/mice");
 }
 
 export function getMouse(id: string): Promise<Mouse> {
-  return request(`/api/mice/${id}`);
+  return apiJson(`/api/mice/${id}`);
 }
 
 export function saveMeasurement(payload: {
@@ -36,7 +49,7 @@ export function saveMeasurement(payload: {
   length_mm: number;
   width_mm: number;
 }): Promise<Measurement> {
-  return request("/api/measurements", {
+  return apiJson("/api/measurements", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -47,7 +60,7 @@ export function saveGrip(payload: {
   grip: string;
   confidence?: number;
 }): Promise<Grip> {
-  return request("/api/grip", {
+  return apiJson("/api/grip", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -55,16 +68,16 @@ export function saveGrip(payload: {
 
 export function generateReport(sessionId: string): Promise<Report> {
   const encoded = encodeURIComponent(sessionId);
-  return request(`/api/report/generate?session_id=${encoded}`, { method: "POST" });
+  return apiJson(`/api/report/generate?session_id=${encoded}`, { method: "POST" });
 }
 
 export function getLatestReport(sessionId: string): Promise<Report> {
   const encoded = encodeURIComponent(sessionId);
-  return request(`/api/report/latest?session_id=${encoded}`);
+  return apiJson(`/api/report/latest?session_id=${encoded}`);
 }
 
 export function chatAgent(payload: Record<string, unknown>): Promise<{ reply: string }> {
-  return request("/api/agent/chat", {
+  return apiJson("/api/agent/chat", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -76,7 +89,7 @@ export function ragQuery(payload: {
   top_k?: number;
   prefs?: Record<string, unknown>;
 }): Promise<{ answer: string; sources: Array<Record<string, unknown>> }> {
-  return request("/api/rag/query", {
+  return apiJson("/api/rag/query", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -86,7 +99,7 @@ export function mlPredict(payload: {
   session_id: string;
   payload: Record<string, unknown>;
 }): Promise<{ prediction: string; confidence: number; metadata?: Record<string, unknown> }> {
-  return request("/api/ml/predict", {
+  return apiJson("/api/ml/predict", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -121,7 +134,7 @@ export async function yoloPredict(imageData: string | HTMLCanvasElement | ImageD
     }
   }
 
-  const response = await request<{
+  const response = await apiJson<{
     detections: Array<{
       box: [number, number, number, number];
       score: number;
@@ -129,9 +142,6 @@ export async function yoloPredict(imageData: string | HTMLCanvasElement | ImageD
     }>;
   }>("/api/ml/yolo", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify({
       image: imageBase64,
       conf: options?.conf ?? 0.22,

@@ -24,6 +24,7 @@ from backend.rag.schemas import (
 )
 
 router = APIRouter()
+_SESSION = requests.Session()
 
 
 def _profile_to_query(profile: Dict[str, Any]) -> str:
@@ -56,10 +57,10 @@ def _call_groq(messages: List[Dict[str, Any]], model: Optional[str] = None, temp
     if response_format:
         payload["response_format"] = response_format
 
-    resp = requests.post(
+    resp = _SESSION.post(
         config.GROQ_URL,
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {config.GROQ_API_KEY}"},
-        data=json.dumps(payload),
+        json=payload,
         timeout=60,
     )
     if not resp.ok:

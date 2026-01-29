@@ -8,6 +8,8 @@ from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi import Response
 from pydantic import BaseModel, Field
 
 from backend.api.routes_ml import router as ml_router
@@ -102,6 +104,8 @@ class Report(BaseModel):
 
 
 app = FastAPI(title="MouseFit v2 API")
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
     CORSMiddleware,
@@ -283,6 +287,15 @@ def seed_mice(conn: sqlite3.Connection) -> None:
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    warm = os.getenv("MOUSEFIT_WARMUP_RAG", "1").strip().lower() in {"1", "true", "yes", "on"}
+    if warm:
+        try:
+            from backend.rag.retriever import warmup
+
+            warmup()
+        except Exception:
+            # Best-effort warmup; avoid breaking startup if optional deps/models are unavailable.
+            pass
 
 
 def row_to_mouse(row: sqlite3.Row) -> Mouse:
@@ -382,7 +395,9 @@ def health() -> dict:
 
 
 @app.get("/api/mice", response_model=List[Mouse])
-def list_mice() -> List[Mouse]:
+def list_mice(response: Response) -> List[Mouse]:
+    # This endpoint is hit often (database/search UI). Cache briefly to reduce repeat fetches.
+    response.headers["Cache-Control"] = "public, max-age=300"
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("SELECT * FROM mice ORDER BY brand, model")
