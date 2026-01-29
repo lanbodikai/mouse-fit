@@ -1,7 +1,28 @@
 import type { Grip, Measurement, Mouse, Report } from "./types";
 
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.trim().replace(/\/+$/, "") || "https://api.mousefit.pro";
+declare global {
+  interface Window {
+    __MOUSEFIT_API_BASE__?: string;
+  }
+}
+
+function normalizeBase(value: string): string {
+  return value.trim().replace(/\/+$/, "");
+}
+
+export function getApiBase(): string {
+  if (typeof window !== "undefined") {
+    const runtime = window.__MOUSEFIT_API_BASE__;
+    if (typeof runtime === "string" && runtime.trim()) return normalizeBase(runtime);
+  }
+
+  const envBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (typeof envBase === "string" && envBase.trim()) return normalizeBase(envBase);
+
+  if (process.env.NODE_ENV === "development") return "http://localhost:8000";
+
+  return "https://api.mousefit.pro";
+}
 
 function joinUrl(base: string, path: string) {
   const baseTrimmed = base.replace(/\/+$/, "");
@@ -10,14 +31,21 @@ function joinUrl(base: string, path: string) {
 }
 
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const url = /^https?:\/\//.test(path) ? path : joinUrl(API_BASE, path);
+  const apiBase = getApiBase();
+  const url = /^https?:\/\//.test(path) ? path : joinUrl(apiBase, path);
 
   const headers = new Headers(options.headers);
   if (options.body != null && typeof options.body === "string" && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
-  const res = await fetch(url, { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(url, { ...options, headers });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`API request failed (network error) for ${url}: ${message}`);
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     const statusText = res.statusText ? ` ${res.statusText}` : "";

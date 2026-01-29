@@ -29,7 +29,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.mousefit.pro").replace(/\/+$/, "");
+  // Use bracket access to avoid build-time inlining so container/runtime env changes can be reflected.
+  const apiBase = (
+    process.env["NEXT_PUBLIC_API_BASE_URL"] ||
+    (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://api.mousefit.pro")
+  ).replace(/\/+$/, "");
 
   return (
     <html lang="en" className="dark" suppressHydrationWarning>

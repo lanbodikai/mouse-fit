@@ -116,6 +116,8 @@ DEFAULT_CORS_ORIGINS = [
     # Production
     "https://mousefit.pro",
     "https://www.mousefit.pro",
+    # GitHub Pages
+    "https://lanbodikai.github.io",
 ]
 
 
