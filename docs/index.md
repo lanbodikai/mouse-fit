@@ -37,6 +37,7 @@ Open `http://localhost:3000`.
 During `docker compose build`, each Dockerfile tries to download that file and store it in the image as `/app/.mousefit.env`. On container startup, that file is sourced automatically.
 
 The `.env.compose` file is the unified env inventory for this repo (backend, frontend, and script vars).
+Its SMTP entries are placeholders by design. Set real `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `CONTACT_TO` via your local/deploy env source instead of committing secrets.
 
 ### Typical flow
 
