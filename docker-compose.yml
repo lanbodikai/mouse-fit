@@ -1,10 +1,18 @@
 version: '3.8'
 
+x-mousefit-build-args: &mousefit-build-args
+  # Default source for shared runtime/build env values.
+  # Override this in your shell if you host env elsewhere:
+  # MOUSEFIT_ENV_URL=https://... docker compose build
+  MOUSEFIT_ENV_URL: ${MOUSEFIT_ENV_URL:-https://raw.githubusercontent.com/lanbodikai/mouse-fit/main/.env.compose}
+
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        <<: *mousefit-build-args
     container_name: mousefit-backend
     ports:
       - "8000:8000"
@@ -30,6 +38,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        <<: *mousefit-build-args
     container_name: mousefit-frontend
     ports:
       - "3000:3000"
