@@ -28,30 +28,3 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-## Docker Compose shared env download
-
-`docker-compose.yml` now passes `MOUSEFIT_ENV_URL` into both image builds. By default it points to:
-
-`https://raw.githubusercontent.com/lanbodikai/mouse-fit/main/.env.compose`
-
-During `docker compose build`, each Dockerfile tries to download that file and store it in the image as `/app/.mousefit.env`. On container startup, that file is sourced automatically.
-
-The `.env.compose` file is the unified env inventory for this repo (backend, frontend, and script vars).
-
-### Typical flow
-
-```bash
-docker compose build
-docker compose up -d
-```
-
-### Use your own env URL
-
-```bash
-set MOUSEFIT_ENV_URL=https://your-host/path/to/.env
-docker compose build
-```
-
-If env download fails, build continues and services fall back to compose/runtime env values.
-
-`MOUSEFIT_ENV_URL` is listed in `.env.compose` for completeness, but compose resolves it from your current shell/local compose env before the image download step.
