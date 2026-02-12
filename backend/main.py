@@ -4,7 +4,7 @@ import json
 import os
 import sqlite3
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -84,6 +84,30 @@ class GripOut(BaseModel):
     grip: str
     confidence: float
     created_at: str
+
+
+class GripRatingsIn(BaseModel):
+    palm: int
+    claw: int
+    fingertip: int
+
+
+class UserProfileIn(BaseModel):
+    session_id: str
+    hand_length_mm: float
+    hand_width_mm: float
+    grip_ratings: GripRatingsIn
+    budget_min: float
+    budget_target: float
+    budget_max: float
+    usage_intents: List[str] = Field(default_factory=list)
+    weight_pref: Literal["light", "balanced", "heavy"]
+    notes: Optional[str] = None
+
+
+class UserProfileOut(BaseModel):
+    ok: bool
+    saved_at: str
 
 
 class MouseRecommendation(BaseModel):
@@ -226,6 +250,16 @@ def init_db() -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id TEXT NOT NULL,
             report_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            profile_json TEXT NOT NULL,
             created_at TEXT NOT NULL
         )
         """
@@ -508,6 +542,53 @@ def save_grip(payload: GripIn) -> GripOut:
         confidence=payload.confidence or 0.0,
         created_at=created_at,
     )
+
+
+def _validate_user_profile(payload: UserProfileIn) -> None:
+    if payload.hand_length_mm < 100 or payload.hand_length_mm > 260:
+        raise HTTPException(status_code=422, detail="hand_length_mm must be between 100 and 260")
+    if payload.hand_width_mm < 50 or payload.hand_width_mm > 130:
+        raise HTTPException(status_code=422, detail="hand_width_mm must be between 50 and 130")
+
+    grip_values = [payload.grip_ratings.palm, payload.grip_ratings.claw, payload.grip_ratings.fingertip]
+    for value in grip_values:
+        if value < 1 or value > 5:
+            raise HTTPException(status_code=422, detail="grip ratings must be between 1 and 5")
+
+    budgets = [payload.budget_min, payload.budget_target, payload.budget_max]
+    for value in budgets:
+        if value < 5 or value > 500:
+            raise HTTPException(status_code=422, detail="budget values must be between 5 and 500")
+    if not (payload.budget_min <= payload.budget_target <= payload.budget_max):
+        raise HTTPException(status_code=422, detail="budget_min <= budget_target <= budget_max is required")
+
+    if payload.notes and len(payload.notes) > 1000:
+        raise HTTPException(status_code=422, detail="notes must be 1000 chars or less")
+
+
+@app.post("/api/profile", response_model=UserProfileOut)
+def save_profile(payload: UserProfileIn) -> UserProfileOut:
+    _validate_user_profile(payload)
+    created_at = utc_now()
+    profile_json: Dict[str, Any] = payload.model_dump()
+    if profile_json.get("notes") is None:
+        profile_json["notes"] = ""
+
+    conn = get_conn()
+    conn.execute(
+        """
+        INSERT INTO user_profiles (session_id, profile_json, created_at)
+        VALUES (?, ?, ?)
+        """,
+        (
+            payload.session_id,
+            json.dumps(profile_json),
+            created_at,
+        ),
+    )
+    conn.commit()
+    conn.close()
+    return UserProfileOut(ok=True, saved_at=created_at)
 
 
 @app.post("/api/report/generate", response_model=Report)

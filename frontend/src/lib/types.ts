@@ -47,3 +47,37 @@ export type Report = {
   summary: string;
   created_at: string;
 };
+
+export type GripRatings = {
+  palm: number;
+  claw: number;
+  fingertip: number;
+};
+
+export type UsageIntent =
+  | "gaming"
+  | "coding"
+  | "office"
+  | "creative"
+  | "school"
+  | "general";
+
+export type WeightPreference = "light" | "balanced" | "heavy";
+
+export type UserProfileInput = {
+  session_id: string;
+  hand_length_mm: number;
+  hand_width_mm: number;
+  grip_ratings: GripRatings;
+  budget_min: number;
+  budget_target: number;
+  budget_max: number;
+  usage_intents: UsageIntent[];
+  weight_pref: WeightPreference;
+  notes?: string;
+};
+
+export type SaveProfileResponse = {
+  ok: boolean;
+  saved_at: string;
+};
