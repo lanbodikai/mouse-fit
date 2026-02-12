@@ -42,6 +42,8 @@ export async function POST(req: Request) {
     return json(400, { ok: false, error: "Message is required" });
   }
 
+  const toEmail = getEnv("CONTACT_TO") ?? "lanbodikai@gmail.com";
+
   const smtpHost = getEnv("SMTP_HOST");
   const smtpPort = Number(getEnv("SMTP_PORT") ?? "587");
   const smtpUser = getEnv("SMTP_USER");
@@ -56,7 +58,6 @@ export async function POST(req: Request) {
     });
   }
 
-  const toEmail = getEnv("CONTACT_TO") ?? smtpUser;
   const fromEmail = getEnv("CONTACT_FROM") ?? smtpUser;
 
   const transporter = nodemailer.createTransport({
@@ -84,3 +85,4 @@ export async function POST(req: Request) {
 
   return json(200, { ok: true });
 }
+
