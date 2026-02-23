@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { Check, ChevronLeft, MousePointer2, Ruler, Target } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -400,7 +400,12 @@ export default function MousefitSurveyPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => writeJson(WIZARD_KEYS, answers), [answers]);
-  useEffect(() => () => timerRef.current !== null && window.clearTimeout(timerRef.current), []);
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    },
+    []
+  );
 
   const steps = useMemo<Step[]>(() => {
     const list: Step[] = [
@@ -557,9 +562,14 @@ export default function MousefitSurveyPage() {
     }
   };
 
-  const panel = {
+  const panel: Variants = {
     enter: (d: number) => ({ opacity: 0, x: d > 0 ? 56 : -56, filter: "blur(8px)" }),
-    center: { opacity: 1, x: 0, filter: "blur(0px)", transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] } },
+    center: {
+      opacity: 1,
+      x: 0,
+      filter: "blur(0px)",
+      transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    },
     exit: (d: number) => ({ opacity: 0, x: d > 0 ? -56 : 56, filter: "blur(8px)", transition: { duration: 0.24 } }),
   };
 

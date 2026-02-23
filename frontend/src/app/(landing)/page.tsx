@@ -25,22 +25,23 @@ const sectionVideos: Record<SectionId, string> = {
   contact: CONTACT_BG_MP4,
 };
 
+const SECTION_TRANSITION_MS = 520;
+const NAV_LOCK_MS = 460;
+const WHEEL_MIN_DELTA = 20;
+
 // Zoom transition variants
 const zoomVariants = {
   enter: {
-    scale: 0.8,
+    scale: 0.985,
     opacity: 0,
-    filter: "blur(10px)",
   },
   center: {
     scale: 1,
     opacity: 1,
-    filter: "blur(0px)",
   },
   exit: {
-    scale: 1.3,
+    scale: 1.015,
     opacity: 0,
-    filter: "blur(10px)",
   },
 };
 
@@ -51,11 +52,29 @@ export default function LandingPage() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const productScrollRef = useRef<HTMLElement | null>(null);
   const navLockRef = useRef(false);
+  const navLockTimeoutRef = useRef<number | null>(null);
+  const transitionTimeoutRef = useRef<number | null>(null);
+  const wheelAccumRef = useRef(0);
+  const wheelRafRef = useRef<number | null>(null);
 
   const openContactModal = useCallback(() => setIsContactModalOpen(true), []);
   const closeContactModal = useCallback(() => setIsContactModalOpen(false), []);
   const setProductScrollEl = useCallback((el: HTMLElement | null) => {
     productScrollRef.current = el;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (navLockTimeoutRef.current !== null) {
+        window.clearTimeout(navLockTimeoutRef.current);
+      }
+      if (transitionTimeoutRef.current !== null) {
+        window.clearTimeout(transitionTimeoutRef.current);
+      }
+      if (wheelRafRef.current !== null) {
+        window.cancelAnimationFrame(wheelRafRef.current);
+      }
+    };
   }, []);
 
   // Navigate to a specific section with zoom animation
@@ -66,9 +85,13 @@ export default function LandingPage() {
     setCurrentSection(sectionId);
 
     // Reset transitioning state after animation
-    setTimeout(() => {
+    if (transitionTimeoutRef.current !== null) {
+      window.clearTimeout(transitionTimeoutRef.current);
+    }
+    transitionTimeoutRef.current = window.setTimeout(() => {
       setIsTransitioning(false);
-    }, 800);
+      transitionTimeoutRef.current = null;
+    }, SECTION_TRANSITION_MS);
   }, [isTransitioning, currentSection]);
 
   // Navigate to next sectionG
@@ -105,9 +128,13 @@ export default function LandingPage() {
 
     const lock = () => {
       navLockRef.current = true;
-      window.setTimeout(() => {
+      if (navLockTimeoutRef.current !== null) {
+        window.clearTimeout(navLockTimeoutRef.current);
+      }
+      navLockTimeoutRef.current = window.setTimeout(() => {
         navLockRef.current = false;
-      }, 800);
+        navLockTimeoutRef.current = null;
+      }, NAV_LOCK_MS);
     };
 
     const atProductTop = () => {
@@ -167,25 +194,35 @@ export default function LandingPage() {
     };
 
     const onWheel = (e: WheelEvent) => {
-      if (isContactModalOpen) return;
       if (isTypingTarget(e.target)) return;
-      if (isTransitioning || navLockRef.current) return;
-
-      // Ignore tiny trackpad jitter.
-      if (Math.abs(e.deltaY) < 10) return;
-
-      const down = e.deltaY > 0;
-
-      // Let Product scroll naturally until top/bottom, then switch sections.
-      if (currentSection === "product") {
-        if (down && !atProductBottom()) return;
-        if (!down && !atProductTop()) return;
+      if (isContactModalOpen || isTransitioning || navLockRef.current) {
+        e.preventDefault();
+        return;
       }
 
+      const down = e.deltaY > 0;
+      const canSectionNavigate =
+        currentSection !== "product" || (down ? atProductBottom() : atProductTop());
+
+      // Keep native scrolling inside Product until the user reaches an edge.
+      if (!canSectionNavigate) return;
+
       e.preventDefault();
-      lock();
-      if (down) goToNextSection();
-      else goToPrevSection();
+      wheelAccumRef.current += e.deltaY;
+
+      if (wheelRafRef.current !== null) return;
+      wheelRafRef.current = window.requestAnimationFrame(() => {
+        wheelRafRef.current = null;
+
+        const wheelDelta = wheelAccumRef.current;
+        wheelAccumRef.current = 0;
+        if (Math.abs(wheelDelta) < WHEEL_MIN_DELTA) return;
+
+        const toNext = wheelDelta > 0;
+        lock();
+        if (toNext) goToNextSection();
+        else goToPrevSection();
+      });
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -204,16 +241,16 @@ export default function LandingPage() {
   ]);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden">
+    <div className="relative h-screen w-screen overflow-hidden overscroll-none">
       {/* Video Backdrop - Changes based on current section */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentSection}
-          initial={{ opacity: 0, scale: 1.1 }}
+          initial={{ opacity: 0, scale: 1.02 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.6, ease: "easeInOut" }}
-          className="fixed inset-0 z-0 pointer-events-none"
+          exit={{ opacity: 0, scale: 0.985 }}
+          transition={{ duration: 0.42, ease: "easeInOut" }}
+          className="fixed inset-0 z-0 pointer-events-none will-change-transform"
         >
           <VideoBackdrop src={sectionVideos[currentSection]} />
         </motion.div>
@@ -231,10 +268,10 @@ export default function LandingPage() {
           animate="center"
           exit="exit"
           transition={{ 
-            duration: 0.6, 
-            ease: [0.22, 1, 0.36, 1] // Custom easing for smooth zoom
+            duration: 0.42, 
+            ease: [0.22, 1, 0.36, 1]
           }}
-          className="relative z-10 h-screen w-screen"
+          className="relative z-10 h-screen w-screen will-change-transform"
         >
           {currentSection === "hero" && (
             <HeroSection />
@@ -309,9 +346,7 @@ function LandingNavigation({
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-lg font-bold tracking-wide text-white">
-            <span className="text-green-500">MSF</span> STUDIO
-          </span>
+          <span className="text-lg font-bold tracking-wide text-white">Mousefit Studio</span>
         </Link>
 
         {/* Profile Button - Top Right */}
@@ -568,7 +603,7 @@ function ProductSection({
               transition={{ duration: 0.6, delay: 0.6 }}
               className="text-white/50 text-sm md:text-base max-w-2xl mx-auto pt-4 md:pt-6 leading-relaxed"
             >
-              MouseFit Studio build AI tools to help gamers like you. Our expertise extends across diverse hand sizes and grip styles backed by the highest standards of ergonomic analysis.
+              Mousefit Studio builds AI tools to help gamers like you. Our expertise extends across diverse hand sizes and grip styles backed by the highest standards of ergonomic analysis.
             </motion.p>
           </motion.div>
 

@@ -36,9 +36,7 @@ export function LandingNav({ currentPage = "Home" }: LandingNavProps) {
           disabled={isTransitioning}
           className="flex items-center gap-2 disabled:opacity-50"
         >
-          <span className="text-lg font-bold tracking-wide text-white">
-            <span className="text-green-500">DC</span> MOUSEFIT
-          </span>
+          <span className="text-lg font-bold tracking-wide text-white">Mousefit Studio</span>
         </button>
 
         {/* Profile Button - Top Right */}

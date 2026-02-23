@@ -26,16 +26,16 @@ export default function ProductPage() {
   }, []);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#01040c] text-white">
+    <div className="relative h-screen w-screen overflow-hidden bg-[#020b07] text-white">
       <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
 
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background: `
-            radial-gradient(120% 74% at 18% 34%, rgba(12, 33, 92, 0.55), transparent 65%),
-            radial-gradient(98% 62% at 82% 56%, rgba(3, 17, 58, 0.45), transparent 72%),
-            radial-gradient(130% 100% at 50% 100%, rgba(0, 3, 14, 0.98), rgba(0, 1, 8, 1) 72%)
+            radial-gradient(120% 74% at 18% 34%, rgba(14, 56, 36, 0.55), transparent 65%),
+            radial-gradient(98% 62% at 82% 56%, rgba(5, 40, 24, 0.45), transparent 72%),
+            radial-gradient(130% 100% at 50% 100%, rgba(1, 10, 6, 0.98), rgba(0, 6, 3, 1) 72%)
           `,
         }}
       />
@@ -90,7 +90,7 @@ export default function ProductPage() {
                     <Link
                       href="/mousefit"
                       className={`truncate no-underline transition ${
-                        isActive ? "text-white [text-shadow:0_0_12px_rgba(195,209,255,0.45)]" : "text-white/46 hover:text-white/70"
+                        isActive ? "text-white [text-shadow:0_0_12px_rgba(142,223,173,0.45)]" : "text-white/46 hover:text-white/70"
                       }`}
                     >
                       {item}
@@ -98,7 +98,7 @@ export default function ProductPage() {
                   ) : (
                     <span
                       className={`truncate transition ${
-                        isActive ? "text-white [text-shadow:0_0_12px_rgba(195,209,255,0.45)]" : "text-white/46"
+                        isActive ? "text-white [text-shadow:0_0_12px_rgba(142,223,173,0.45)]" : "text-white/46"
                       }`}
                     >
                       {item}

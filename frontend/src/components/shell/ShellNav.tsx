@@ -61,9 +61,7 @@ export function ShellNav({ currentPage }: ShellNavProps) {
 
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-wide text-white">
-              <span className="text-green-500">MSF</span> STUDIO
-            </span>
+            <span className="text-lg font-bold tracking-wide text-white">Mousefit Studio</span>
           </Link>
         </div>
 

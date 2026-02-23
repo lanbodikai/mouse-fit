@@ -84,7 +84,7 @@ const PERSONAL_REFERENCE_PROFILES = {
 };
 
 const $status = document.getElementById("status");
-const $grid = document.getElementById("grid-grip") || document.getElementById("grid-top") || document.getElementById("grid-palm");
+const $grid = document.getElementById("grid-grip");
 const $handLength = document.getElementById("handLength");
 const $handWidth = document.getElementById("handWidth");
 const $handSize = document.getElementById("handSize");

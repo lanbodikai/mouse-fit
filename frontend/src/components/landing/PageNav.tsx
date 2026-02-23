@@ -89,9 +89,7 @@ export function PageNav({ currentPage }: PageNavProps) {
           
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-wide text-white">
-              <span className="text-green-500">DC</span> MOUSEFIT
-            </span>
+            <span className="text-lg font-bold tracking-wide text-white">Mousefit Studio</span>
           </Link>
         </div>
 
