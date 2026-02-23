@@ -421,7 +421,7 @@ function HeroSection() {
               className="pt-4"
             >
               <Link
-                href="/services"
+                href="/mousefit"
                 className="group inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/20 rounded-full transition-all duration-200"
               >
                 <span className="text-white text-sm">Try now</span>

@@ -1,4 +1,4 @@
-import type { Grip, Measurement, Mouse, Report, SaveProfileResponse, UserProfileInput } from "./types";
+import type { Grip, Measurement, Mouse, Report } from "./types";
 
 declare global {
   interface Window {
@@ -181,9 +181,3 @@ export async function yoloPredict(imageData: string | HTMLCanvasElement | ImageD
   return response.detections;
 }
 
-export function saveUserProfile(payload: UserProfileInput): Promise<SaveProfileResponse> {
-  return apiJson("/api/profile", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}

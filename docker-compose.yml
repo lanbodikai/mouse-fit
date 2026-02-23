@@ -10,6 +10,7 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=${DATABASE_URL:-}
       - WEB_CONCURRENCY=${WEB_CONCURRENCY:-2}
       - MOUSEFIT_WARMUP_RAG=${MOUSEFIT_WARMUP_RAG:-1}
       - GROQ_API_KEY=${GROQ_API_KEY:-}

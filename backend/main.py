@@ -2,22 +2,25 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi import Response
 from pydantic import BaseModel, Field
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
-from backend.api.routes_ml import router as ml_router
 from backend.api.routes_rag import router as rag_router
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "data", "mousefit.db")
-MICE_JSON_PATH = os.path.join(BASE_DIR, "data", "mice.json")
+try:
+    from backend.api.routes_ml import router as ml_router  # type: ignore
+except Exception:
+    ml_router = None
+
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+_POOL: Optional[ConnectionPool] = None
 
 
 def utc_now() -> str:
@@ -39,6 +42,235 @@ def slugify(value: str) -> str:
     return slug or "item"
 
 
+def _require_database_url() -> str:
+    conninfo = DATABASE_URL or os.getenv("DATABASE_URL", "").strip()
+    if not conninfo:
+        raise RuntimeError("DATABASE_URL is required.")
+    return conninfo
+
+
+def init_pool(database_url: Optional[str] = None) -> None:
+    global _POOL
+    if _POOL is not None:
+        return
+    conninfo = (database_url or _require_database_url()).strip()
+    _POOL = ConnectionPool(
+        conninfo=conninfo,
+        min_size=1,
+        max_size=10,
+        kwargs={"row_factory": dict_row},
+    )
+    _POOL.wait()
+
+
+def close_pool() -> None:
+    global _POOL
+    if _POOL is not None:
+        _POOL.close()
+        _POOL = None
+
+
+def get_pool() -> ConnectionPool:
+    if _POOL is None:
+        raise RuntimeError("Database pool is not initialized.")
+    return _POOL
+
+
+def get_conn():
+    return get_pool().connection()
+
+
+def _ensure_columns(conn, table_name: str, required: Dict[str, str]) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = %s
+            """,
+            (table_name,),
+        )
+        existing = {str(row["column_name"]) for row in cur.fetchall()}
+        for col, col_def in required.items():
+            if col not in existing:
+                cur.execute(f"ALTER TABLE {table_name} ADD COLUMN {col} {col_def}")
+
+
+def _ensure_source_handle_unique_index(conn) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT indexdef
+            FROM pg_indexes
+            WHERE schemaname = 'public'
+              AND tablename = 'mice'
+              AND indexname = 'mice_source_handle_uniq'
+            """
+        )
+        row = cur.fetchone()
+        if row:
+            indexdef = str(row.get("indexdef") or "")
+            # Replace legacy partial index so ON CONFLICT(source_handle) can infer it.
+            if " WHERE " in indexdef.upper():
+                cur.execute("DROP INDEX IF EXISTS mice_source_handle_uniq")
+                cur.execute("CREATE UNIQUE INDEX mice_source_handle_uniq ON mice (source_handle)")
+        else:
+            cur.execute("CREATE UNIQUE INDEX mice_source_handle_uniq ON mice (source_handle)")
+
+
+def init_db() -> None:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS mice (
+                    id TEXT PRIMARY KEY,
+                    brand TEXT NOT NULL,
+                    model TEXT NOT NULL,
+                    variant TEXT,
+                    length_mm DOUBLE PRECISION,
+                    width_mm DOUBLE PRECISION,
+                    height_mm DOUBLE PRECISION,
+                    weight_g DOUBLE PRECISION,
+                    ergo BOOLEAN,
+                    wired BOOLEAN,
+                    shape TEXT,
+                    hump TEXT,
+                    grips JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    hands JSONB NOT NULL DEFAULT '[]'::jsonb,
+                    product_url TEXT,
+                    image_url TEXT,
+                    source TEXT,
+                    source_handle TEXT,
+                    availability_status TEXT,
+                    shape_raw TEXT,
+                    hump_raw TEXT,
+                    hump_bucket TEXT,
+                    front_flare_raw TEXT,
+                    side_curvature_raw TEXT,
+                    side_profile TEXT,
+                    hand_compatibility TEXT,
+                    affiliate_links JSONB,
+                    brand_discount TEXT,
+                    discount_code TEXT,
+                    price_usd NUMERIC,
+                    price_status TEXT,
+                    source_payload JSONB,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS measurements (
+                    id BIGSERIAL PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    length_mm DOUBLE PRECISION NOT NULL,
+                    width_mm DOUBLE PRECISION NOT NULL,
+                    length_cm DOUBLE PRECISION NOT NULL,
+                    width_cm DOUBLE PRECISION NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS grips (
+                    id BIGSERIAL PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    grip TEXT NOT NULL,
+                    confidence DOUBLE PRECISION NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS reports (
+                    id BIGSERIAL PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    report_json JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            _ensure_source_handle_unique_index(conn)
+            cur.execute("CREATE INDEX IF NOT EXISTS mice_availability_status_idx ON mice (availability_status)")
+            cur.execute("CREATE INDEX IF NOT EXISTS mice_brand_model_idx ON mice (brand, model)")
+            cur.execute("CREATE INDEX IF NOT EXISTS measurements_session_id_id_idx ON measurements (session_id, id DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS grips_session_id_id_idx ON grips (session_id, id DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS reports_session_id_id_idx ON reports (session_id, id DESC)")
+
+        _ensure_columns(
+            conn,
+            "mice",
+            {
+                "ergo": "BOOLEAN",
+                "wired": "BOOLEAN",
+                "grips": "JSONB NOT NULL DEFAULT '[]'::jsonb",
+                "hands": "JSONB NOT NULL DEFAULT '[]'::jsonb",
+                "source": "TEXT",
+                "source_handle": "TEXT",
+                "availability_status": "TEXT",
+                "shape_raw": "TEXT",
+                "hump_raw": "TEXT",
+                "hump_bucket": "TEXT",
+                "front_flare_raw": "TEXT",
+                "side_curvature_raw": "TEXT",
+                "side_profile": "TEXT",
+                "hand_compatibility": "TEXT",
+                "affiliate_links": "JSONB",
+                "brand_discount": "TEXT",
+                "discount_code": "TEXT",
+                "price_usd": "NUMERIC",
+                "price_status": "TEXT",
+                "source_payload": "JSONB",
+                "created_at": "TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+                "updated_at": "TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+            },
+        )
+        conn.commit()
+
+
+def _iso_ts(value: Any) -> str:
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat()
+    if isinstance(value, str) and value.strip():
+        return value
+    return utc_now()
+
+
+def _as_list(value: Any) -> List[Any]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return []
+        return parsed if isinstance(parsed, list) else []
+    return []
+
+
+def _as_dict(value: Any) -> Optional[Dict[str, Any]]:
+    if value is None:
+        return None
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return None
+        return parsed if isinstance(parsed, dict) else None
+    return None
+
+
 class Mouse(BaseModel):
     id: str
     brand: str
@@ -56,6 +288,21 @@ class Mouse(BaseModel):
     hands: List[str] = Field(default_factory=list)
     product_url: Optional[str] = None
     image_url: Optional[str] = None
+    source_handle: Optional[str] = None
+    availability_status: Optional[str] = None
+    shape_raw: Optional[str] = None
+    hump_raw: Optional[str] = None
+    hump_bucket: Optional[str] = None
+    front_flare_raw: Optional[str] = None
+    side_curvature_raw: Optional[str] = None
+    side_profile: Optional[str] = None
+    hand_compatibility: Optional[str] = None
+    affiliate_links: List[Dict[str, Any]] = Field(default_factory=list)
+    brand_discount: Optional[str] = None
+    discount_code: Optional[str] = None
+    price_usd: Optional[float] = None
+    price_status: Optional[str] = None
+    source_payload: Optional[Dict[str, Any]] = None
 
 
 class MeasurementIn(BaseModel):
@@ -86,30 +333,6 @@ class GripOut(BaseModel):
     created_at: str
 
 
-class GripRatingsIn(BaseModel):
-    palm: int
-    claw: int
-    fingertip: int
-
-
-class UserProfileIn(BaseModel):
-    session_id: str
-    hand_length_mm: float
-    hand_width_mm: float
-    grip_ratings: GripRatingsIn
-    budget_min: float
-    budget_target: float
-    budget_max: float
-    usage_intents: List[str] = Field(default_factory=list)
-    weight_pref: Literal["light", "balanced", "heavy"]
-    notes: Optional[str] = None
-
-
-class UserProfileOut(BaseModel):
-    ok: bool
-    saved_at: str
-
-
 class MouseRecommendation(BaseModel):
     id: str
     brand: str
@@ -132,23 +355,19 @@ app = FastAPI(title="MouseFit v2 API")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 DEFAULT_CORS_ORIGINS = [
-    # Local dev
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    # Docker dev
     "http://frontend:3000",
-    # Production
     "https://mousefit.pro",
     "https://www.mousefit.pro",
-    # GitHub Pages
     "https://lanbodikai.github.io",
 ]
 
 
-def _parse_cors_origins(value: str | None) -> list[str]:
+def _parse_cors_origins(value: str | None) -> List[str]:
     if not value:
         return []
-    out: list[str] = []
+    out: List[str] = []
     for item in value.split(","):
         origin = item.strip()
         if origin:
@@ -159,12 +378,6 @@ def _parse_cors_origins(value: str | None) -> list[str]:
 EXTRA_CORS_ORIGINS = _parse_cors_origins(os.getenv("CORS_ALLOW_ORIGINS"))
 CORS_ORIGIN_REGEX = os.getenv(
     "CORS_ALLOW_ORIGIN_REGEX",
-    # Allow Vercel preview deploys + any production subdomain(s).
-    # Examples:
-    # - https://mouse-fit.vercel.app
-    # - https://mousefit-abc123.vercel.app
-    # - https://mousefit.pro
-    # - https://www.mousefit.pro
     r"^https://((mouse-fit|mousefit)(?:-[a-z0-9-]+)?\.vercel\.app|([a-z0-9-]+\.)?mousefit\.pro)$",
 )
 
@@ -178,182 +391,13 @@ app.add_middleware(
 )
 
 app.include_router(rag_router)
-app.include_router(ml_router)
-
-
-def get_conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db() -> None:
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS mice (
-            id TEXT PRIMARY KEY,
-            brand TEXT NOT NULL,
-            model TEXT NOT NULL,
-            variant TEXT,
-            length_mm REAL,
-            width_mm REAL,
-            height_mm REAL,
-            weight_g REAL,
-            ergo INTEGER,
-            wired INTEGER,
-            shape TEXT,
-            hump TEXT,
-            grips TEXT,
-            hands TEXT,
-            product_url TEXT,
-            image_url TEXT
-        )
-        """
-    )
-    # Lightweight migrations for older DBs.
-    cur.execute("PRAGMA table_info(mice)")
-    existing_cols = {row[1] for row in cur.fetchall()}
-    if "ergo" not in existing_cols:
-        cur.execute("ALTER TABLE mice ADD COLUMN ergo INTEGER")
-    if "wired" not in existing_cols:
-        cur.execute("ALTER TABLE mice ADD COLUMN wired INTEGER")
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS measurements (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT NOT NULL,
-            length_mm REAL NOT NULL,
-            width_mm REAL NOT NULL,
-            length_cm REAL NOT NULL,
-            width_cm REAL NOT NULL,
-            created_at TEXT NOT NULL
-        )
-        """
-    )
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS grips (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT NOT NULL,
-            grip TEXT NOT NULL,
-            confidence REAL NOT NULL,
-            created_at TEXT NOT NULL
-        )
-        """
-    )
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT NOT NULL,
-            report_json TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )
-        """
-    )
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS user_profiles (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT NOT NULL,
-            profile_json TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )
-        """
-    )
-    conn.commit()
-
-    # Seed mice into SQLite from data/mice.json (only when needed by default).
-    # This keeps the database as the source of truth after the initial import.
-    seed_mode = os.getenv("MOUSEFIT_SEED_MICE", "if_empty").strip().lower()
-    if seed_mode not in {"never", "if_empty", "always"}:
-        seed_mode = "if_empty"
-
-    should_seed = seed_mode == "always"
-    if seed_mode == "if_empty":
-        cur.execute("SELECT 1 FROM mice LIMIT 1")
-        should_seed = cur.fetchone() is None
-
-    if should_seed:
-        seed_mice(conn)
-    conn.close()
-
-
-def seed_mice(conn: sqlite3.Connection) -> None:
-    if not os.path.exists(MICE_JSON_PATH):
-        return
-    with open(MICE_JSON_PATH, "r", encoding="utf-8") as handle:
-        raw = json.load(handle)
-
-    rows = []
-    for item in raw:
-        brand = str(item.get("brand") or "").strip()
-        model = str(item.get("model") or "").strip()
-        if not brand or not model:
-            continue
-        variant = str(item.get("variant") or "").strip() or None
-        base_id = f"{brand}-{model}"
-        if variant:
-            base_id = f"{base_id}-{variant}"
-        mouse_id = slugify(base_id)
-        ergo = item.get("ergo")
-        wired = item.get("wired")
-        ergo_i = None if ergo is None else int(bool(ergo))
-        wired_i = None if wired is None else int(bool(wired))
-        rows.append(
-            (
-                mouse_id,
-                brand,
-                model,
-                variant,
-                item.get("length_mm"),
-                item.get("width_mm"),
-                item.get("height_mm"),
-                item.get("weight_g"),
-                ergo_i,
-                wired_i,
-                item.get("shape"),
-                item.get("hump"),
-                json.dumps(item.get("grips") or []),
-                json.dumps(item.get("hands") or []),
-                item.get("product_url"),
-                item.get("image_url"),
-            )
-        )
-
-    conn.executemany(
-        """
-        INSERT INTO mice (
-            id, brand, model, variant, length_mm, width_mm, height_mm, weight_g, ergo, wired,
-            shape, hump, grips, hands, product_url, image_url
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            brand=excluded.brand,
-            model=excluded.model,
-            variant=excluded.variant,
-            length_mm=excluded.length_mm,
-            width_mm=excluded.width_mm,
-            height_mm=excluded.height_mm,
-            weight_g=excluded.weight_g,
-            ergo=excluded.ergo,
-            wired=excluded.wired,
-            shape=excluded.shape,
-            hump=excluded.hump,
-            grips=excluded.grips,
-            hands=excluded.hands,
-            product_url=excluded.product_url,
-            image_url=excluded.image_url
-        """,
-        rows,
-    )
-    conn.commit()
+if ml_router is not None:
+    app.include_router(ml_router)
 
 
 @app.on_event("startup")
 def on_startup() -> None:
+    init_pool()
     init_db()
     warm = os.getenv("MOUSEFIT_WARMUP_RAG", "1").strip().lower() in {"1", "true", "yes", "on"}
     if warm:
@@ -362,74 +406,105 @@ def on_startup() -> None:
 
             warmup()
         except Exception:
-            # Best-effort warmup; avoid breaking startup if optional deps/models are unavailable.
             pass
 
 
-def row_to_mouse(row: sqlite3.Row) -> Mouse:
+@app.on_event("shutdown")
+def on_shutdown() -> None:
+    close_pool()
+
+
+def row_to_mouse(row: Dict[str, Any]) -> Mouse:
+    grips = [str(x) for x in _as_list(row.get("grips"))]
+    hands = [str(x) for x in _as_list(row.get("hands"))]
+    affiliate_links = _as_list(row.get("affiliate_links"))
+    affiliate_links = [x for x in affiliate_links if isinstance(x, dict)]
+
+    ergo_raw = row.get("ergo")
+    wired_raw = row.get("wired")
+    ergo = None if ergo_raw is None else bool(ergo_raw)
+    wired = None if wired_raw is None else bool(wired_raw)
+
     return Mouse(
-        id=row["id"],
-        brand=row["brand"],
-        model=row["model"],
-        variant=row["variant"],
-        length_mm=row["length_mm"],
-        width_mm=row["width_mm"],
-        height_mm=row["height_mm"],
-        weight_g=row["weight_g"],
-        ergo=(None if row["ergo"] is None else bool(row["ergo"])),
-        wired=(None if row["wired"] is None else bool(row["wired"])),
-        shape=row["shape"],
-        hump=row["hump"],
-        grips=json.loads(row["grips"] or "[]"),
-        hands=json.loads(row["hands"] or "[]"),
-        product_url=row["product_url"],
-        image_url=row["image_url"],
+        id=str(row.get("id")),
+        brand=str(row.get("brand") or ""),
+        model=str(row.get("model") or ""),
+        variant=row.get("variant"),
+        length_mm=row.get("length_mm"),
+        width_mm=row.get("width_mm"),
+        height_mm=row.get("height_mm"),
+        weight_g=row.get("weight_g"),
+        ergo=ergo,
+        wired=wired,
+        shape=row.get("shape"),
+        hump=row.get("hump"),
+        grips=grips,
+        hands=hands,
+        product_url=row.get("product_url"),
+        image_url=row.get("image_url"),
+        source_handle=row.get("source_handle"),
+        availability_status=row.get("availability_status"),
+        shape_raw=row.get("shape_raw"),
+        hump_raw=row.get("hump_raw"),
+        hump_bucket=row.get("hump_bucket"),
+        front_flare_raw=row.get("front_flare_raw"),
+        side_curvature_raw=row.get("side_curvature_raw"),
+        side_profile=row.get("side_profile"),
+        hand_compatibility=row.get("hand_compatibility"),
+        affiliate_links=affiliate_links,
+        brand_discount=row.get("brand_discount"),
+        discount_code=row.get("discount_code"),
+        price_usd=(None if row.get("price_usd") is None else float(row["price_usd"])),
+        price_status=row.get("price_status"),
+        source_payload=_as_dict(row.get("source_payload")),
     )
 
 
-def latest_measurement(conn: sqlite3.Connection, session_id: str) -> Optional[MeasurementOut]:
-    cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT * FROM measurements
-        WHERE session_id = ?
-        ORDER BY id DESC
-        LIMIT 1
-        """,
-        (session_id,),
-    )
-    row = cur.fetchone()
+def latest_measurement(conn, session_id: str) -> Optional[MeasurementOut]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT session_id, length_mm, width_mm, length_cm, width_cm, created_at
+            FROM measurements
+            WHERE session_id = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (session_id,),
+        )
+        row = cur.fetchone()
     if not row:
         return None
     return MeasurementOut(
         session_id=row["session_id"],
-        length_mm=row["length_mm"],
-        width_mm=row["width_mm"],
-        length_cm=row["length_cm"],
-        width_cm=row["width_cm"],
-        created_at=row["created_at"],
+        length_mm=float(row["length_mm"]),
+        width_mm=float(row["width_mm"]),
+        length_cm=float(row["length_cm"]),
+        width_cm=float(row["width_cm"]),
+        created_at=_iso_ts(row["created_at"]),
     )
 
 
-def latest_grip(conn: sqlite3.Connection, session_id: str) -> Optional[GripOut]:
-    cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT * FROM grips
-        WHERE session_id = ?
-        ORDER BY id DESC
-        LIMIT 1
-        """,
-        (session_id,),
-    )
-    row = cur.fetchone()
+def latest_grip(conn, session_id: str) -> Optional[GripOut]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT session_id, grip, confidence, created_at
+            FROM grips
+            WHERE session_id = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (session_id,),
+        )
+        row = cur.fetchone()
     if not row:
         return None
     return GripOut(
         session_id=row["session_id"],
         grip=row["grip"],
-        confidence=row["confidence"],
-        created_at=row["created_at"],
+        confidence=float(row["confidence"]),
+        created_at=_iso_ts(row["created_at"]),
     )
 
 
@@ -464,23 +539,20 @@ def health() -> dict:
 
 @app.get("/api/mice", response_model=List[Mouse])
 def list_mice(response: Response) -> List[Mouse]:
-    # This endpoint is hit often (database/search UI). Cache briefly to reduce repeat fetches.
     response.headers["Cache-Control"] = "public, max-age=300"
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM mice ORDER BY brand, model")
-    rows = cur.fetchall()
-    conn.close()
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM mice ORDER BY brand, model")
+            rows = cur.fetchall()
     return [row_to_mouse(row) for row in rows]
 
 
 @app.get("/api/mice/{mouse_id}", response_model=Mouse)
 def get_mouse(mouse_id: str) -> Mouse:
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM mice WHERE id = ?", (mouse_id,))
-    row = cur.fetchone()
-    conn.close()
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM mice WHERE id = %s", (mouse_id,))
+            row = cur.fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Mouse not found")
     return row_to_mouse(row)
@@ -491,23 +563,23 @@ def save_measurement(payload: MeasurementIn) -> MeasurementOut:
     created_at = utc_now()
     length_cm = round(payload.length_mm / 10, 2)
     width_cm = round(payload.width_mm / 10, 2)
-    conn = get_conn()
-    conn.execute(
-        """
-        INSERT INTO measurements (session_id, length_mm, width_mm, length_cm, width_cm, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (
-            payload.session_id,
-            payload.length_mm,
-            payload.width_mm,
-            length_cm,
-            width_cm,
-            created_at,
-        ),
-    )
-    conn.commit()
-    conn.close()
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO measurements (session_id, length_mm, width_mm, length_cm, width_cm, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    payload.session_id,
+                    payload.length_mm,
+                    payload.width_mm,
+                    length_cm,
+                    width_cm,
+                    created_at,
+                ),
+            )
+        conn.commit()
     return MeasurementOut(
         session_id=payload.session_id,
         length_mm=payload.length_mm,
@@ -521,140 +593,107 @@ def save_measurement(payload: MeasurementIn) -> MeasurementOut:
 @app.post("/api/grip", response_model=GripOut)
 def save_grip(payload: GripIn) -> GripOut:
     created_at = utc_now()
-    conn = get_conn()
-    conn.execute(
-        """
-        INSERT INTO grips (session_id, grip, confidence, created_at)
-        VALUES (?, ?, ?, ?)
-        """,
-        (
-            payload.session_id,
-            payload.grip,
-            payload.confidence or 0.0,
-            created_at,
-        ),
-    )
-    conn.commit()
-    conn.close()
+    confidence = payload.confidence or 0.0
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO grips (session_id, grip, confidence, created_at)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (
+                    payload.session_id,
+                    payload.grip,
+                    confidence,
+                    created_at,
+                ),
+            )
+        conn.commit()
     return GripOut(
         session_id=payload.session_id,
         grip=payload.grip,
-        confidence=payload.confidence or 0.0,
+        confidence=confidence,
         created_at=created_at,
     )
 
 
-def _validate_user_profile(payload: UserProfileIn) -> None:
-    if payload.hand_length_mm < 100 or payload.hand_length_mm > 260:
-        raise HTTPException(status_code=422, detail="hand_length_mm must be between 100 and 260")
-    if payload.hand_width_mm < 50 or payload.hand_width_mm > 130:
-        raise HTTPException(status_code=422, detail="hand_width_mm must be between 50 and 130")
-
-    grip_values = [payload.grip_ratings.palm, payload.grip_ratings.claw, payload.grip_ratings.fingertip]
-    for value in grip_values:
-        if value < 1 or value > 5:
-            raise HTTPException(status_code=422, detail="grip ratings must be between 1 and 5")
-
-    budgets = [payload.budget_min, payload.budget_target, payload.budget_max]
-    for value in budgets:
-        if value < 5 or value > 500:
-            raise HTTPException(status_code=422, detail="budget values must be between 5 and 500")
-    if not (payload.budget_min <= payload.budget_target <= payload.budget_max):
-        raise HTTPException(status_code=422, detail="budget_min <= budget_target <= budget_max is required")
-
-    if payload.notes and len(payload.notes) > 1000:
-        raise HTTPException(status_code=422, detail="notes must be 1000 chars or less")
-
-
-@app.post("/api/profile", response_model=UserProfileOut)
-def save_profile(payload: UserProfileIn) -> UserProfileOut:
-    _validate_user_profile(payload)
-    created_at = utc_now()
-    profile_json: Dict[str, Any] = payload.model_dump()
-    if profile_json.get("notes") is None:
-        profile_json["notes"] = ""
-
-    conn = get_conn()
-    conn.execute(
-        """
-        INSERT INTO user_profiles (session_id, profile_json, created_at)
-        VALUES (?, ?, ?)
-        """,
-        (
-            payload.session_id,
-            json.dumps(profile_json),
-            created_at,
-        ),
-    )
-    conn.commit()
-    conn.close()
-    return UserProfileOut(ok=True, saved_at=created_at)
-
-
 @app.post("/api/report/generate", response_model=Report)
 def generate_report(session_id: str = Query(...)) -> Report:
-    conn = get_conn()
-    measurement = latest_measurement(conn, session_id)
-    if not measurement:
-        conn.close()
-        raise HTTPException(status_code=404, detail="No measurement found for session_id")
-    grip = latest_grip(conn, session_id)
+    with get_conn() as conn:
+        measurement = latest_measurement(conn, session_id)
+        if not measurement:
+            raise HTTPException(status_code=404, detail="No measurement found for session_id")
+        grip = latest_grip(conn, session_id)
 
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM mice")
-    mice = [row_to_mouse(row) for row in cur.fetchall()]
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM mice")
+            mice = [row_to_mouse(row) for row in cur.fetchall()]
 
-    scored = [score_mouse(m, measurement, grip) for m in mice if m.length_mm and m.width_mm]
-    scored.sort(key=lambda x: x.score, reverse=True)
-    top = scored[:5]
+        scored = [score_mouse(m, measurement, grip) for m in mice if m.length_mm and m.width_mm]
+        scored.sort(key=lambda x: x.score, reverse=True)
+        top = scored[:5]
 
-    if grip:
-        summary = (
-            f"Based on a {measurement.length_mm:.1f} x {measurement.width_mm:.1f} mm hand and "
-            f"{grip.grip} grip, these mice fit your profile best."
+        if grip:
+            summary = (
+                f"Based on a {measurement.length_mm:.1f} x {measurement.width_mm:.1f} mm hand and "
+                f"{grip.grip} grip, these mice fit your profile best."
+            )
+        else:
+            summary = (
+                f"Based on a {measurement.length_mm:.1f} x {measurement.width_mm:.1f} mm hand, "
+                "these mice fit your profile best."
+            )
+
+        report = Report(
+            session_id=session_id,
+            measurement=measurement,
+            grip=grip,
+            recommendations=top,
+            summary=summary,
+            created_at=utc_now(),
         )
-    else:
-        summary = (
-            f"Based on a {measurement.length_mm:.1f} x {measurement.width_mm:.1f} mm hand, "
-            "these mice fit your profile best."
-        )
 
-    report = Report(
-        session_id=session_id,
-        measurement=measurement,
-        grip=grip,
-        recommendations=top,
-        summary=summary,
-        created_at=utc_now(),
-    )
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO reports (session_id, report_json, created_at)
+                VALUES (%s, %s::jsonb, %s)
+                """,
+                (session_id, json.dumps(report.model_dump()), report.created_at),
+            )
+        conn.commit()
 
-    conn.execute(
-        "INSERT INTO reports (session_id, report_json, created_at) VALUES (?, ?, ?)",
-        (session_id, report.model_dump_json(), report.created_at),
-    )
-    conn.commit()
-    conn.close()
     return report
 
 
 @app.get("/api/report/latest", response_model=Report)
 def latest_report(session_id: str = Query(...)) -> Report:
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT report_json FROM reports
-        WHERE session_id = ?
-        ORDER BY id DESC
-        LIMIT 1
-        """,
-        (session_id,),
-    )
-    row = cur.fetchone()
-    conn.close()
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT report_json
+                FROM reports
+                WHERE session_id = %s
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (session_id,),
+            )
+            row = cur.fetchone()
+
     if not row:
         raise HTTPException(status_code=404, detail="No report found for session_id")
-    return Report.model_validate_json(row["report_json"])
+
+    report_json = row.get("report_json")
+    if isinstance(report_json, dict):
+        return Report.model_validate(report_json)
+    if isinstance(report_json, str):
+        try:
+            return Report.model_validate_json(report_json)
+        except ValueError:
+            pass
+    raise HTTPException(status_code=500, detail="Invalid stored report format")
 
 
 @app.post("/api/agent/chat")

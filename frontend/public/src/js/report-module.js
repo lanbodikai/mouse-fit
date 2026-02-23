@@ -1,6 +1,8 @@
+import { apiJson } from "./api-client.js";
 import { loadMice as loadMiceApi } from "./mice-api.js";
 
 const TOP_MATCH_LIMIT = 10;
+const RERANK_CANDIDATE_LIMIT = 12;
 const MIN_RETRIEVAL_POOL = 40;
 const ALLOWED_GRIPS = new Set(["palm", "claw", "fingertip"]);
 
@@ -82,9 +84,14 @@ const PERSONAL_REFERENCE_PROFILES = {
 };
 
 const $status = document.getElementById("status");
-const $p1 = document.getElementById("p1");
-const $p2 = document.getElementById("p2");
-const $grid = document.getElementById("grid-top");
+const $grid = document.getElementById("grid-grip") || document.getElementById("grid-top") || document.getElementById("grid-palm");
+const $handLength = document.getElementById("handLength");
+const $handWidth = document.getElementById("handWidth");
+const $handSize = document.getElementById("handSize");
+const $chosenGrip = document.getElementById("chosenGrip");
+const $chosenGripInline = document.getElementById("chosenGripInline");
+const $chosenGripTitle = document.getElementById("chosenGripTitle");
+const $year = document.getElementById("y");
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -94,27 +101,32 @@ function setStatus(message) {
   if ($status) $status.textContent = message || "";
 }
 
-function setSummary(paragraph1, paragraph2) {
-  if ($p1) $p1.textContent = paragraph1 || "";
-  if ($p2) $p2.textContent = paragraph2 || "";
-}
-
 function toFiniteNumber(value) {
   const num = Number(value);
   return Number.isFinite(num) ? num : null;
 }
 
-function readStorageJson(keys) {
+function readStorageValue(keys) {
   for (const key of keys) {
     try {
       const raw = localStorage.getItem(key) ?? sessionStorage.getItem(key);
       if (!raw) continue;
-      return JSON.parse(raw);
+      return raw;
     } catch {
       return null;
     }
   }
   return null;
+}
+
+function readStorageJson(keys) {
+  const raw = readStorageValue(keys);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 function normalizeGrip(value) {
@@ -148,39 +160,139 @@ function getHandBucket(handLengthCm) {
   return "big";
 }
 
-function mmTextToMm(text) {
-  const input = String(text || "").toLowerCase();
-  let match = input.match(/(\d+(?:\.\d+)?)\s*mm\b/);
-  if (match) return Number(match[1]);
-  match = input.match(/(\d+(?:\.\d+)?)\s*cm\b/);
-  if (match) return Math.round(Number(match[1]) * 10);
-  match = input.match(/(\d+(?:\.\d+)?)/);
-  if (!match) return null;
-  const fallback = Number(match[1]);
-  if (!Number.isFinite(fallback)) return null;
-  return fallback >= 30 ? fallback : Math.round(fallback * 10);
+function getHandSize(lengthMm) {
+  if (!Number.isFinite(lengthMm)) return "unknown";
+  if (lengthMm < 170) return "small";
+  if (lengthMm < 190) return "medium";
+  if (lengthMm < 210) return "large";
+  return "xlarge";
 }
 
-function scrapeProfileFromPage() {
-  const profile = {};
+function formatGripLabel(grip) {
+  const value = normalizeGrip(grip);
+  if (!value) return "Unknown";
+  if (value === "fingertip") return "Fingertip";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 
-  try {
-    const ms = window.MF?.measure;
-    if (ms?.len_mm) profile.length_mm = Number(ms.len_mm);
-    if (ms?.wid_mm) profile.width_mm = Number(ms.wid_mm);
-  } catch {}
+function readMeasurementSnapshot() {
+  const measure = readStorageJson(["mousefit:measure", "mf:measure"]) || {};
+  const draft = readStorageJson(["mousefit:survey_draft", "mf:survey_draft"]) || {};
+  const sessionLen = toFiniteNumber(readStorageValue(["mf:length_mm", "mousefit:length_mm"]));
+  const sessionWid = toFiniteNumber(readStorageValue(["mf:width_mm", "mousefit:width_mm"]));
+  const measureLen = toFiniteNumber(measure.len_mm ?? measure.length_mm);
+  const measureWid = toFiniteNumber(measure.wid_mm ?? measure.width_mm);
+  const draftLen = toFiniteNumber(draft.handLengthMm);
+  const draftWid = toFiniteNumber(draft.handWidthMm);
+  const length_mm = sessionLen ?? measureLen ?? draftLen ?? null;
+  const width_mm = sessionWid ?? measureWid ?? draftWid ?? null;
+  const size = getHandSize(length_mm ?? NaN);
 
-  if (!profile.length_mm) profile.length_mm = mmTextToMm(document.getElementById("handLength")?.textContent);
-  if (!profile.width_mm) profile.width_mm = mmTextToMm(document.getElementById("handWidth")?.textContent);
+  return {
+    length_mm,
+    width_mm,
+    size,
+    length_text: Number.isFinite(length_mm) ? `${(length_mm / 10).toFixed(1)} cm` : "—",
+    width_text: Number.isFinite(width_mm) ? `${(width_mm / 10).toFixed(1)} cm` : "—",
+  };
+}
 
-  const detectedGrip = normalizeGrip(window.MF?.grips?.result?.grip);
-  if (detectedGrip) profile.grip = detectedGrip;
+function readGripPreference() {
+  const draft = readStorageJson(["mousefit:survey_draft", "mf:survey_draft"]) || {};
+  const result = readStorageJson(["mousefit:grip_result", "mf:grip_result"]) || {};
+  return normalizeGrip(draft.primaryGrip) || normalizeGrip(result.grip) || "palm";
+}
 
-  return profile;
+function hydrateTopSection(grip, measurement) {
+  if ($year) $year.textContent = String(new Date().getFullYear());
+  if ($handLength) $handLength.textContent = measurement.length_text;
+  if ($handWidth) $handWidth.textContent = measurement.width_text;
+  if ($handSize) $handSize.textContent = measurement.size === "unknown" ? "Unknown" : measurement.size.toUpperCase();
+  if ($chosenGrip) $chosenGrip.textContent = formatGripLabel(grip);
+  if ($chosenGripInline) $chosenGripInline.textContent = formatGripLabel(grip);
+  if ($chosenGripTitle) $chosenGripTitle.textContent = `${formatGripLabel(grip)} Grip Recommendations`;
+}
+
+function buildRagCandidateId(candidate) {
+  const fromName = `${candidate.brand || ""}_${candidate.model || ""}`.toLowerCase();
+  const normalized = fromName.replace(/\s+/g, "_").replace(/[^\w_]/g, "").replace(/^_+|_+$/g, "");
+  if (normalized) return normalized;
+  return String(candidate.id || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "mouse";
+}
+
+async function rerankWithRag(profile, candidates, localRanked) {
+  if (!Array.isArray(candidates) || !candidates.length) return null;
+
+  const uniqueMap = new Map();
+  const rerankCandidates = [];
+  for (const entry of candidates) {
+    const ragId = buildRagCandidateId(entry);
+    if (uniqueMap.has(ragId)) continue;
+    uniqueMap.set(ragId, entry.id);
+    rerankCandidates.push({
+      id: ragId,
+      brand: entry.brand,
+      model: entry.model,
+      length_mm: entry.length,
+      width_mm: entry.width,
+      height_mm: entry.height,
+      weight_g: entry.weight || null,
+      shape: entry.shapeKey === "other" ? null : entry.shapeKey,
+    });
+  }
+
+  if (!rerankCandidates.length) return null;
+
+  const payload = {
+    profile: {
+      grip: profile.grip,
+      length_mm: profile.handLength,
+      width_mm: profile.handWidth,
+      budget:
+        profile.budgetRange && Number.isFinite(profile.budgetRange.min) && Number.isFinite(profile.budgetRange.max)
+          ? (profile.budgetRange.min + profile.budgetRange.max) / 2
+          : undefined,
+    },
+    candidates: rerankCandidates,
+  };
+
+  const reranked = await apiJson("/api/rerank", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  const rankedMap = new Map();
+  if (Array.isArray(reranked?.ranked)) {
+    reranked.ranked.forEach((item) => {
+      if (!item?.id) return;
+      rankedMap.set(String(item.id), item);
+    });
+  }
+
+  const byLocalId = new Map(localRanked.map((mouse) => [mouse.id, mouse]));
+  const merged = [];
+  rankedMap.forEach((item, ragId) => {
+    const localId = uniqueMap.get(ragId);
+    if (!localId) return;
+    const base = byLocalId.get(localId);
+    if (!base) return;
+
+    merged.push({
+      ...base,
+      score: toFiniteNumber(item.score) ?? base.score,
+      rerankReason: item.reason ? String(item.reason) : "",
+      rerankFlags: Array.isArray(item.flags) ? item.flags.map((flag) => String(flag)) : [],
+      source: "rag-rerank",
+    });
+  });
+
+  if (!merged.length) return null;
+  merged.sort((a, b) => (b.score || 0) - (a.score || 0));
+  return merged.slice(0, TOP_MATCH_LIMIT);
 }
 
 function readBudgetRange() {
-  const fromCompat = window.MF?.recs || {};
+  const fromCompat = readStorageJson(["mousefit:recs", "mf:recs"]) || {};
   const compatMin = toFiniteNumber(fromCompat.budget_min);
   const compatMax = toFiniteNumber(fromCompat.budget_max);
   if (compatMin != null && compatMax != null) {
@@ -323,12 +435,13 @@ function derivePersonalizedSizing({
 }
 
 function buildUserProfile() {
-  const pageProfile = scrapeProfileFromPage();
+  const measurement = readMeasurementSnapshot();
+  const gripFromStorage = readGripPreference();
   const selections = readSurveySelections();
 
-  const grip = selections.primaryGrip || normalizeGrip(pageProfile.grip) || "palm";
-  const handLength = toFiniteNumber(pageProfile.length_mm) ?? 180;
-  const handWidth = toFiniteNumber(pageProfile.width_mm) ?? 90;
+  const grip = selections.primaryGrip || gripFromStorage || "palm";
+  const handLength = toFiniteNumber(measurement.length_mm) ?? 180;
+  const handWidth = toFiniteNumber(measurement.width_mm) ?? 90;
   const handBucket = getHandBucket(handLength / 10);
   const dominantFinger = selections.dominantFinger;
   const isSlantedHand = selections.fingerDirection === "left" || selections.fingerDirection === "right";
@@ -996,7 +1109,7 @@ function scoreMouseFit(mouse, profile, retrieval, feature) {
   };
 }
 
-function rankAndSelectTop(mice, profile, retrieval) {
+function rankAndSelectTop(mice, profile, retrieval, limit = TOP_MATCH_LIMIT) {
   return mice
     .map((mouse) => {
       const feature = calcFeatureDistance(mouse, profile.featureRequest);
@@ -1004,7 +1117,7 @@ function rankAndSelectTop(mice, profile, retrieval) {
       return { ...mouse, ...scored };
     })
     .sort((a, b) => b.score - a.score)
-    .slice(0, TOP_MATCH_LIMIT);
+    .slice(0, Math.max(limit, 0));
 }
 
 function chipClass(grip) {
@@ -1030,43 +1143,20 @@ function renderGrid(el, items, grip) {
     const card = document.createElement("div");
     card.className = `chip ${chipClass(grip)} ${idx === 0 ? "best" : ""}`;
     const priceLabel = Number.isFinite(item.price) && item.price > 0 ? `$${Math.round(item.price)}` : "N/A";
-    const mismatchLabel = item.feature.mismatchedLabels.length
-      ? `, Closest: ${item.feature.mismatchedLabels.join(", ")}`
+    const mismatches = Array.isArray(item.feature?.mismatchedLabels) ? item.feature.mismatchedLabels : [];
+    const mismatchLabel = mismatches.length
+      ? `, Closest: ${mismatches.join(", ")}`
       : "";
+    const reasonLabel = item.rerankReason ? `<div class="reason">${item.rerankReason}</div>` : "";
 
     card.innerHTML = `
       <div class="pct">${Math.round(item.score)}%</div>
       <div>${item.name}</div>
       <div class="meta">LxWxH: ${item.length.toFixed(1)}x${item.width.toFixed(1)}x${item.height.toFixed(1)} mm, GripW est: ${item.gripWidthEstimate.toFixed(1)} mm, Weight: ${item.weight || "?"} g, Shape: ${shapeLabel(item.shapeKey)}, Hump: ${item.humpRaw || "N/A"}, Side: ${item.sideRaw || "N/A"}, Price: ${priceLabel}${mismatchLabel}</div>
+      ${reasonLabel}
     `;
     el.appendChild(card);
   });
-}
-
-function describeHeightFit(grip) {
-  if (grip === "palm") return "Palm scoring favors 39-44mm height and penalizes very low/very tall shells.";
-  if (grip === "claw") return "Claw scoring favors 37-42mm, strongest around 38.5-41mm, with penalties above 44mm.";
-  return "Fingertip scoring favors 33-38mm and strongly penalizes heights at or above 40mm.";
-}
-
-function describeGripSubtype(profile) {
-  if (profile.grip === "claw") {
-    if (profile.clawSubtype === "regular-claw") {
-      return "Regular claw subtype detected; high/rear hump mice are prioritized.";
-    }
-    if (profile.clawSubtype === "relaxed-claw") {
-      return "Relaxed claw subtype detected; center hump or high/rear hump mice are preferred.";
-    }
-    if (profile.clawSubtype === "fingertip-claw") {
-      return "Fingertip-claw subtype detected; lower center/back humps are preferred over tall rear humps.";
-    }
-  }
-  if (profile.grip === "palm") {
-    return profile.palmSubtype === "palm-claw"
-      ? "Palm-claw subtype detected; medium-height symmetrical shells get a mild boost."
-      : "Full-palm subtype detected; stable medium-tall shells get a mild boost.";
-  }
-  return "Fingertip subtype detected; lower heights and compact shells are preferred.";
 }
 
 function describeMode(mode, relaxedLabels) {
@@ -1083,27 +1173,17 @@ function describeMode(mode, relaxedLabels) {
   return "fallback retrieval";
 }
 
-function applyAlgorithmSummary({ profile, retrieval, candidateCount, topMatches, mode, relaxedLabels }) {
-  const topNames = topMatches.slice(0, 3).map((mouse) => mouse.name).join(", ");
-  const postureText = profile.postureNotes.length ? profile.postureNotes.join("; ") : "no posture offset";
-  const sizingText = profile.sizingNotes.length ? profile.sizingNotes.join("; ") : "default size profile";
-  const filterText = profile.featureRequest.labels.length ? profile.featureRequest.labels.join(", ") : "no explicit shape filters";
-  const subtypeText = describeGripSubtype(profile);
-  const archetypeText = profile.isReferenceArchetype
-    ? "Reference calibration was applied for ring-finger 18x8-style profiles."
-    : "Reference calibration was not applied.";
-
-  const paragraph1 = `Retrieved ${retrieval.list.length} mice from the ${profile.handBucket} hand-size bucket around a ${profile.targetLength.toFixed(1)}mm target length (tolerance +/-${retrieval.usedTolerance}mm) and ${profile.targetWidth.toFixed(1)}mm target grip width (tolerance +/-${retrieval.usedWidthTolerance.toFixed(1)}mm) for ${profile.grip} grip. Size band floor: ${profile.minLength.toFixed(1)}mm length and ${profile.minWidth.toFixed(1)}mm grip width. Posture adjustments: ${postureText}. Size profile: ${sizingText}. Applied filters: ${filterText}.`;
-  const paragraph2 = topNames
-    ? `Ranking used ${describeMode(mode, relaxedLabels)} across ${candidateCount} candidates. ${describeHeightFit(profile.grip)} ${subtypeText} ${archetypeText} Top picks: ${topNames}.`
-    : `No candidates remained after retrieval and fallback. ${describeHeightFit(profile.grip)}`;
-
-  setSummary(paragraph1, paragraph2);
-}
-
 async function generateReport() {
   try {
     const profile = buildUserProfile();
+    const measurement = readMeasurementSnapshot();
+    hydrateTopSection(profile.grip, measurement);
+
+    if (!Number.isFinite(measurement.length_mm) || !Number.isFinite(measurement.width_mm)) {
+      setStatus("Missing measurement data. Run the survey again from Redo Test.");
+      renderGrid($grid, [], profile.grip);
+      return;
+    }
 
     setStatus("Loading mice...");
     const baseRaw = await loadMice();
@@ -1111,16 +1191,14 @@ async function generateReport() {
     const cleaned = filterOutliers(normalized);
 
     if (!cleaned.length) {
-      setStatus("No eligible mice found after outlier filtering.");
+      setStatus("No eligible mice found after data-quality filtering.");
       renderGrid($grid, [], profile.grip);
-      setSummary("No mice available after data-quality filters.", "Try again after dataset refresh.");
       return;
     }
 
     let budgetStatusNote = "";
-    let scoped = cleaned;
     const budgetFiltered = filterMiceByBudget(cleaned, profile.budgetRange);
-    scoped = budgetFiltered.list;
+    const scoped = budgetFiltered.list;
 
     if (profile.budgetRange && budgetFiltered.mode === "no-price-data") {
       budgetStatusNote = `No price data available, so budget range $${Math.round(profile.budgetRange.min)}-$${Math.round(profile.budgetRange.max)} was ignored.`;
@@ -1128,22 +1206,18 @@ async function generateReport() {
       const message = `No mice found in budget range $${Math.round(profile.budgetRange.min)}-$${Math.round(profile.budgetRange.max)}.`;
       setStatus(message);
       renderGrid($grid, [], profile.grip);
-      setSummary(message, "Adjust your budget and regenerate.");
       return;
     }
 
-    setStatus("Retrieving by hand-size bucket...");
+    setStatus("Retrieving candidates...");
     const retrieval = retrieveByHandBucket(scoped, profile);
     if (!retrieval.list.length) {
-      setStatus("No candidates were retrieved for your hand-size bucket.");
+      setStatus("No candidates were retrieved for your hand-size profile.");
       renderGrid($grid, [], profile.grip);
-      setSummary("No candidates found after hand-size retrieval.", "Try regenerating after updating your hand measurement.");
       return;
     }
 
-    setStatus("Applying strict feature filters...");
     const strict = applyStrictFeatureFilters(retrieval.list, profile.featureRequest);
-
     let candidatePool = strict.list;
     let mode = strict.mode;
     let relaxedLabels = [];
@@ -1157,58 +1231,39 @@ async function generateReport() {
 
     if (!candidatePool.length) {
       const selectedBits = profile.featureRequest.labels.length ? profile.featureRequest.labels.join(", ") : "current selections";
-      const message = `No candidates found after fallback for ${selectedBits}.`;
-      setStatus(message);
+      setStatus(`No candidates found after fallback for ${selectedBits}.`);
       renderGrid($grid, [], profile.grip);
-      setSummary("No mice matched your filters, even after fallback.", `Try changing one preference (${selectedBits}).`);
       return;
     }
 
-    setStatus("Scoring candidates...");
-    const topMatches = rankAndSelectTop(candidatePool, profile, retrieval);
-    renderGrid($grid, topMatches, profile.grip);
+    setStatus("Scoring locally...");
+    const localRanked = rankAndSelectTop(candidatePool, profile, retrieval, RERANK_CANDIDATE_LIMIT);
+    let topMatches = localRanked.slice(0, TOP_MATCH_LIMIT);
+    let rerankStatus = "Local ranking used.";
 
-    applyAlgorithmSummary({
-      profile,
-      retrieval,
-      candidateCount: candidatePool.length,
-      topMatches,
-      mode,
-      relaxedLabels,
-    });
-
-    const selectedFeaturesText = profile.featureRequest.labels.length
-      ? profile.featureRequest.labels.join(", ")
-      : "no explicit shape filters";
-
-    let modeStatus = "";
-    if (mode === "strict") {
-      modeStatus = `Strict mode: ${topMatches.length} matches with ${selectedFeaturesText}.`;
-    } else if (mode === "fallback-pass1") {
-      modeStatus = `Fallback mode (pass 1): relaxed one feature mismatch${relaxedLabels.length ? ` (${relaxedLabels.join(", ")})` : ""}.`;
-    } else if (mode === "fallback-pass2") {
-      modeStatus = `Fallback mode (pass 2): relaxed up to two feature mismatches${relaxedLabels.length ? ` (${relaxedLabels.join(", ")})` : ""}.`;
-    } else {
-      modeStatus = `Fallback mode (pass 3): returned nearest-feature mice${relaxedLabels.length ? ` (${relaxedLabels.join(", ")})` : ""}.`;
+    if (localRanked.length) {
+      try {
+        setStatus("Applying RAG rerank...");
+        const reranked = await rerankWithRag(profile, localRanked, localRanked);
+        if (reranked?.length) {
+          topMatches = reranked;
+          rerankStatus = "RAG rerank applied.";
+        } else {
+          rerankStatus = "RAG rerank unavailable; local ranking used.";
+        }
+      } catch (error) {
+        console.warn("RAG rerank failed, using local ranking", error);
+        rerankStatus = "RAG rerank failed; local ranking used.";
+      }
     }
 
-    setStatus([budgetStatusNote, modeStatus].filter(Boolean).join(" "));
+    renderGrid($grid, topMatches, profile.grip);
+    const modeStatus = `Candidate mode: ${describeMode(mode, relaxedLabels)}.`;
+    setStatus([budgetStatusNote, modeStatus, rerankStatus].filter(Boolean).join(" "));
   } catch (error) {
     console.error(error);
     setStatus(String(error?.message || error || "Error"));
   }
 }
-
-document.getElementById("btn-generate")?.addEventListener("click", generateReport);
-document.getElementById("btn-copy")?.addEventListener("click", async () => {
-  const text = [($p1?.textContent || "").trim(), ($p2?.textContent || "").trim()].filter(Boolean).join("\n\n");
-  try {
-    await navigator.clipboard.writeText(text);
-    setStatus("Copied.");
-    setTimeout(() => setStatus(""), 1200);
-  } catch {
-    setStatus("Copy failed.");
-  }
-});
 
 generateReport();

@@ -13,6 +13,21 @@ export type Mouse = {
   hands?: string[] | null;
   product_url?: string | null;
   image_url?: string | null;
+  source_handle?: string | null;
+  availability_status?: string | null;
+  shape_raw?: string | null;
+  hump_raw?: string | null;
+  hump_bucket?: string | null;
+  front_flare_raw?: string | null;
+  side_curvature_raw?: string | null;
+  side_profile?: string | null;
+  hand_compatibility?: string | null;
+  affiliate_links?: Array<Record<string, unknown>> | null;
+  brand_discount?: string | null;
+  discount_code?: string | null;
+  price_usd?: number | null;
+  price_status?: string | null;
+  source_payload?: Record<string, unknown> | null;
 };
 
 export type Measurement = {
@@ -46,38 +61,4 @@ export type Report = {
   recommendations: MouseRecommendation[];
   summary: string;
   created_at: string;
-};
-
-export type GripRatings = {
-  palm: number;
-  claw: number;
-  fingertip: number;
-};
-
-export type UsageIntent =
-  | "gaming"
-  | "coding"
-  | "office"
-  | "creative"
-  | "school"
-  | "general";
-
-export type WeightPreference = "light" | "balanced" | "heavy";
-
-export type UserProfileInput = {
-  session_id: string;
-  hand_length_mm: number;
-  hand_width_mm: number;
-  grip_ratings: GripRatings;
-  budget_min: number;
-  budget_target: number;
-  budget_max: number;
-  usage_intents: UsageIntent[];
-  weight_pref: WeightPreference;
-  notes?: string;
-};
-
-export type SaveProfileResponse = {
-  ok: boolean;
-  saved_at: string;
 };

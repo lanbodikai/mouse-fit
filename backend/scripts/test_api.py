@@ -25,10 +25,6 @@ def main() -> int:
     rag_payload = {"session_id": "test", "query": "lightweight claw grip mouse", "top_k": 3}
     print(json.dumps(call("/api/rag/query", rag_payload), indent=2))
 
-    print("\n/api/ml/predict")
-    ml_payload = {"session_id": "test", "payload": {"grip": "claw", "confidence": 0.5}}
-    print(json.dumps(call("/api/ml/predict", ml_payload), indent=2))
-
     return 0
 
 
