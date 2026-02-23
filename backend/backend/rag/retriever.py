@@ -6,7 +6,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+try:
+    from sentence_transformers import SentenceTransformer
+except Exception:  # pragma: no cover - optional dependency
+    SentenceTransformer = None
 
 from backend import config
 from backend.rag.schemas import RagPreferences, RagSource
@@ -23,6 +26,8 @@ _collection = None
 
 def _get_embedder() -> SentenceTransformer:
     global _embedder
+    if SentenceTransformer is None:
+        raise RuntimeError("sentence-transformers is not installed")
     if _embedder is None:
         _embedder = SentenceTransformer(config.EMBED_MODEL_NAME)
     return _embedder
@@ -103,7 +108,10 @@ def retrieve(query: str, prefs: Optional[RagPreferences] = None, k: int = 8) -> 
     if not docs:
         return []
 
-    embedder = _get_embedder()
+    try:
+        embedder = _get_embedder()
+    except Exception:
+        return []
     query_vec = embedder.encode(query, normalize_embeddings=True)
     scored: List[RagSource] = []
     for doc in docs:

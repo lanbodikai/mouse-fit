@@ -17,9 +17,19 @@ RAG_COLLECTION = "mousefit_docs"
 
 EMBED_MODEL_NAME = os.getenv("MOUSEFIT_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
+# Groq (OpenAI-compatible).
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_URL = os.getenv("GROQ_URL", "https://api.groq.com/openai/v1/chat/completions")
-GROQ_DEFAULT_MODEL = os.getenv("GROQ_DEFAULT_MODEL", "llama-3.1-8b-instant")
+GROQ_DEFAULT_MODEL = os.getenv("GROQ_DEFAULT_MODEL", "llama-3.3-70b-versatile")
+
+# Google Gemini via OpenAI-compatible endpoint.
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+GOOGLE_URL = os.getenv("GOOGLE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions")
+GOOGLE_DEFAULT_MODEL = os.getenv("GOOGLE_DEFAULT_MODEL", "gemini-2.5-pro")
+
+XAI_API_KEY = os.getenv("XAI_API_KEY", "")
+XAI_URL = os.getenv("XAI_URL", "https://api.x.ai/v1/chat/completions")
+XAI_DEFAULT_MODEL = os.getenv("XAI_DEFAULT_MODEL", "grok-3-mini-latest")
 
 MODEL_ONNX_PATH = Path(os.getenv("MOUSEFIT_ONNX_PATH", MODEL_DIR / "models" / "best.onnx"))
 MODEL_PT_PATH = Path(os.getenv("MOUSEFIT_PT_PATH", MODEL_DIR / "models" / "best.pt"))

@@ -42,6 +42,9 @@ class CandidateProfile(BaseModel):
     width_mm: Optional[float] = None
     wireless: Optional[bool] = None
     budget: Optional[float] = None
+    budgetMin: Optional[float] = None
+    budgetMax: Optional[float] = None
+    weightPreference: Optional[str] = None
     targetWeight: Optional[TargetWeight] = None
 
 
@@ -90,3 +93,40 @@ class ReportRequest(BaseModel):
 
 class ReportResponse(BaseModel):
     report: str
+
+
+class FitSource(BaseModel):
+    id: str
+    title: str
+    url: Optional[str] = None
+    kind: str = "rag"
+    snippet: Optional[str] = None
+
+
+class FitRecommendation(BaseModel):
+    id: str
+    brand: str
+    model: str
+    score: float
+    reason: str
+    length_mm: Optional[float] = None
+    width_mm: Optional[float] = None
+    height_mm: Optional[float] = None
+    weight_g: Optional[float] = None
+    citations: List[str] = Field(default_factory=list)
+
+
+class FitRequest(BaseModel):
+    profile: CandidateProfile = Field(default_factory=CandidateProfile)
+    top_k: int = 3
+    candidate_k: int = 36
+    llm_mode: str = "auto"  # auto | xai_only | google_only | rule_only
+    allow_fallback: bool = True
+    llm_model: Optional[str] = None
+
+
+class FitResponse(BaseModel):
+    recommendations: List[FitRecommendation]
+    sources: List[FitSource] = Field(default_factory=list)
+    provider: str
+    model: str

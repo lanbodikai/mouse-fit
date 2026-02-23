@@ -111,6 +111,56 @@ export function chatAgent(payload: Record<string, unknown>): Promise<{ reply: st
   });
 }
 
+export function fitRecommend(payload: {
+  profile: {
+    grip?: string | null;
+    length_mm?: number | null;
+    width_mm?: number | null;
+    wireless?: boolean | null;
+    budget?: number | null;
+    budgetMin?: number | null;
+    budgetMax?: number | null;
+    weightPreference?: "lighter" | "heavier" | "balanced" | null;
+    targetWeight?: { min?: number | null; max?: number | null } | null;
+  };
+  top_k?: number;
+  candidate_k?: number;
+  llm_mode?: "auto" | "xai_only" | "google_only" | "groq_only" | "rule_only";
+  allow_fallback?: boolean;
+  llm_model?: string;
+}): Promise<{
+  recommendations: Array<{
+    id: string;
+    brand: string;
+    model: string;
+    score: number;
+    reason: string;
+    length_mm?: number | null;
+    width_mm?: number | null;
+    height_mm?: number | null;
+    weight_g?: number | null;
+    citations: string[];
+  }>;
+  sources: Array<{
+    id: string;
+    title: string;
+    url?: string | null;
+    kind: string;
+    snippet?: string | null;
+  }>;
+  provider: string;
+  model: string;
+}> {
+  return apiJson("/api/fit/recommend", {
+    method: "POST",
+    body: JSON.stringify({
+      ...payload,
+      llm_mode: payload.llm_mode ?? "auto",
+      allow_fallback: payload.allow_fallback ?? true,
+    }),
+  });
+}
+
 export function ragQuery(payload: {
   session_id: string;
   query: string;
