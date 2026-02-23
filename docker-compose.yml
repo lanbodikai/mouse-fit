@@ -1,6 +1,24 @@
-version: '3.8'
-
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mousefit-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-mousefit}
+      - POSTGRES_USER=${POSTGRES_USER:-mousefit}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mousefit}
+    volumes:
+      - postgres-data-local:/var/lib/postgresql/data
+    networks:
+      - mousefit-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mousefit} -d ${POSTGRES_DB:-mousefit}"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
@@ -10,8 +28,9 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=${DATABASE_URL:-}
-      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-2}
+      # Defaults to local Docker Postgres. Override with DATABASE_URL to use Supabase.
+      - DATABASE_URL=${DATABASE_URL:-postgresql://mousefit:mousefit@postgres:5432/mousefit}
+      - WEB_CONCURRENCY=${WEB_CONCURRENCY:-1}
       - MOUSEFIT_WARMUP_RAG=${MOUSEFIT_WARMUP_RAG:-1}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - MOUSEFIT_EMBED_MODEL=${MOUSEFIT_EMBED_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
@@ -20,6 +39,9 @@ services:
       - ./backend/backend/rag/chroma:/app/backend/rag/chroma
     networks:
       - mousefit-network
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
@@ -47,3 +69,6 @@ services:
 networks:
   mousefit-network:
     driver: bridge
+
+volumes:
+  postgres-data-local:

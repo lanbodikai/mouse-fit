@@ -14,11 +14,6 @@ from psycopg_pool import ConnectionPool
 
 from backend.api.routes_rag import router as rag_router
 
-try:
-    from backend.api.routes_ml import router as ml_router  # type: ignore
-except Exception:
-    ml_router = None
-
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 _POOL: Optional[ConnectionPool] = None
 
@@ -391,8 +386,6 @@ app.add_middleware(
 )
 
 app.include_router(rag_router)
-if ml_router is not None:
-    app.include_router(ml_router)
 
 
 @app.on_event("startup")
