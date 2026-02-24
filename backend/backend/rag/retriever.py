@@ -9,6 +9,7 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 from backend import config
+from backend.rag.index_builder import build_embeddings
 from backend.rag.schemas import RagPreferences, RagSource
 
 try:
@@ -41,6 +42,10 @@ def _get_collection():
 
 def warmup() -> None:
     """Preload embedder / vector store to avoid first-request latency."""
+    try:
+        build_embeddings(rebuild=False)
+    except Exception:
+        pass
     _get_collection()
     _get_embedder()
 
@@ -78,47 +83,87 @@ def _hard_filter(meta: Dict[str, Any], prefs: RagPreferences) -> bool:
 
 
 def retrieve(query: str, prefs: Optional[RagPreferences] = None, k: int = 8) -> List[RagSource]:
+    global _collection
     prefs = prefs or RagPreferences()
     query = query or ""
+    try:
+        rebuilt_count = build_embeddings(rebuild=False)
+    except Exception:
+        rebuilt_count = 0
+    if rebuilt_count > 0:
+        # Re-open collection after index rebuild so queries use latest dataset files.
+        _collection = None
 
     collection = _get_collection()
     if collection is not None:
-        results = collection.query(query_texts=[query], n_results=max(k * 3, k))
+        try:
+            count = int(collection.count())
+        except Exception:
+            count = 0
+        if count <= 0:
+            collection = None
+
+    if collection is not None:
+        n_results = min(max(k * 8, 32), 256)
+        results = collection.query(query_texts=[query], n_results=n_results)
         docs: List[RagSource] = []
+        relaxed: List[RagSource] = []
         ids = results.get("ids", [[]])[0]
         texts = results.get("documents", [[]])[0]
         metas = results.get("metadatas", [[]])[0]
         distances = results.get("distances", [[]])[0]
         for doc_id, text, meta, dist in zip(ids, texts, metas, distances):
             meta = meta or {}
-            if not _hard_filter(meta, prefs):
-                continue
             score = 1.0 - float(dist) if dist is not None else 0.0
-            docs.append(RagSource(id=doc_id, text=text or "", meta=meta, score=score))
+            item = RagSource(id=doc_id, text=text or "", meta=meta, score=score)
+            if _hard_filter(meta, prefs):
+                docs.append(item)
+            else:
+                relaxed.append(item)
             if len(docs) >= k:
                 break
+        if len(docs) < k:
+            docs.extend(relaxed[: k - len(docs)])
         return docs
 
     docs = _load_docs(config.RAG_EMBEDDINGS_PATH)
+    if not docs:
+        try:
+            if build_embeddings(rebuild=False) > 0:
+                docs = _load_docs(config.RAG_EMBEDDINGS_PATH)
+        except Exception:
+            docs = []
     if not docs:
         return []
 
     embedder = _get_embedder()
     query_vec = embedder.encode(query, normalize_embeddings=True)
-    scored: List[RagSource] = []
+    strict: List[RagSource] = []
+    relaxed: List[RagSource] = []
     for doc in docs:
         meta = doc.get("meta") or {}
-        if not _hard_filter(meta, prefs):
-            continue
         score = _cosine(query_vec, np.array(doc.get("vector", []), dtype=np.float32))
-        scored.append(
-            RagSource(
-                id=str(doc.get("id", "")),
-                text=str(doc.get("text", "")),
-                meta=meta,
-                score=score,
-            )
+        item = RagSource(
+            id=str(doc.get("id", "")),
+            text=str(doc.get("text", "")),
+            meta=meta,
+            score=score,
         )
+        if _hard_filter(meta, prefs):
+            strict.append(item)
+        else:
+            # Keep relaxed matches as lower-priority fallback.
+            relaxed.append(
+                RagSource(
+                    id=item.id,
+                    text=item.text,
+                    meta=item.meta,
+                    score=item.score * 0.9,
+                )
+            )
 
-    scored.sort(key=lambda item: item.score, reverse=True)
-    return scored[:k]
+    strict.sort(key=lambda item: item.score, reverse=True)
+    if len(strict) >= k:
+        return strict[:k]
+    relaxed.sort(key=lambda item: item.score, reverse=True)
+    return (strict + relaxed)[:k]

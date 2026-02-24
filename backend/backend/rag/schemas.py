@@ -20,7 +20,7 @@ class RagPreferences(BaseModel):
 class RagQuery(BaseModel):
     session_id: str
     query: str
-    top_k: int = 8
+    top_k: int = 3
     prefs: Optional[RagPreferences] = None
 
 

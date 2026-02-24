@@ -27,6 +27,62 @@ router = APIRouter()
 _SESSION = requests.Session()
 
 
+def _clip_text(value: Any, limit: int = 140) -> str:
+    text = str(value).strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3] + "..."
+
+
+def _reason_for_source(query: str, prefs: RagPreferences, source: RagSource) -> str:
+    meta = source.meta or {}
+    reasons: List[str] = []
+    if prefs.wireless is True and "wireless" in str(meta.get("wireless", "")).lower():
+        reasons.append("matches wireless preference")
+    if prefs.wireless is False and "wireless" not in str(meta.get("wireless", "")).lower():
+        reasons.append("matches wired preference")
+
+    shape_pref = (prefs.shape or "").strip().lower()
+    shape_val = str(meta.get("shape", "")).strip().lower()
+    if shape_pref and shape_pref in shape_val:
+        reasons.append(f"shape aligns with `{shape_pref}`")
+
+    if prefs.targetWeight and prefs.targetWeight.max and meta.get("weight_g") is not None:
+        try:
+            weight = float(meta["weight_g"])
+            if weight <= prefs.targetWeight.max:
+                reasons.append(f"within target weight ({weight:g}g <= {prefs.targetWeight.max:g}g)")
+        except (TypeError, ValueError):
+            pass
+
+    dims = []
+    for key in ("length_mm", "width_mm", "height_mm"):
+        val = meta.get(key)
+        if val is None:
+            dims = []
+            break
+        dims.append(str(val))
+    if dims:
+        reasons.append(f"size {dims[0]}x{dims[1]}x{dims[2]} mm")
+
+    if not reasons:
+        reasons.append("highest semantic match to your query among indexed mice")
+
+    query_hint = _clip_text(query, 90)
+    return f"{'; '.join(reasons)}. Query match: `{query_hint}`. Similarity score: {source.score:.3f}"
+
+
+def _format_top3_answer(query: str, prefs: RagPreferences, sources: List[RagSource]) -> str:
+    lines = ["Top 3 recommendations with reasoning:"]
+    for idx, source in enumerate(sources[:3], start=1):
+        meta = source.meta or {}
+        name = f"{meta.get('brand', '')} {meta.get('model', '')}".strip() or source.id
+        reason = _reason_for_source(query, prefs, source)
+        lines.append(f"{idx}. {name} ({source.id})")
+        lines.append(f"Reason: {reason}")
+    return "\n".join(lines)
+
+
 def _profile_to_query(profile: Dict[str, Any]) -> str:
     bits = []
     if profile.get("length_mm"):
@@ -79,24 +135,12 @@ def _build_context(sources: List[RagSource], max_lines: int = 24) -> str:
 
 @router.post("/api/rag/query", response_model=RagAnswer)
 def rag_query(payload: RagQuery) -> RagAnswer:
-    sources = retrieve(payload.query, payload.prefs, payload.top_k)
+    prefs = payload.prefs or RagPreferences()
+    sources = retrieve(payload.query, prefs, k=3)[:3]
     if not sources:
         return RagAnswer(answer="No sources available.", sources=[])
 
-    context = _build_context(sources, max_lines=18)
-    try:
-        answer = _call_groq(
-            [
-                {"role": "system", "content": RAG_SYSTEM},
-                {"role": "system", "content": f"CONTEXT:\n{context}"},
-                {"role": "user", "content": payload.query},
-            ],
-            temperature=0.2,
-        )
-    except HTTPException:
-        # fallback if no key configured
-        answer = " ".join(source.text.split("\n")[0] for source in sources[:3])
-
+    answer = _format_top3_answer(payload.query, prefs, sources)
     return RagAnswer(answer=answer, sources=sources)
 
 
@@ -125,7 +169,7 @@ def _is_mouse_doc(text: str) -> bool:
 
 def _parse_dims(text: str) -> Dict[str, float]:
     import re
-    match = re.search(r"(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)", text)
+    match = re.search(r"(\d+(?:\.\d+)?)\s*[xX]\s*(\d+(?:\.\d+)?)\s*[xX]\s*(\d+(?:\.\d+)?)", text)
     if not match:
         return {}
     return {
@@ -151,7 +195,7 @@ def _parse_shape(text: str) -> Optional[str]:
 
 
 def _parse_brand_model(first_line: str) -> Dict[str, str]:
-    cleaned = first_line.strip().replace("#", "").replace("*", "").replace("•", "").strip()
+    cleaned = first_line.strip().replace("#", "").replace("*", "").replace("-", "").strip()
     parts = cleaned.split()
     if len(parts) < 2:
         return {"brand": "", "model": ""}
@@ -277,7 +321,7 @@ def rag_report(payload: ReportRequest) -> ReportResponse:
     ctx = _build_context(narrowed[:8], max_lines=24)
 
     candidate_summary = " ".join(
-        f"• {c.brand} {c.model}" for c in payload.candidates[:5] if c.brand and c.model
+        f"- {c.brand} {c.model}" for c in payload.candidates[:5] if c.brand and c.model
     )
 
     reply = _call_groq(
