@@ -12,6 +12,13 @@ from sentence_transformers import SentenceTransformer
 from backend import config
 
 try:
+    import psycopg
+    from psycopg.rows import dict_row
+except Exception:  # pragma: no cover - optional dependency
+    psycopg = None
+    dict_row = None
+
+try:
     import chromadb
     from chromadb.config import Settings
 except Exception:  # pragma: no cover - optional dependency
@@ -247,6 +254,69 @@ def _iter_dataset() -> Iterable[Dict[str, Any]]:
             yield row
 
 
+def _iter_postgres_dataset() -> Iterable[Dict[str, Any]]:
+    if psycopg is None or not config.DATABASE_URL:
+        return []
+
+    try:
+        with psycopg.connect(config.DATABASE_URL, row_factory=dict_row) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        id,
+                        brand,
+                        model,
+                        variant,
+                        length_mm,
+                        width_mm,
+                        height_mm,
+                        weight_g,
+                        ergo,
+                        wired,
+                        shape,
+                        hump,
+                        grips,
+                        hands,
+                        product_url,
+                        image_url,
+                        source,
+                        source_handle,
+                        availability_status
+                    FROM mice
+                    """
+                )
+                return list(cur.fetchall())
+    except Exception:
+        return []
+
+
+def _postgres_latest_update_ts() -> Optional[float]:
+    if psycopg is None or not config.DATABASE_URL:
+        return None
+    try:
+        with psycopg.connect(config.DATABASE_URL, row_factory=dict_row) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT EXTRACT(
+                        EPOCH FROM GREATEST(
+                            COALESCE(MAX(updated_at), TIMESTAMPTZ 'epoch'),
+                            COALESCE(MAX(created_at), TIMESTAMPTZ 'epoch')
+                        )
+                    ) AS latest_epoch
+                    FROM mice
+                    """
+                )
+                row = cur.fetchone() or {}
+                latest = row.get("latest_epoch")
+                if latest is None:
+                    return None
+                return float(latest)
+    except Exception:
+        return None
+
+
 def _non_empty_count(mouse: Dict[str, Any]) -> int:
     score = 0
     for key in (
@@ -295,7 +365,7 @@ def _merge_mouse(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
 
 def _collect_mice() -> Dict[Tuple[str, str, str], Dict[str, Any]]:
     mice: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
-    for row in _iter_dataset():
+    for row in [*_iter_dataset(), *_iter_postgres_dataset()]:
         normalized = _normalize_mouse(row)
         if not (normalized["brand"] and normalized["model"]):
             continue
@@ -336,6 +406,11 @@ def _needs_rebuild(rebuild: bool = False) -> bool:
     for dataset in _dataset_files():
         if dataset.stat().st_mtime > emb_mtime:
             return True
+
+    pg_latest = _postgres_latest_update_ts()
+    if pg_latest is not None and pg_latest > emb_mtime:
+        return True
+
     if config.RAG_SOURCES_DIR.exists():
         for source in config.RAG_SOURCES_DIR.glob("*.md"):
             if source.stat().st_mtime > emb_mtime:

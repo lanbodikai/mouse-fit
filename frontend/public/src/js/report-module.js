@@ -1,7 +1,7 @@
 import { apiJson } from "./api-client.js";
 import { loadMice as loadMiceApi } from "./mice-api.js";
 
-const TOP_MATCH_LIMIT = 10;
+const TOP_MATCH_LIMIT = 3;
 const RERANK_CANDIDATE_LIMIT = 12;
 const MIN_RETRIEVAL_POOL = 40;
 const ALLOWED_GRIPS = new Set(["palm", "claw", "fingertip"]);
@@ -221,72 +221,100 @@ function buildRagCandidateId(candidate) {
 }
 
 async function rerankWithRag(profile, candidates, localRanked) {
-  if (!Array.isArray(candidates) || !candidates.length) return null;
-
-  const uniqueMap = new Map();
-  const rerankCandidates = [];
-  for (const entry of candidates) {
-    const ragId = buildRagCandidateId(entry);
-    if (uniqueMap.has(ragId)) continue;
-    uniqueMap.set(ragId, entry.id);
-    rerankCandidates.push({
-      id: ragId,
-      brand: entry.brand,
-      model: entry.model,
-      length_mm: entry.length,
-      width_mm: entry.width,
-      height_mm: entry.height,
-      weight_g: entry.weight || null,
-      shape: entry.shapeKey === "other" ? null : entry.shapeKey,
-    });
-  }
-
-  if (!rerankCandidates.length) return null;
+  const queryParts = [
+    `${profile.grip || "palm"} grip`,
+    Number.isFinite(profile.handLength) ? `hand length ${profile.handLength.toFixed(1)}mm` : "",
+    Number.isFinite(profile.handWidth) ? `hand width ${profile.handWidth.toFixed(1)}mm` : "",
+    profile.featureRequest?.requested?.shell ? `shape ${profile.featureRequest.requested.shell}` : "",
+    "gaming mouse recommendations",
+  ].filter(Boolean);
 
   const payload = {
-    profile: {
-      grip: profile.grip,
-      length_mm: profile.handLength,
-      width_mm: profile.handWidth,
-      budget:
-        profile.budgetRange && Number.isFinite(profile.budgetRange.min) && Number.isFinite(profile.budgetRange.max)
-          ? (profile.budgetRange.min + profile.budgetRange.max) / 2
-          : undefined,
+    session_id: "report-page",
+    query: queryParts.join(", "),
+    top_k: TOP_MATCH_LIMIT,
+    prefs: {
+      grip: profile.grip || undefined,
+      shape: profile.featureRequest?.requested?.shell || undefined,
     },
-    candidates: rerankCandidates,
   };
 
-  const reranked = await apiJson("/api/rerank", {
+  const rag = await apiJson("/api/rag/query", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 
-  const rankedMap = new Map();
-  if (Array.isArray(reranked?.ranked)) {
-    reranked.ranked.forEach((item) => {
-      if (!item?.id) return;
-      rankedMap.set(String(item.id), item);
+  const recommendations = Array.isArray(rag?.recommendations) ? rag.recommendations.slice(0, TOP_MATCH_LIMIT) : [];
+  if (!recommendations.length) return null;
+
+  const sourceById = new Map();
+  if (Array.isArray(rag?.sources)) {
+    rag.sources.forEach((source) => {
+      if (!source?.id) return;
+      sourceById.set(String(source.id), source);
     });
   }
 
-  const byLocalId = new Map(localRanked.map((mouse) => [mouse.id, mouse]));
-  const merged = [];
-  rankedMap.forEach((item, ragId) => {
-    const localId = uniqueMap.get(ragId);
-    if (!localId) return;
-    const base = byLocalId.get(localId);
-    if (!base) return;
-
-    merged.push({
-      ...base,
-      score: toFiniteNumber(item.score) ?? base.score,
-      rerankReason: item.reason ? String(item.reason) : "",
-      rerankFlags: Array.isArray(item.flags) ? item.flags.map((flag) => String(flag)) : [],
-      source: "rag-rerank",
-    });
+  const normalizedLocalById = new Map();
+  (Array.isArray(localRanked) ? localRanked : []).forEach((mouse) => {
+    if (!mouse?.id) return;
+    const key = String(mouse.id).toLowerCase().replace(/[^a-z0-9]/g, "");
+    normalizedLocalById.set(key, mouse);
   });
 
-  if (!merged.length) return null;
+  const merged = recommendations.map((rec) => {
+    const recId = String(rec.id || "");
+    const source = sourceById.get(recId) || {};
+    const meta = source?.meta || {};
+    const localKey = recId.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const local = normalizedLocalById.get(localKey);
+
+    const length = toFiniteNumber(meta.length_mm) ?? local?.length ?? 0;
+    const width = toFiniteNumber(meta.width_mm) ?? local?.width ?? 0;
+    const height = toFiniteNumber(meta.height_mm) ?? local?.height ?? 0;
+    const weight = toFiniteNumber(meta.weight_g) ?? local?.weight ?? 0;
+    const shapeKey = normalizeShape(meta.shape || local?.shapeRaw || "");
+    const humpRaw = String(meta.hump || local?.humpRaw || "");
+    const sideRaw = String(meta.side_curvature_raw || local?.sideRaw || "");
+    const sideKey = normalizeSide(sideRaw);
+    const gripWidthEstimate = estimateGripWidth(width, sideKey);
+    const rating = toFiniteNumber(rec.rating);
+    const score =
+      rating != null ? clamp(rating * 10, 0, 100) : clamp(((toFiniteNumber(rec.score) ?? 0) + 1) * 50, 0, 100);
+
+    return {
+      id: recId || local?.id || slug(String(rec.name || "")),
+      name: String(rec.name || local?.name || `${meta.brand || ""} ${meta.model || ""}`.trim() || "Unknown"),
+      brand: String(meta.brand || local?.brand || ""),
+      model: String(meta.model || local?.model || ""),
+      length,
+      width,
+      height,
+      weight,
+      price: local?.price ?? null,
+      shapeKey,
+      humpRaw,
+      sideRaw,
+      sideKey,
+      gripWidthEstimate,
+      feature: { mismatchedLabels: [] },
+      score,
+      ragRating: rating,
+      rerankReason: buildNaturalReasoning({
+        grip: profile.grip,
+        recReasoning: String(rec.reasoning || ""),
+        shapeKey,
+        humpRaw,
+        length,
+        width,
+        height,
+        weight,
+        wireless: String(meta.wireless || ""),
+      }),
+      source: "rag-query",
+    };
+  });
+
   merged.sort((a, b) => (b.score || 0) - (a.score || 0));
   return merged.slice(0, TOP_MATCH_LIMIT);
 }
@@ -1131,6 +1159,37 @@ function shapeLabel(shapeKey) {
   return "Other";
 }
 
+function buildNaturalReasoning({ grip, recReasoning, shapeKey, humpRaw, length, width, height, weight, wireless }) {
+  const gripLabel = grip === "fingertip" ? "fingertip" : grip || "your";
+  const shapeText = shapeLabel(shapeKey).toLowerCase();
+  const dims =
+    Number.isFinite(length) && Number.isFinite(width) && Number.isFinite(height)
+      ? `${length.toFixed(1)} x ${width.toFixed(1)} x ${height.toFixed(1)} mm`
+      : "a practical size";
+  const weightText = Number.isFinite(weight) && weight > 0 ? `${Math.round(weight)}g` : "a balanced weight";
+  const humpText = humpRaw ? `${String(humpRaw).toLowerCase()} hump` : "balanced hump";
+  const connectionText = wireless === "wireless" ? "wireless setup" : wireless === "wired" ? "wired setup" : "setup";
+
+  const base = `This ${shapeText} shape with a ${humpText} should feel stable for ${gripLabel} grip, and the ${dims} body at ${weightText} is a solid fit for your ${connectionText}.`;
+  if (!recReasoning) return base;
+
+  const cleaned = String(recReasoning)
+    .replace(/Similarity score:\s*[-+]?\d*\.?\d+/gi, "")
+    .replace(/Query match:\s*`[^`]*`\.?/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return base;
+  return `${base} ${cleaned.charAt(0).toUpperCase()}${cleaned.slice(1)}`;
+}
+
+function buildFallbackCardReason(item, grip) {
+  const shapeText = shapeLabel(item.shapeKey).toLowerCase();
+  const humpText = item.humpRaw ? `${String(item.humpRaw).toLowerCase()} hump` : "balanced hump";
+  const weightText = Number.isFinite(item.weight) && item.weight > 0 ? `${Math.round(item.weight)}g weight` : "balanced weight";
+  const gripText = grip === "fingertip" ? "fingertip" : grip || "your";
+  return `This ${shapeText} shell with a ${humpText} and ${weightText} should feel comfortable and controlled for your ${gripText} grip style.`;
+}
+
 function renderGrid(el, items, grip) {
   if (!el) return;
   el.innerHTML = "";
@@ -1142,17 +1201,19 @@ function renderGrid(el, items, grip) {
   items.forEach((item, idx) => {
     const card = document.createElement("div");
     card.className = `chip ${chipClass(grip)} ${idx === 0 ? "best" : ""}`;
-    const priceLabel = Number.isFinite(item.price) && item.price > 0 ? `$${Math.round(item.price)}` : "N/A";
-    const mismatches = Array.isArray(item.feature?.mismatchedLabels) ? item.feature.mismatchedLabels : [];
-    const mismatchLabel = mismatches.length
-      ? `, Closest: ${mismatches.join(", ")}`
-      : "";
-    const reasonLabel = item.rerankReason ? `<div class="reason">${item.rerankReason}</div>` : "";
+    const reasonText = item.rerankReason ? String(item.rerankReason) : buildFallbackCardReason(item, grip);
+    const reasonLabel = `<div class="reason">${reasonText}</div>`;
+    const pctLabel = Number.isFinite(item.ragRating) ? `${Math.round(item.ragRating * 10)}%` : `${Math.round(item.score)}%`;
+    const signalBits = [];
+    if (Number.isFinite(item.weight) && item.weight > 0) signalBits.push(`${Math.round(item.weight)}g`);
+    if (item.shapeKey) signalBits.push(shapeLabel(item.shapeKey));
+    if (item.humpRaw) signalBits.push(`${item.humpRaw} hump`);
+    const supportLine = signalBits.length ? signalBits.join(" • ") : "Fit reasoning";
 
     card.innerHTML = `
-      <div class="pct">${Math.round(item.score)}%</div>
+      <div class="pct">${pctLabel}</div>
       <div>${item.name}</div>
-      <div class="meta">LxWxH: ${item.length.toFixed(1)}x${item.width.toFixed(1)}x${item.height.toFixed(1)} mm, GripW est: ${item.gripWidthEstimate.toFixed(1)} mm, Weight: ${item.weight || "?"} g, Shape: ${shapeLabel(item.shapeKey)}, Hump: ${item.humpRaw || "N/A"}, Side: ${item.sideRaw || "N/A"}, Price: ${priceLabel}${mismatchLabel}</div>
+      <div class="meta">${supportLine}</div>
       ${reasonLabel}
     `;
     el.appendChild(card);
@@ -1183,6 +1244,19 @@ async function generateReport() {
       setStatus("Missing measurement data. Run the survey again from Redo Test.");
       renderGrid($grid, [], profile.grip);
       return;
+    }
+
+    // RAG-first path: show backend top-3 recommendations with reasoning directly.
+    try {
+      setStatus("Querying RAG top 3...");
+      const ragTopMatches = await rerankWithRag(profile, [], []);
+      if (ragTopMatches?.length) {
+        renderGrid($grid, ragTopMatches.slice(0, TOP_MATCH_LIMIT), profile.grip);
+        setStatus("RAG top 3 with reasoning applied.");
+        return;
+      }
+    } catch (error) {
+      console.warn("RAG top-3 query failed; falling back to local pipeline", error);
     }
 
     setStatus("Loading mice...");
@@ -1243,17 +1317,17 @@ async function generateReport() {
 
     if (localRanked.length) {
       try {
-        setStatus("Applying RAG rerank...");
+        setStatus("Querying RAG top 3...");
         const reranked = await rerankWithRag(profile, localRanked, localRanked);
         if (reranked?.length) {
           topMatches = reranked;
-          rerankStatus = "RAG rerank applied.";
+          rerankStatus = "RAG top 3 with reasoning applied.";
         } else {
-          rerankStatus = "RAG rerank unavailable; local ranking used.";
+          rerankStatus = "RAG unavailable; local ranking used.";
         }
       } catch (error) {
         console.warn("RAG rerank failed, using local ranking", error);
-        rerankStatus = "RAG rerank failed; local ranking used.";
+        rerankStatus = "RAG failed; local ranking used.";
       }
     }
 

@@ -301,6 +301,7 @@ const bodyHtml = `
 `;
 
 export default function ReportPage() {
+  const reportScriptVersion = "20260224-rag-v2";
   return (
     <>
       <ShellNav currentPage="report" />
@@ -308,7 +309,7 @@ export default function ReportPage() {
         <style dangerouslySetInnerHTML={{ __html: styles }} />
         <ReportStoreSync />
         <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-        <Script type="module" src="/src/js/report-module.js" strategy="afterInteractive" />
+        <Script type="module" src={`/src/js/report-module.js?v=${reportScriptVersion}`} strategy="afterInteractive" />
       </div>
     </>
   );

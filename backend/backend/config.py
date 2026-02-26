@@ -15,6 +15,7 @@ RAG_CHROMA_PATH = RAG_DIR / "chroma"
 RAG_COLLECTION = "mousefit_docs"
 
 EMBED_MODEL_NAME = os.getenv("MOUSEFIT_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_URL = os.getenv("GROQ_URL", "https://api.groq.com/openai/v1/chat/completions")

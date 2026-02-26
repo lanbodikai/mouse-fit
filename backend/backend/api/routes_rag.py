@@ -14,6 +14,7 @@ from backend.rag.schemas import (
     CandidateRequest,
     CandidateResponse,
     RagAnswer,
+    RagRecommendation,
     RagQuery,
     RagPreferences,
     RagSource,
@@ -37,21 +38,29 @@ def _clip_text(value: Any, limit: int = 140) -> str:
 def _reason_for_source(query: str, prefs: RagPreferences, source: RagSource) -> str:
     meta = source.meta or {}
     reasons: List[str] = []
-    if prefs.wireless is True and "wireless" in str(meta.get("wireless", "")).lower():
-        reasons.append("matches wireless preference")
-    if prefs.wireless is False and "wireless" not in str(meta.get("wireless", "")).lower():
-        reasons.append("matches wired preference")
+    brand = str(meta.get("brand") or "").strip()
+    model = str(meta.get("model") or "").strip()
+    mouse_name = f"{brand} {model}".strip() or "This mouse"
+
+    wireless_val = str(meta.get("wireless", "")).lower()
+    if prefs.wireless is True and "wireless" in wireless_val:
+        reasons.append("it matches your wireless preference")
+    if prefs.wireless is False and "wireless" not in wireless_val:
+        reasons.append("it matches your wired preference")
 
     shape_pref = (prefs.shape or "").strip().lower()
     shape_val = str(meta.get("shape", "")).strip().lower()
     if shape_pref and shape_pref in shape_val:
-        reasons.append(f"shape aligns with `{shape_pref}`")
+        reasons.append(f"its {shape_val or 'overall'} shape lines up with your requested {shape_pref} profile")
 
+    weight_clause = ""
     if prefs.targetWeight and prefs.targetWeight.max and meta.get("weight_g") is not None:
         try:
             weight = float(meta["weight_g"])
             if weight <= prefs.targetWeight.max:
-                reasons.append(f"within target weight ({weight:g}g <= {prefs.targetWeight.max:g}g)")
+                weight_clause = f"At {weight:g}g, it stays under your {prefs.targetWeight.max:g}g target."
+            else:
+                weight_clause = f"It weighs {weight:g}g, which is above your {prefs.targetWeight.max:g}g target."
         except (TypeError, ValueError):
             pass
 
@@ -62,24 +71,76 @@ def _reason_for_source(query: str, prefs: RagPreferences, source: RagSource) -> 
             dims = []
             break
         dims.append(str(val))
-    if dims:
-        reasons.append(f"size {dims[0]}x{dims[1]}x{dims[2]} mm")
+    size_clause = f"Its shape dimensions are {dims[0]} x {dims[1]} x {dims[2]} mm." if dims else ""
 
-    if not reasons:
-        reasons.append("highest semantic match to your query among indexed mice")
+    fit_clause = (
+        f"{mouse_name} is recommended because {', and '.join(reasons)}."
+        if reasons
+        else f"{mouse_name} is recommended because it is one of the strongest semantic matches to your request."
+    )
 
     query_hint = _clip_text(query, 90)
-    return f"{'; '.join(reasons)}. Query match: `{query_hint}`. Similarity score: {source.score:.3f}"
+    tail = f"It also aligns well with your query ({query_hint}) with a similarity score of {source.score:.3f}."
+    return " ".join(part for part in (fit_clause, weight_clause, size_clause, tail) if part)
 
 
-def _format_top3_answer(query: str, prefs: RagPreferences, sources: List[RagSource]) -> str:
-    lines = ["Top 3 recommendations with reasoning:"]
+def _rating_from_score(score: float) -> float:
+    normalized = max(0.0, min(1.0, (score + 1.0) / 2.0))
+    return round(normalized * 10.0, 1)
+
+
+def _shape_bucket(meta: Dict[str, Any]) -> str:
+    shape = str(meta.get("shape") or "").strip().lower()
+    if not shape:
+        return "unknown"
+    if "ergo" in shape:
+        return "ergo"
+    if "sym" in shape or "ambi" in shape:
+        return "sym"
+    return shape
+
+
+def _pick_shape_diverse(sources: List[RagSource], limit: int = 3) -> List[RagSource]:
+    if not sources:
+        return []
+    picked: List[RagSource] = []
+    seen_shapes: set[str] = set()
+    for source in sources:
+        shape_key = _shape_bucket(source.meta or {})
+        if shape_key in seen_shapes:
+            continue
+        picked.append(source)
+        seen_shapes.add(shape_key)
+        if len(picked) >= limit:
+            return picked[:limit]
+    return picked[:limit]
+
+
+def _top3_recommendations(query: str, prefs: RagPreferences, sources: List[RagSource]) -> List[RagRecommendation]:
+    recommendations: List[RagRecommendation] = []
     for idx, source in enumerate(sources[:3], start=1):
         meta = source.meta or {}
         name = f"{meta.get('brand', '')} {meta.get('model', '')}".strip() or source.id
-        reason = _reason_for_source(query, prefs, source)
-        lines.append(f"{idx}. {name} ({source.id})")
-        lines.append(f"Reason: {reason}")
+        recommendations.append(
+            RagRecommendation(
+                rank=idx,
+                id=source.id,
+                name=name,
+                rating=_rating_from_score(source.score),
+                reasoning=_reason_for_source(query, prefs, source),
+                score=source.score,
+            )
+        )
+    return recommendations
+
+
+def _format_top3_answer(recommendations: List[RagRecommendation]) -> str:
+    count = len(recommendations[:3])
+    lines = [f"Top {count} recommendations with reasoning:"]
+    for rec in recommendations[:3]:
+        lines.append(f"{rec.rank}. {rec.name} ({rec.id})")
+        lines.append(f"Rating: {rec.rating}/10")
+        lines.append(f"Reasoning: {rec.reasoning}")
     return "\n".join(lines)
 
 
@@ -136,12 +197,15 @@ def _build_context(sources: List[RagSource], max_lines: int = 24) -> str:
 @router.post("/api/rag/query", response_model=RagAnswer)
 def rag_query(payload: RagQuery) -> RagAnswer:
     prefs = payload.prefs or RagPreferences()
-    sources = retrieve(payload.query, prefs, k=3)[:3]
+    k = max(3, int(payload.top_k or 3))
+    pool = retrieve(payload.query, prefs, k=min(max(k * 6, 18), 128))
+    sources = _pick_shape_diverse(pool, limit=3)
     if not sources:
-        return RagAnswer(answer="No sources available.", sources=[])
+        return RagAnswer(answer="No sources available.", sources=[], recommendations=[])
 
-    answer = _format_top3_answer(payload.query, prefs, sources)
-    return RagAnswer(answer=answer, sources=sources)
+    recommendations = _top3_recommendations(payload.query, prefs, sources)
+    answer = _format_top3_answer(recommendations)
+    return RagAnswer(answer=answer, sources=sources, recommendations=recommendations)
 
 
 def _is_mouse_doc(text: str) -> bool:

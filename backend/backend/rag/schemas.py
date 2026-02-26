@@ -31,9 +31,19 @@ class RagSource(BaseModel):
     score: float
 
 
+class RagRecommendation(BaseModel):
+    rank: int
+    id: str
+    name: str
+    rating: float
+    reasoning: str
+    score: float
+
+
 class RagAnswer(BaseModel):
     answer: str
     sources: List[RagSource]
+    recommendations: List[RagRecommendation] = Field(default_factory=list)
 
 
 class CandidateProfile(BaseModel):

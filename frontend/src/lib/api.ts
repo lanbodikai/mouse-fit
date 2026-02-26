@@ -116,7 +116,18 @@ export function ragQuery(payload: {
   query: string;
   top_k?: number;
   prefs?: Record<string, unknown>;
-}): Promise<{ answer: string; sources: Array<Record<string, unknown>> }> {
+}): Promise<{
+  answer: string;
+  sources: Array<Record<string, unknown>>;
+  recommendations?: Array<{
+    rank: number;
+    id: string;
+    name: string;
+    rating: number;
+    reasoning: string;
+    score: number;
+  }>;
+}> {
   return apiJson("/api/rag/query", {
     method: "POST",
     body: JSON.stringify(payload),

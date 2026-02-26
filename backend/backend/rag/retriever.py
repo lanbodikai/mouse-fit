@@ -14,8 +14,10 @@ from backend.rag.schemas import RagPreferences, RagSource
 
 try:
     import chromadb
+    from chromadb.config import Settings
 except Exception:  # pragma: no cover - optional dependency
     chromadb = None
+    Settings = None
 
 
 _embedder: Optional[SentenceTransformer] = None
@@ -35,7 +37,8 @@ def _get_collection():
         return _collection
     if chromadb is None:
         return None
-    client = chromadb.PersistentClient(path=str(config.RAG_CHROMA_PATH))
+    settings = Settings(allow_reset=True) if Settings is not None else None
+    client = chromadb.PersistentClient(path=str(config.RAG_CHROMA_PATH), settings=settings)
     _collection = client.get_or_create_collection(config.RAG_COLLECTION)
     return _collection
 
