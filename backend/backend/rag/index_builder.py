@@ -131,6 +131,10 @@ def _normalize_mouse(item: Dict[str, Any]) -> Dict[str, Any]:
         "source_handle": pick("source_handle", "sourceHandle"),
         "grips": pick_list("grips", "Grips"),
         "hands": pick_list("hands", "Hands"),
+        "side_profile": pick("side_profile", "sideProfile"),
+        "hand_compatibility": pick("hand_compatibility", "handCompatibility"),
+        "price_usd": pick_float("price_usd", "price", "msrp", "priceUsd", "priceUSD"),
+        "price_status": pick("price_status", "priceStatus"),
     }
 
 
@@ -223,12 +227,23 @@ def _build_doc_text(mouse: Dict[str, Any], extra: str) -> str:
         parts.append(f"HUMP: {mouse['hump']}")
     if mouse.get("availability_status"):
         parts.append(f"AVAILABILITY: {mouse['availability_status']}")
+    if mouse.get("price_usd") is not None:
+        try:
+            parts.append(f"PRICE_USD: ${float(mouse['price_usd']):.2f}")
+        except (TypeError, ValueError):
+            pass
+    if mouse.get("price_status"):
+        parts.append(f"PRICE_STATUS: {mouse['price_status']}")
     if mouse.get("source"):
         parts.append(f"SOURCE: {mouse['source']}")
     if mouse.get("grips"):
         parts.append(f"RECOMMENDED_GRIPS: {', '.join(str(x) for x in mouse['grips'])}")
     if mouse.get("hands"):
         parts.append(f"HAND_COMPATIBILITY: {', '.join(str(x) for x in mouse['hands'])}")
+    if mouse.get("side_profile"):
+        parts.append(f"SIDE_PROFILE: {mouse['side_profile']}")
+    if mouse.get("hand_compatibility"):
+        parts.append(f"FIT_NOTES: {mouse['hand_compatibility']}")
     if mouse.get("product_url"):
         parts.append(f"PRODUCT_URL: {mouse['product_url']}")
 
@@ -282,7 +297,11 @@ def _iter_postgres_dataset() -> Iterable[Dict[str, Any]]:
                         image_url,
                         source,
                         source_handle,
-                        availability_status
+                        availability_status,
+                        side_profile,
+                        hand_compatibility,
+                        price_usd,
+                        price_status
                     FROM mice
                     """
                 )
@@ -335,6 +354,10 @@ def _non_empty_count(mouse: Dict[str, Any]) -> int:
         "product_url",
         "source",
         "availability_status",
+        "side_profile",
+        "hand_compatibility",
+        "price_usd",
+        "price_status",
     ):
         val = mouse.get(key)
         if val in (None, "", []):

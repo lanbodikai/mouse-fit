@@ -69,6 +69,10 @@ class Candidate(BaseModel):
     height_mm: Optional[float] = None
     weight_g: Optional[float] = None
     shape: Optional[str] = None
+    price_usd: Optional[float] = None
+    grips: List[str] = Field(default_factory=list)
+    hands: List[str] = Field(default_factory=list)
+    hand_compatibility: Optional[str] = None
 
 
 class CandidateResponse(BaseModel):

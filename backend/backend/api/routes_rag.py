@@ -52,6 +52,14 @@ def _reason_for_source(query: str, prefs: RagPreferences, source: RagSource) -> 
     shape_val = str(meta.get("shape", "")).strip().lower()
     if shape_pref and shape_pref in shape_val:
         reasons.append(f"its {shape_val or 'overall'} shape lines up with your requested {shape_pref} profile")
+    grip_pref = (prefs.grip or "").strip().lower()
+    if grip_pref:
+        raw_grips = meta.get("grips") or []
+        if isinstance(raw_grips, str):
+            raw_grips = [part.strip() for part in raw_grips.split(",")]
+        grip_list = [str(x).strip().lower() for x in raw_grips if str(x).strip()]
+        if grip_pref in grip_list:
+            reasons.append(f"its fit profile supports {grip_pref} grip")
 
     weight_clause = ""
     if prefs.targetWeight and prefs.targetWeight.max and meta.get("weight_g") is not None:
@@ -72,6 +80,13 @@ def _reason_for_source(query: str, prefs: RagPreferences, source: RagSource) -> 
             break
         dims.append(str(val))
     size_clause = f"Its shape dimensions are {dims[0]} x {dims[1]} x {dims[2]} mm." if dims else ""
+    price_clause = ""
+    price_raw = meta.get("price_usd")
+    if price_raw is not None:
+        try:
+            price_clause = f"Current listed price is about ${float(price_raw):.2f}."
+        except (TypeError, ValueError):
+            pass
 
     fit_clause = (
         f"{mouse_name} is recommended because {', and '.join(reasons)}."
@@ -81,7 +96,7 @@ def _reason_for_source(query: str, prefs: RagPreferences, source: RagSource) -> 
 
     query_hint = _clip_text(query, 90)
     tail = f"It also aligns well with your query ({query_hint}) with a similarity score of {source.score:.3f}."
-    return " ".join(part for part in (fit_clause, weight_clause, size_clause, tail) if part)
+    return " ".join(part for part in (fit_clause, weight_clause, size_clause, price_clause, tail) if part)
 
 
 def _rating_from_score(score: float) -> float:
@@ -266,21 +281,52 @@ def _parse_brand_model(first_line: str) -> Dict[str, str]:
     return {"brand": parts[0], "model": " ".join(parts[1:])}
 
 
+def _safe_float(value: Any) -> Optional[float]:
+    try:
+        if value in (None, ""):
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _normalize_doc(source: RagSource) -> Candidate:
     first_line = source.text.split("\n")[0] if source.text else ""
     brand_model = _parse_brand_model(first_line)
     dims = _parse_dims(source.text)
     weight = _parse_weight(source.text)
     shape = _parse_shape(source.text)
+    meta = source.meta or {}
+
+    grips_raw = meta.get("grips") or []
+    if isinstance(grips_raw, str):
+        grips = [part.strip() for part in grips_raw.split(",") if part.strip()]
+    elif isinstance(grips_raw, list):
+        grips = [str(part).strip() for part in grips_raw if str(part).strip()]
+    else:
+        grips = []
+
+    hands_raw = meta.get("hands") or []
+    if isinstance(hands_raw, str):
+        hands = [part.strip() for part in hands_raw.split(",") if part.strip()]
+    elif isinstance(hands_raw, list):
+        hands = [str(part).strip() for part in hands_raw if str(part).strip()]
+    else:
+        hands = []
+
     return Candidate(
         id=source.id.lower(),
-        brand=brand_model.get("brand", ""),
-        model=brand_model.get("model", ""),
-        length_mm=dims.get("length_mm"),
-        width_mm=dims.get("width_mm"),
-        height_mm=dims.get("height_mm"),
-        weight_g=weight,
-        shape=shape,
+        brand=str(meta.get("brand") or brand_model.get("brand") or ""),
+        model=str(meta.get("model") or brand_model.get("model") or ""),
+        length_mm=_safe_float(meta.get("length_mm")) or dims.get("length_mm"),
+        width_mm=_safe_float(meta.get("width_mm")) or dims.get("width_mm"),
+        height_mm=_safe_float(meta.get("height_mm")) or dims.get("height_mm"),
+        weight_g=_safe_float(meta.get("weight_g")) or weight,
+        shape=str(meta.get("shape") or shape or "") or None,
+        price_usd=_safe_float(meta.get("price_usd")),
+        grips=grips,
+        hands=hands,
+        hand_compatibility=(str(meta.get("hand_compatibility")) if meta.get("hand_compatibility") else None),
     )
 
 
