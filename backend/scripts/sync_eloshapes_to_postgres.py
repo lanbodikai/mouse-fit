@@ -5,11 +5,16 @@ import json
 import os
 import re
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-import psycopg
 import requests
-from psycopg.rows import dict_row
+
+try:
+    import psycopg
+    from psycopg.rows import dict_row
+except Exception:  # pragma: no cover - optional for --dry-run environments
+    psycopg = None
+    dict_row = None
 
 DEFAULT_ELOSHAPES_BASE_URL = os.getenv("ELOSHAPES_BASE_URL", "https://www.eloshapes.com").strip().rstrip("/")
 DEFAULT_TIMEOUT_SEC = float(os.getenv("ELOSHAPES_TIMEOUT_SEC", "45"))
@@ -45,6 +50,46 @@ def _to_float(value: Any) -> Optional[float]:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _extract_price_usd(row: Dict[str, Any]) -> Tuple[Optional[float], str]:
+    # EloShapes currently does not expose stable MSRP fields for mice, but this
+    # keeps ingestion forward-compatible if price columns are added.
+    candidate_keys = (
+        "price_usd",
+        "general__price_usd",
+        "general__price",
+        "general__msrp_usd",
+        "general__msrp",
+        "mouse__price_usd",
+        "mouse__price",
+        "mouse__msrp_usd",
+        "mouse__msrp",
+    )
+    for key in candidate_keys:
+        raw = row.get(key)
+        price = _to_float(raw)
+        if price is not None and price > 0:
+            return float(price), f"from:{key}"
+    return None, "not_exposed_by_source"
+
+
+def _derive_fit_lists(hand_compatibility: Optional[str]) -> Tuple[List[str], List[str]]:
+    if not hand_compatibility:
+        return [], []
+    raw = hand_compatibility.lower()
+
+    grips: List[str] = []
+    for grip in ("palm", "claw", "fingertip"):
+        if grip in raw:
+            grips.append(grip)
+
+    hands: List[str] = []
+    for size in ("small", "medium", "large"):
+        if size in raw:
+            hands.append(size)
+
+    return grips, hands
 
 
 def _normalize_shape(shape_raw: Optional[str]) -> Optional[str]:
@@ -241,6 +286,9 @@ def transform_product(
     hand_compatibility = _clean_text(row.get("mouse__hand_compatibility"))
     front_flare_raw = _clean_text(row.get("mouse__front_flare"))
 
+    price_usd, price_status = _extract_price_usd(row)
+    grips, hands = _derive_fit_lists(hand_compatibility)
+
     wireless = row.get("mouse__wireless")
     wired = None if wireless is None else (not bool(wireless))
     ergo = None
@@ -275,8 +323,8 @@ def transform_product(
         "wired": wired,
         "shape": shape,
         "hump": _legacy_hump(hump_bucket),
-        "grips": [],
-        "hands": [],
+        "grips": grips,
+        "hands": hands,
         "product_url": product_url,
         "image_url": _pick_image_url(row),
         "source": "eloshapes",
@@ -292,8 +340,8 @@ def transform_product(
         "affiliate_links": product_affiliate_links,
         "brand_discount": brand_discount,
         "discount_code": discount_code,
-        "price_usd": None,
-        "price_status": "not_exposed_by_source",
+        "price_usd": price_usd,
+        "price_status": price_status,
         "source_payload": row,
     }
 
@@ -593,6 +641,10 @@ def main(argv: List[str]) -> int:
         print("[sync] Sample rows:")
         print(json.dumps(sample, indent=2)[:2000])
         return 0
+
+    if psycopg is None or dict_row is None:
+        print("psycopg is required for database sync. Install it or use --dry-run.", file=sys.stderr)
+        return 2
 
     database_url = args.database_url.strip()
     if not database_url:
