@@ -44,6 +44,7 @@ class RagAnswer(BaseModel):
     answer: str
     sources: List[RagSource]
     recommendations: List[RagRecommendation] = Field(default_factory=list)
+    request_id: Optional[str] = None
 
 
 class CandidateProfile(BaseModel):

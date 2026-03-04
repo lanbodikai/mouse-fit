@@ -14,21 +14,21 @@ const features = [
     description: "Precise hand measurement using AI",
     icon: Hand,
     href: "/measure",
-    color: "from-green-500/20 to-green-600/10",
+    color: "from-fuchsia-500/20 to-fuchsia-600/10",
   },
   {
     title: "Grip Analysis",
     description: "Detect your natural grip style",
     icon: MousePointer2,
     href: "/grip",
-    color: "from-emerald-500/20 to-emerald-600/10",
+    color: "from-cyan-500/20 to-cyan-600/10",
   },
   {
     title: "Mouse Database",
     description: "Browse 200+ mice with specs",
     icon: Database,
     href: "/database",
-    color: "from-teal-500/20 to-teal-600/10",
+    color: "from-cyan-500/20 to-cyan-600/10",
   },
   {
     title: "AI Assistant",
@@ -78,11 +78,11 @@ export default function DashboardPage() {
           className="mb-12"
         >
           <div className="flex items-center gap-3 mb-4">
-            <Sparkles className="w-5 h-5 text-green-500" />
+            <Sparkles className="w-5 h-5 text-fuchsia-500" />
             <span className="text-xs tracking-[0.3em] text-white/40 uppercase">Dashboard</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-light text-white mb-4">
-            Welcome to <span className="text-green-500">MouseFit</span>
+            Welcome to <span className="text-fuchsia-500">MouseFit</span>
           </h1>
           <p className="text-white/50 max-w-xl">
             Find your perfect mouse match through precision hand measurement and AI-powered recommendations.
@@ -103,17 +103,18 @@ export default function DashboardPage() {
                   transition={{ duration: 0.5, delay: 0.1 * index }}
                 >
                   <Link href={feature.href}>
-                    <div className={`group relative h-full p-6 rounded-2xl border border-white/10 bg-gradient-to-br ${feature.color} backdrop-blur-sm hover:border-green-500/30 transition-all duration-300`}>
+                    <div className="group relative h-full rounded-2xl p-6 backdrop-blur-sm transition-all duration-300 mf-neon-card-soft">
+                      <div className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.color} opacity-45`} />
                       <div className="flex items-start justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center group-hover:border-green-500/30 transition-colors">
-                          <Icon className="w-6 h-6 text-green-500" />
+                        <div className="relative w-12 h-12 rounded-xl bg-black/20 border border-white/10 flex items-center justify-center group-hover:border-fuchsia-500/30 transition-colors">
+                          <Icon className="w-6 h-6 text-fuchsia-500" />
                         </div>
-                        <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:border-green-500 group-hover:bg-green-500 transition-all duration-300">
+                        <div className="relative w-8 h-8 rounded-full border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:border-fuchsia-500 group-hover:bg-fuchsia-500 transition-all duration-300">
                           <ArrowRight className="w-4 h-4 text-white group-hover:text-black" />
                         </div>
                       </div>
-                      <h3 className="text-lg font-medium text-white mb-2">{feature.title}</h3>
-                      <p className="text-sm text-white/50">{feature.description}</p>
+                      <h3 className="relative text-lg font-medium text-white mb-2">{feature.title}</h3>
+                      <p className="relative text-sm text-white/50">{feature.description}</p>
                     </div>
                   </Link>
                 </motion.div>
@@ -129,10 +130,10 @@ export default function DashboardPage() {
             className="space-y-4"
           >
             {/* Best Match Card */}
-            <div className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm">
+            <div className="rounded-2xl p-6 backdrop-blur-sm mf-neon-card-soft">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-white/60 uppercase tracking-wider">Your Best Match</h3>
-                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <div className="w-2 h-2 rounded-full bg-fuchsia-500" />
               </div>
               
               {bestMouse ? (
@@ -140,7 +141,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-2xl font-medium text-white mb-1">{bestMouse.name}</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-green-500 font-medium">{Math.round(bestMouse.score)}%</span>
+                      <span className="text-fuchsia-500 font-medium">{Math.round(bestMouse.score)}%</span>
                       <span className="text-white/40">match</span>
                     </div>
                   </div>
@@ -157,7 +158,7 @@ export default function DashboardPage() {
                   </div>
                   <Link 
                     href="/report"
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-green-500 text-black font-medium hover:bg-green-400 transition-colors"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 font-medium text-white transition-colors mf-neon-btn"
                   >
                     <FileText className="w-4 h-4" />
                     View Report
@@ -168,7 +169,7 @@ export default function DashboardPage() {
                   <p className="text-white/40 mb-4">No results yet</p>
                   <Link 
                     href="/measure"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500/20 text-green-500 border border-green-500/30 hover:bg-green-500 hover:text-black transition-all"
+                    className="inline-flex items-center gap-2 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/20 px-6 py-3 text-fuchsia-300 transition-all hover:bg-fuchsia-500/30"
                   >
                     <Hand className="w-4 h-4" />
                     Start Measuring
@@ -178,7 +179,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Quick Stats */}
-            <div className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm">
+            <div className="rounded-2xl p-6 backdrop-blur-sm mf-neon-card-soft">
               <h3 className="text-sm font-medium text-white/60 uppercase tracking-wider mb-4">Quick Actions</h3>
               <div className="space-y-2">
                 <Link 
@@ -186,21 +187,21 @@ export default function DashboardPage() {
                   className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group"
                 >
                   <span className="text-white/80">Check Grip Style</span>
-                  <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-green-500 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-fuchsia-500 transition-colors" />
                 </Link>
                 <Link 
                   href="/database"
                   className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group"
                 >
                   <span className="text-white/80">Browse Mice</span>
-                  <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-green-500 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-fuchsia-500 transition-colors" />
                 </Link>
                 <Link 
                   href="/ai"
                   className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group"
                 >
                   <span className="text-white/80">Ask AI</span>
-                  <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-green-500 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-fuchsia-500 transition-colors" />
                 </Link>
               </div>
             </div>
@@ -210,3 +211,4 @@ export default function DashboardPage() {
     </>
   );
 }
+

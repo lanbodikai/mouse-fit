@@ -1,21 +1,38 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+import time
+import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from pydantic import BaseModel, Field
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, field_validator
 from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
+try:
+    from psycopg_pool import ConnectionPool
+except Exception:  # pragma: no cover - optional in limited test envs
+    ConnectionPool = None  # type: ignore[assignment]
 
+from backend import config
+from backend.auth import AuthError, parse_bearer_token, verify_bearer_token
 from backend.api.routes_rag import router as rag_router
+from backend.metrics import METRICS
+
+try:
+    import sentry_sdk
+except Exception:  # pragma: no cover - optional dependency
+    sentry_sdk = None
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 _POOL: Optional[ConnectionPool] = None
+LOGGER = logging.getLogger("mousefit.api")
 
 
 def utc_now() -> str:
@@ -48,6 +65,8 @@ def init_pool(database_url: Optional[str] = None) -> None:
     global _POOL
     if _POOL is not None:
         return
+    if ConnectionPool is None:
+        raise RuntimeError("psycopg_pool is required to initialize the database pool.")
     conninfo = (database_url or _require_database_url()).strip()
     _POOL = ConnectionPool(
         conninfo=conninfo,
@@ -161,6 +180,7 @@ def init_db() -> None:
                 CREATE TABLE IF NOT EXISTS measurements (
                     id BIGSERIAL PRIMARY KEY,
                     session_id TEXT NOT NULL,
+                    user_id TEXT,
                     length_mm DOUBLE PRECISION NOT NULL,
                     width_mm DOUBLE PRECISION NOT NULL,
                     length_cm DOUBLE PRECISION NOT NULL,
@@ -174,6 +194,7 @@ def init_db() -> None:
                 CREATE TABLE IF NOT EXISTS grips (
                     id BIGSERIAL PRIMARY KEY,
                     session_id TEXT NOT NULL,
+                    user_id TEXT,
                     grip TEXT NOT NULL,
                     confidence DOUBLE PRECISION NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -185,8 +206,21 @@ def init_db() -> None:
                 CREATE TABLE IF NOT EXISTS reports (
                     id BIGSERIAL PRIMARY KEY,
                     session_id TEXT NOT NULL,
+                    user_id TEXT,
                     report_json JSONB NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS profiles (
+                    id TEXT PRIMARY KEY,
+                    email TEXT,
+                    display_name TEXT,
+                    metadata JSONB,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
                 """
             )
@@ -194,8 +228,12 @@ def init_db() -> None:
             cur.execute("CREATE INDEX IF NOT EXISTS mice_availability_status_idx ON mice (availability_status)")
             cur.execute("CREATE INDEX IF NOT EXISTS mice_brand_model_idx ON mice (brand, model)")
             cur.execute("CREATE INDEX IF NOT EXISTS measurements_session_id_id_idx ON measurements (session_id, id DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS measurements_user_id_id_idx ON measurements (user_id, id DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS grips_session_id_id_idx ON grips (session_id, id DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS grips_user_id_id_idx ON grips (user_id, id DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS reports_session_id_id_idx ON reports (session_id, id DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS reports_user_id_id_idx ON reports (user_id, id DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS profiles_email_idx ON profiles (email)")
 
         _ensure_columns(
             conn,
@@ -223,6 +261,27 @@ def init_db() -> None:
                 "source_payload": "JSONB",
                 "created_at": "TIMESTAMPTZ NOT NULL DEFAULT NOW()",
                 "updated_at": "TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+            },
+        )
+        _ensure_columns(
+            conn,
+            "measurements",
+            {
+                "user_id": "TEXT",
+            },
+        )
+        _ensure_columns(
+            conn,
+            "grips",
+            {
+                "user_id": "TEXT",
+            },
+        )
+        _ensure_columns(
+            conn,
+            "reports",
+            {
+                "user_id": "TEXT",
             },
         )
         conn.commit()
@@ -312,6 +371,8 @@ class MeasurementOut(BaseModel):
     width_mm: float
     length_cm: float
     width_cm: float
+    user_id: Optional[str] = None
+    request_id: Optional[str] = None
     created_at: str
 
 
@@ -325,6 +386,8 @@ class GripOut(BaseModel):
     session_id: str
     grip: str
     confidence: float
+    user_id: Optional[str] = None
+    request_id: Optional[str] = None
     created_at: str
 
 
@@ -338,12 +401,46 @@ class MouseRecommendation(BaseModel):
 
 class Report(BaseModel):
     session_id: str
+    user_id: Optional[str] = None
     measurement: MeasurementOut
     grip: Optional[GripOut]
     recommendations: List[MouseRecommendation]
     summary: str
+    request_id: Optional[str] = None
     created_at: str
 
+
+class ProfileOut(BaseModel):
+    id: str
+    email: Optional[str] = None
+    display_name: Optional[str] = None
+    theme: Optional[Literal["light", "dark"]] = None
+    created_at: str
+    updated_at: str
+    request_id: Optional[str] = None
+
+
+class ProfileUpdateIn(BaseModel):
+    display_name: Optional[str] = None
+    theme: Optional[Literal["light", "dark"]] = None
+
+    @field_validator("display_name")
+    @classmethod
+    def validate_display_name(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            return None
+        if len(normalized) > 80:
+            raise ValueError("display_name must be 80 characters or fewer.")
+        return normalized
+
+
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+
+if sentry_sdk is not None and config.SENTRY_DSN:
+    sentry_sdk.init(dsn=config.SENTRY_DSN, traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")))
 
 app = FastAPI(title="MouseFit v2 API")
 
@@ -381,25 +478,106 @@ app.add_middleware(
     allow_origins=[*DEFAULT_CORS_ORIGINS, *EXTRA_CORS_ORIGINS],
     allow_origin_regex=CORS_ORIGIN_REGEX or None,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
+
+
+def _request_id(request: Request) -> str:
+    value = getattr(request.state, "request_id", "")
+    return value if isinstance(value, str) and value else ""
+
+
+def _error_payload(request: Request, code: str, message: str, detail: Any = None) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {
+        "code": code,
+        "message": message,
+        "request_id": _request_id(request),
+    }
+    if detail is not None:
+        payload["detail"] = detail
+    return payload
+
+
+@app.middleware("http")
+async def request_context_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    request.state.request_id = request_id
+    request.state.user_id = None
+    request.state.auth_claims = None
+
+    auth_header = request.headers.get("Authorization")
+    token = parse_bearer_token(auth_header)
+    if token and config.ENABLE_AUTH:
+        try:
+            auth_ctx = verify_bearer_token(token)
+            request.state.user_id = auth_ctx.user_id
+            request.state.auth_claims = auth_ctx.claims
+        except AuthError as exc:
+            payload = _error_payload(request, exc.code, exc.message)
+            return JSONResponse(status_code=exc.status_code, content=payload, headers={"X-Request-ID": request_id})
+
+    started = time.perf_counter()
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    response.headers["X-Request-ID"] = request_id
+    METRICS.record(request.method, request.url.path, response.status_code, elapsed_ms)
+    LOGGER.info(
+        "request_completed method=%s path=%s status=%s elapsed_ms=%.2f request_id=%s user_id=%s",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed_ms,
+        request_id,
+        request.state.user_id,
+    )
+    return response
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    detail = exc.detail
+    if isinstance(detail, dict):
+        code = str(detail.get("code") or f"http_{exc.status_code}")
+        message = str(detail.get("message") or "Request failed.")
+        payload = _error_payload(request, code, message, detail.get("detail"))
+    else:
+        payload = _error_payload(request, f"http_{exc.status_code}", str(detail or "Request failed."))
+    return JSONResponse(status_code=exc.status_code, content=payload, headers={"X-Request-ID": _request_id(request)})
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    payload = _error_payload(request, "validation_error", "Request validation failed.", exc.errors())
+    return JSONResponse(status_code=422, content=payload, headers={"X-Request-ID": _request_id(request)})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    LOGGER.exception("unhandled_exception request_id=%s", _request_id(request))
+    payload = _error_payload(request, "internal_error", "Internal server error.")
+    return JSONResponse(status_code=500, content=payload, headers={"X-Request-ID": _request_id(request)})
+
 
 app.include_router(rag_router)
 
 
 @app.on_event("startup")
 def on_startup() -> None:
+    if os.getenv("MOUSEFIT_SKIP_STARTUP", "0").strip().lower() in {"1", "true", "yes", "on"}:
+        return
     init_pool()
-    init_db()
-    warm = os.getenv("MOUSEFIT_WARMUP_RAG", "1").strip().lower() in {"1", "true", "yes", "on"}
+    auto_schema_init = os.getenv("MOUSEFIT_AUTO_SCHEMA_INIT", "0").strip().lower() in {"1", "true", "yes", "on"}
+    if auto_schema_init:
+        init_db()
+    warm = os.getenv("MOUSEFIT_WARMUP_RAG", "0").strip().lower() in {"1", "true", "yes", "on"}
     if warm:
         try:
             from backend.rag.retriever import warmup
 
             warmup()
         except Exception:
-            pass
+            LOGGER.exception("rag_warmup_failed")
 
 
 @app.on_event("shutdown")
@@ -453,19 +631,130 @@ def row_to_mouse(row: Dict[str, Any]) -> Mouse:
     )
 
 
-def latest_measurement(conn, session_id: str) -> Optional[MeasurementOut]:
+def _request_user_id(request: Request) -> Optional[str]:
+    value = getattr(request.state, "user_id", None)
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def _request_user_email(request: Request) -> Optional[str]:
+    claims = getattr(request.state, "auth_claims", None)
+    if not isinstance(claims, dict):
+        return None
+    value = claims.get("email")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def _normalize_theme(value: Any) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip().lower()
+    if normalized in {"light", "dark"}:
+        return normalized
+    return None
+
+
+def _upsert_profile(
+    conn,
+    user_id: str,
+    email: Optional[str],
+    display_name: Optional[str] = None,
+    theme: Optional[str] = None,
+    update_display_name: bool = False,
+) -> None:
+    metadata_patch: Dict[str, Any] = {}
+    normalized_theme = _normalize_theme(theme)
+    if normalized_theme:
+        metadata_patch["theme"] = normalized_theme
+    metadata_json = json.dumps(metadata_patch) if metadata_patch else None
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT session_id, length_mm, width_mm, length_cm, width_cm, created_at
-            FROM measurements
-            WHERE session_id = %s
-            ORDER BY id DESC
-            LIMIT 1
+            INSERT INTO profiles (id, email, display_name, metadata, updated_at)
+            VALUES (%s, %s, %s, %s::jsonb, NOW())
+            ON CONFLICT (id) DO UPDATE
+            SET email = COALESCE(EXCLUDED.email, profiles.email),
+                display_name = CASE
+                    WHEN %s THEN EXCLUDED.display_name
+                    ELSE profiles.display_name
+                END,
+                metadata = CASE
+                    WHEN EXCLUDED.metadata IS NULL THEN profiles.metadata
+                    ELSE COALESCE(profiles.metadata, '{}'::jsonb) || EXCLUDED.metadata
+                END,
+                updated_at = NOW()
             """,
-            (session_id,),
+            (user_id, email, display_name, metadata_json, update_display_name),
+        )
+
+
+def _read_profile_row(conn, user_id: str) -> Optional[Dict[str, Any]]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, email, display_name, metadata, created_at, updated_at
+            FROM profiles
+            WHERE id = %s
+            """,
+            (user_id,),
         )
         row = cur.fetchone()
+    if not row:
+        return None
+    return row
+
+
+def _row_to_profile(row: Dict[str, Any], request_id: str) -> ProfileOut:
+    metadata = _as_dict(row.get("metadata")) or {}
+    theme = _normalize_theme(metadata.get("theme"))
+    return ProfileOut(
+        id=str(row.get("id") or ""),
+        email=row.get("email"),
+        display_name=row.get("display_name"),
+        theme=theme if theme in {"light", "dark"} else None,
+        created_at=_iso_ts(row.get("created_at")),
+        updated_at=_iso_ts(row.get("updated_at")),
+        request_id=request_id,
+    )
+
+
+def _require_authenticated_user(request: Request) -> tuple[str, Optional[str]]:
+    user_id = _request_user_id(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail={"code": "auth_required", "message": "Authentication required."})
+    return user_id, _request_user_email(request)
+
+
+def latest_measurement(conn, session_id: str, user_id: Optional[str]) -> Optional[MeasurementOut]:
+    with conn.cursor() as cur:
+        row = None
+        if user_id:
+            cur.execute(
+                """
+                SELECT session_id, user_id, length_mm, width_mm, length_cm, width_cm, created_at
+                FROM measurements
+                WHERE session_id = %s AND user_id = %s
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (session_id, user_id),
+            )
+            row = cur.fetchone()
+        if row is None:
+            cur.execute(
+                """
+                SELECT session_id, user_id, length_mm, width_mm, length_cm, width_cm, created_at
+                FROM measurements
+                WHERE session_id = %s AND user_id IS NULL
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (session_id,),
+            )
+            row = cur.fetchone()
     if not row:
         return None
     return MeasurementOut(
@@ -474,29 +763,45 @@ def latest_measurement(conn, session_id: str) -> Optional[MeasurementOut]:
         width_mm=float(row["width_mm"]),
         length_cm=float(row["length_cm"]),
         width_cm=float(row["width_cm"]),
+        user_id=row.get("user_id"),
         created_at=_iso_ts(row["created_at"]),
     )
 
 
-def latest_grip(conn, session_id: str) -> Optional[GripOut]:
+def latest_grip(conn, session_id: str, user_id: Optional[str]) -> Optional[GripOut]:
     with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT session_id, grip, confidence, created_at
-            FROM grips
-            WHERE session_id = %s
-            ORDER BY id DESC
-            LIMIT 1
-            """,
-            (session_id,),
-        )
-        row = cur.fetchone()
+        row = None
+        if user_id:
+            cur.execute(
+                """
+                SELECT session_id, user_id, grip, confidence, created_at
+                FROM grips
+                WHERE session_id = %s AND user_id = %s
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (session_id, user_id),
+            )
+            row = cur.fetchone()
+        if row is None:
+            cur.execute(
+                """
+                SELECT session_id, user_id, grip, confidence, created_at
+                FROM grips
+                WHERE session_id = %s AND user_id IS NULL
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (session_id,),
+            )
+            row = cur.fetchone()
     if not row:
         return None
     return GripOut(
         session_id=row["session_id"],
         grip=row["grip"],
         confidence=float(row["confidence"]),
+        user_id=row.get("user_id"),
         created_at=_iso_ts(row["created_at"]),
     )
 
@@ -526,8 +831,48 @@ def score_mouse(mouse: Mouse, measurement: MeasurementOut, grip: Optional[GripOu
 
 
 @app.get("/api/health")
-def health() -> dict:
-    return {"ok": True}
+def health(request: Request) -> dict:
+    return {"ok": True, "request_id": _request_id(request)}
+
+
+@app.get("/api/metrics")
+def metrics(request: Request) -> dict:
+    return {
+        "ok": True,
+        "request_id": _request_id(request),
+        "metrics": METRICS.snapshot(),
+    }
+
+
+@app.get("/api/profile/me", response_model=ProfileOut)
+def get_profile_me(request: Request) -> ProfileOut:
+    user_id, user_email = _require_authenticated_user(request)
+    with get_conn() as conn:
+        _upsert_profile(conn, user_id, user_email)
+        row = _read_profile_row(conn, user_id)
+        conn.commit()
+    if not row:
+        raise HTTPException(status_code=500, detail={"code": "profile_missing", "message": "Profile could not be read."})
+    return _row_to_profile(row, _request_id(request))
+
+
+@app.post("/api/profile/me", response_model=ProfileOut)
+def update_profile_me(payload: ProfileUpdateIn, request: Request) -> ProfileOut:
+    user_id, user_email = _require_authenticated_user(request)
+    with get_conn() as conn:
+        _upsert_profile(
+            conn,
+            user_id,
+            user_email,
+            display_name=payload.display_name,
+            theme=payload.theme,
+            update_display_name=True,
+        )
+        row = _read_profile_row(conn, user_id)
+        conn.commit()
+    if not row:
+        raise HTTPException(status_code=500, detail={"code": "profile_missing", "message": "Profile could not be read."})
+    return _row_to_profile(row, _request_id(request))
 
 
 @app.get("/api/mice", response_model=List[Mouse])
@@ -547,24 +892,29 @@ def get_mouse(mouse_id: str) -> Mouse:
             cur.execute("SELECT * FROM mice WHERE id = %s", (mouse_id,))
             row = cur.fetchone()
     if not row:
-        raise HTTPException(status_code=404, detail="Mouse not found")
+        raise HTTPException(status_code=404, detail={"code": "not_found", "message": "Mouse not found"})
     return row_to_mouse(row)
 
 
 @app.post("/api/measurements", response_model=MeasurementOut)
-def save_measurement(payload: MeasurementIn) -> MeasurementOut:
+def save_measurement(payload: MeasurementIn, request: Request) -> MeasurementOut:
     created_at = utc_now()
     length_cm = round(payload.length_mm / 10, 2)
     width_cm = round(payload.width_mm / 10, 2)
+    user_id = _request_user_id(request)
+    user_email = _request_user_email(request)
     with get_conn() as conn:
+        if user_id:
+            _upsert_profile(conn, user_id, user_email)
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO measurements (session_id, length_mm, width_mm, length_cm, width_cm, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO measurements (session_id, user_id, length_mm, width_mm, length_cm, width_cm, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     payload.session_id,
+                    user_id,
                     payload.length_mm,
                     payload.width_mm,
                     length_cm,
@@ -579,23 +929,30 @@ def save_measurement(payload: MeasurementIn) -> MeasurementOut:
         width_mm=payload.width_mm,
         length_cm=length_cm,
         width_cm=width_cm,
+        user_id=user_id,
+        request_id=_request_id(request),
         created_at=created_at,
     )
 
 
 @app.post("/api/grip", response_model=GripOut)
-def save_grip(payload: GripIn) -> GripOut:
+def save_grip(payload: GripIn, request: Request) -> GripOut:
     created_at = utc_now()
     confidence = payload.confidence or 0.0
+    user_id = _request_user_id(request)
+    user_email = _request_user_email(request)
     with get_conn() as conn:
+        if user_id:
+            _upsert_profile(conn, user_id, user_email)
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO grips (session_id, grip, confidence, created_at)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO grips (session_id, user_id, grip, confidence, created_at)
+                VALUES (%s, %s, %s, %s, %s)
                 """,
                 (
                     payload.session_id,
+                    user_id,
                     payload.grip,
                     confidence,
                     created_at,
@@ -606,17 +963,29 @@ def save_grip(payload: GripIn) -> GripOut:
         session_id=payload.session_id,
         grip=payload.grip,
         confidence=confidence,
+        user_id=user_id,
+        request_id=_request_id(request),
         created_at=created_at,
     )
 
 
 @app.post("/api/report/generate", response_model=Report)
-def generate_report(session_id: str = Query(...)) -> Report:
+def generate_report(request: Request, session_id: str = Query(...)) -> Report:
+    user_id = _request_user_id(request)
+    user_email = _request_user_email(request)
     with get_conn() as conn:
-        measurement = latest_measurement(conn, session_id)
+        if user_id:
+            _upsert_profile(conn, user_id, user_email)
+        measurement = latest_measurement(conn, session_id, user_id)
         if not measurement:
-            raise HTTPException(status_code=404, detail="No measurement found for session_id")
-        grip = latest_grip(conn, session_id)
+            raise HTTPException(
+                status_code=404,
+                detail={"code": "not_found", "message": "No measurement found for session_id"},
+            )
+        grip = latest_grip(conn, session_id, user_id)
+        measurement.request_id = _request_id(request)
+        if grip is not None:
+            grip.request_id = _request_id(request)
 
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM mice")
@@ -639,20 +1008,22 @@ def generate_report(session_id: str = Query(...)) -> Report:
 
         report = Report(
             session_id=session_id,
+            user_id=user_id,
             measurement=measurement,
             grip=grip,
             recommendations=top,
             summary=summary,
+            request_id=_request_id(request),
             created_at=utc_now(),
         )
 
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO reports (session_id, report_json, created_at)
-                VALUES (%s, %s::jsonb, %s)
+                INSERT INTO reports (session_id, user_id, report_json, created_at)
+                VALUES (%s, %s, %s::jsonb, %s)
                 """,
-                (session_id, json.dumps(report.model_dump()), report.created_at),
+                (session_id, user_id, json.dumps(report.model_dump()), report.created_at),
             )
         conn.commit()
 
@@ -660,38 +1031,60 @@ def generate_report(session_id: str = Query(...)) -> Report:
 
 
 @app.get("/api/report/latest", response_model=Report)
-def latest_report(session_id: str = Query(...)) -> Report:
+def latest_report(request: Request, session_id: str = Query(...)) -> Report:
+    user_id = _request_user_id(request)
     with get_conn() as conn:
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT report_json
-                FROM reports
-                WHERE session_id = %s
-                ORDER BY id DESC
-                LIMIT 1
-                """,
-                (session_id,),
-            )
-            row = cur.fetchone()
+            row = None
+            if user_id:
+                cur.execute(
+                    """
+                    SELECT report_json
+                    FROM reports
+                    WHERE session_id = %s AND user_id = %s
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """,
+                    (session_id, user_id),
+                )
+                row = cur.fetchone()
+            if row is None:
+                cur.execute(
+                    """
+                    SELECT report_json
+                    FROM reports
+                    WHERE session_id = %s AND user_id IS NULL
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """,
+                    (session_id,),
+                )
+                row = cur.fetchone()
 
     if not row:
-        raise HTTPException(status_code=404, detail="No report found for session_id")
+        raise HTTPException(status_code=404, detail={"code": "not_found", "message": "No report found for session_id"})
 
     report_json = row.get("report_json")
     if isinstance(report_json, dict):
-        return Report.model_validate(report_json)
+        report = Report.model_validate(report_json)
+        report.request_id = _request_id(request)
+        return report
     if isinstance(report_json, str):
         try:
-            return Report.model_validate_json(report_json)
+            report = Report.model_validate_json(report_json)
+            report.request_id = _request_id(request)
+            return report
         except ValueError:
             pass
-    raise HTTPException(status_code=500, detail="Invalid stored report format")
+    raise HTTPException(status_code=500, detail={"code": "invalid_report", "message": "Invalid stored report format"})
 
 
 @app.post("/api/agent/chat")
-def agent_chat(payload: dict) -> dict:
-    return {
-        "reply": "Agent endpoint is a placeholder in v2. Provide integration later.",
-        "input": payload,
-    }
+def agent_chat() -> JSONResponse:
+    return JSONResponse(
+        status_code=410,
+        content={
+            "code": "endpoint_deprecated",
+            "message": "Use /api/chat instead of /api/agent/chat.",
+        },
+    )

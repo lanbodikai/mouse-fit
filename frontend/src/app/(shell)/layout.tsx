@@ -47,19 +47,19 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden">
-      {/* Background gradient - consistent dark green theme */}
+      {/* Background gradient - black + neon */}
       <div 
         className="fixed inset-0 -z-10"
         style={{
-          background: "linear-gradient(135deg, #030806 0%, #061208 25%, #0a1a0f 50%, #071510 75%, #030806 100%)",
+          background: "linear-gradient(135deg, #05060a 0%, #071022 58%, #0a1c3a 100%)",
         }}
       />
 
-      {/* Subtle ambient glow */}
+      {/* Ambient neon glow */}
       <div 
         className="fixed inset-0 -z-10"
         style={{
-          background: "radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.08) 0%, transparent 60%), radial-gradient(ellipse at 50% 100%, rgba(34, 197, 94, 0.05) 0%, transparent 50%)",
+          background: "radial-gradient(ellipse at 14% 8%, rgba(217, 70, 239, 0.16) 0%, transparent 58%), radial-gradient(ellipse at 84% 88%, rgba(34, 211, 238, 0.14) 0%, transparent 62%)",
         }}
       />
 
@@ -78,3 +78,4 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
     </div>
   );
 }
+

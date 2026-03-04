@@ -36,6 +36,8 @@ export type Measurement = {
   width_mm: number;
   length_cm: number;
   width_cm: number;
+  user_id?: string | null;
+  request_id?: string | null;
   created_at: string;
 };
 
@@ -43,6 +45,8 @@ export type Grip = {
   session_id: string;
   grip: string;
   confidence: number;
+  user_id?: string | null;
+  request_id?: string | null;
   created_at: string;
 };
 
@@ -56,9 +60,23 @@ export type MouseRecommendation = {
 
 export type Report = {
   session_id: string;
+  user_id?: string | null;
   measurement: Measurement;
   grip?: Grip | null;
   recommendations: MouseRecommendation[];
   summary: string;
+  request_id?: string | null;
   created_at: string;
+};
+
+export type ThemeMode = "light" | "dark";
+
+export type UserProfile = {
+  id: string;
+  email?: string | null;
+  display_name?: string | null;
+  theme?: ThemeMode | null;
+  created_at: string;
+  updated_at: string;
+  request_id?: string | null;
 };

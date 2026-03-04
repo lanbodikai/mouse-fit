@@ -7,10 +7,7 @@ import { useRouter } from "next/navigation";
 import { VideoBackdrop } from "@/components/landing/VideoBackdrop";
 import { ContactModal } from "@/components/landing/ContactModal";
 import { 
-  HERO_BG_MP4, 
-  ABOUT_BG_MP4, 
-  NAV_BG_MP4, 
-  CONTACT_BG_MP4 
+  HERO_BG_MP4
 } from "@/config/media";
 import { ArrowUpRight, Circle, Sparkles, Pencil, ChevronDown, User } from "lucide-react";
 
@@ -20,9 +17,9 @@ const sections: SectionId[] = ["hero", "services", "product", "contact"];
 
 const sectionVideos: Record<SectionId, string> = {
   hero: HERO_BG_MP4,
-  services: ABOUT_BG_MP4,
-  product: NAV_BG_MP4,
-  contact: CONTACT_BG_MP4,
+  services: "",
+  product: "",
+  contact: "",
 };
 
 const SECTION_TRANSITION_MS = 520;
@@ -297,7 +294,7 @@ export default function LandingPage() {
             disabled={isTransitioning}
             className={`w-2 h-2 rounded-full transition-all duration-300 disabled:cursor-not-allowed ${
               currentSection === section 
-                ? "bg-green-500 scale-125" 
+                ? "bg-fuchsia-500 scale-125 shadow-[0_0_10px_rgba(217,70,239,0.62)]" 
                 : "bg-white/30 hover:bg-white/50"
             }`}
             aria-label={`Go to section ${index + 1}`}
@@ -344,10 +341,8 @@ function LandingNavigation({
         transition={{ duration: 0.6, delay: 0.2 }}
         className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between"
       >
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <span className="text-lg font-bold tracking-wide text-white">Mousefit Studio</span>
-        </Link>
+        {/* Left spacer */}
+        <div className="w-24" aria-hidden />
 
         {/* Profile Button - Top Right */}
         <Link
@@ -376,7 +371,7 @@ function LandingNavigation({
       >
         {/* Scroll indicator */}
         <div className="flex items-center gap-2 text-white/60 text-sm">
-          <span className="text-green-500">+</span>
+          <span className="text-fuchsia-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.55)]">+</span>
           <span>Scroll to explore</span>
         </div>
 
@@ -386,7 +381,7 @@ function LandingNavigation({
             href="/"
             className="flex items-center gap-2 text-sm text-white"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500 shadow-[0_0_8px_rgba(217,70,239,0.6)]" />
             Home
           </Link>
           <Link
@@ -394,7 +389,7 @@ function LandingNavigation({
             className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
           >
             Services
-            <span className="text-green-500">+</span>
+            <span className="text-fuchsia-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.55)]">+</span>
           </Link>
           <Link
             href="/product"
@@ -435,7 +430,7 @@ function HeroSection() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              <span className="text-green-500 text-xs tracking-[0.3em] uppercase">
+              <span className="text-white text-xs tracking-[0.3em] uppercase">
               [ AI-POWERED ANALYSIS FOR GAMERS ]
               </span>
             </motion.div>
@@ -445,7 +440,10 @@ function HeroSection() {
                 Mousefit
               </h1>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-light text-white leading-[1.1]">
-                Studio v2
+                <span className="bg-gradient-to-r from-fuchsia-300 via-fuchsia-200 to-cyan-200 bg-clip-text text-transparent">
+                  Studio
+                </span>{" "}
+                <span className="text-white">v2</span>
               </h1>
             </div>
 
@@ -457,11 +455,11 @@ function HeroSection() {
             >
               <Link
                 href="/mousefit"
-                className="group inline-flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/15 border border-white/20 rounded-full transition-all duration-200"
+                className="group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-white transition-all duration-200 mf-neon-btn"
               >
                 <span className="text-white text-sm">Try now</span>
-                <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center group-hover:bg-green-400 transition-colors">
-                  <ArrowUpRight className="w-4 h-4 text-black" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
+                  <ArrowUpRight className="w-4 h-4 text-fuchsia-300" />
                 </div>
               </Link>
             </motion.div>
@@ -514,8 +512,8 @@ function ServicesSection({
                 <span className="font-normal">fit</span>, confort,
               </h1>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2] flex items-center gap-3">
-                <span className="inline-flex items-center justify-center w-8 h-8 border-2 border-dashed border-green-500 rounded-full">
-                  <Circle className="w-3 h-3 text-green-500" strokeWidth={3} />
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-fuchsia-500/60 bg-black/45 shadow-[0_0_10px_rgba(217,70,239,0.25)]">
+                  <Circle className="w-3 h-3 text-fuchsia-400" strokeWidth={3} />
                 </span>{" "}
                 control.
               </h1>
@@ -532,11 +530,11 @@ function ServicesSection({
             >
               <button
                 onClick={() => onNavigate("contact")}
-                className="group flex items-center gap-3 px-6 py-3 bg-white/10 hover:bg-white/15 border border-white/20 rounded-full transition-all duration-200"
+                className="group flex items-center gap-3 rounded-full px-6 py-3 text-sm text-white transition-all duration-200 mf-neon-btn"
               >
                 <span className="text-white text-sm">Contact us</span>
-                <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center group-hover:bg-green-400 transition-colors">
-                  <ArrowUpRight className="w-4 h-4 text-black" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
+                  <ArrowUpRight className="w-4 h-4 text-fuchsia-300" />
                 </div>
               </button>
             </motion.div>
@@ -550,7 +548,7 @@ function ServicesSection({
             className="hidden lg:block pt-16"
           >
             <div className="space-y-6">
-              <span className="text-green-500 text-xs tracking-[0.3em] uppercase">
+              <span className="text-white text-xs tracking-[0.3em] uppercase">
                 [ MOUSEFIT ]
               </span>
               <p className="text-white/60 text-sm leading-relaxed max-w-md">
@@ -590,7 +588,7 @@ function ProductSection({
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2]">
               True fit{" "}
               <span className="inline-flex items-center">
-                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-green-500 mx-1 md:mx-2" />
+                <Sparkles className="mx-1 h-6 w-6 text-fuchsia-400 [text-shadow:0_0_8px_rgba(217,70,239,0.4)] md:mx-2 md:h-8 md:w-8" />
               </span>{" "}
             </h1>
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2]">
@@ -618,18 +616,18 @@ function ProductSection({
             <motion.div
               whileHover={{ y: -5 }}
               onClick={() => onNavigate("services")}
-              className="group relative rounded-2xl overflow-hidden cursor-pointer aspect-[4/3] md:aspect-[4/3]"
+              className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-[0_0_18px_rgba(217,70,239,0.28)] md:aspect-[4/3] mf-neon-card"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-green-900/40 to-green-950/60 border border-white/10" />
+              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(3,3,12,0.92)_0%,rgba(10,4,18,0.9)_55%,rgba(3,14,24,0.92)_100%)]" />
               <div 
                 className="absolute inset-0 opacity-30"
                 style={{
-                  backgroundImage: `linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 197, 94, 0.1) 1px, transparent 1px)`,
+                  backgroundImage: `linear-gradient(rgba(217, 70, 239, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.08) 1px, transparent 1px)`,
                   backgroundSize: "60px 60px",
                 }}
               />
               <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end">
-                <span className="text-green-500/60 text-xs tracking-[0.2em] uppercase mb-2 md:mb-3">
+                <span className="mb-2 text-xs tracking-[0.2em] text-fuchsia-400/80 uppercase md:mb-3">
                   FITTING SOLUTIONS
                 </span>
                 <h3 className="text-lg md:text-2xl font-light text-white leading-snug">
@@ -638,16 +636,16 @@ function ProductSection({
                   your perfect mouse fit
                 </h3>
               </div>
-              <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-fuchsia-500/6 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             </motion.div>
 
             {/* Right Card */}
             <motion.div
               whileHover={{ y: -5 }}
               onClick={() => onNavigate("contact")}
-              className="group relative rounded-2xl overflow-hidden cursor-pointer aspect-[4/3] md:aspect-[4/3]"
+              className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-[0_0_18px_rgba(217,70,239,0.28)] md:aspect-[4/3] mf-neon-card"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/80 to-zinc-950/90 border border-white/10" />
+              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(3,3,12,0.9)_0%,rgba(10,4,18,0.88)_55%,rgba(3,14,24,0.9)_100%)]" />
               <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-between">
                 <div>
                   <span className="text-white/40 text-xs tracking-[0.2em] uppercase">
@@ -657,7 +655,7 @@ function ProductSection({
                 <div className="space-y-2 md:space-y-4">
                   <h3 className="text-lg md:text-2xl font-light text-white leading-snug">
                     Our focus is on stay
-                    <span className="inline-flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-green-500 mx-1">
+                    <span className="mx-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-fuchsia-500/55 bg-black/45 md:h-6 md:w-6">
                       <span className="text-black text-[10px] md:text-xs">ing</span>
                     </span>
                     ahead
@@ -671,7 +669,7 @@ function ProductSection({
                   <div className="w-32 md:w-48 h-6 md:h-8 bg-gradient-to-b from-zinc-700/50 to-zinc-800/50 rounded-t-lg border-t border-x border-white/10" />
                 </div>
               </div>
-              <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-cyan-400/6 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             </motion.div>
           </motion.div>
         </div>
@@ -702,8 +700,8 @@ function ContactSection({
             </h1>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2] flex items-center justify-center gap-3">
               Today{" "}
-              <span className="inline-flex items-center justify-center w-10 h-10 border-2 border-dashed border-green-500 rounded-lg">
-                <Pencil className="w-4 h-4 text-green-500" />
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-fuchsia-500/60 bg-black/45 shadow-[0_0_10px_rgba(217,70,239,0.25)]">
+                <Pencil className="w-4 h-4 text-fuchsia-400" />
               </span>
             </h1>
           </div>
@@ -725,11 +723,11 @@ function ContactSection({
           >
             <button
               onClick={onContactClick}
-              className="group flex items-center gap-3 px-6 py-3 bg-white/10 hover:bg-white/15 border border-white/20 rounded-full transition-all duration-200"
+              className="group flex items-center gap-3 rounded-full px-6 py-3 text-sm text-white transition-all duration-200 mf-neon-btn"
             >
               <span className="text-white text-sm">Contact us</span>
-              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center group-hover:bg-green-400 transition-colors">
-                <ArrowUpRight className="w-4 h-4 text-black" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
+                <ArrowUpRight className="w-4 h-4 text-fuchsia-300" />
               </div>
             </button>
           </motion.div>

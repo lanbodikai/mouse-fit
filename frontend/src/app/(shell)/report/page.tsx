@@ -56,14 +56,15 @@ const styles = `
 }
 
 .btn.neon {
-  background: var(--neon);
-  border-color: transparent;
-  color: #05010b;
-  box-shadow: var(--glow);
+  background: rgba(217, 70, 239, 0.2);
+  border-color: rgba(217, 70, 239, 0.45);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(217, 70, 239, 0.24), 0 0 14px rgba(34, 211, 238, 0.12);
 }
 
 .btn.neon:hover {
-  filter: saturate(1.05);
+  background: rgba(217, 70, 239, 0.28);
+  border-color: rgba(217, 70, 239, 0.62);
 }
 
 .status {
@@ -226,7 +227,7 @@ const styles = `
   pointer-events: none;
 }
 
-.bg-palm::before { background: linear-gradient(135deg, rgba(34, 197, 94, 0.26), rgba(6, 182, 212, 0.12)); }
+.bg-palm::before { background: linear-gradient(135deg, rgba(217, 70, 239, 0.26), rgba(6, 182, 212, 0.12)); }
 .bg-claw::before { background: linear-gradient(135deg, rgba(168, 85, 247, 0.26), rgba(6, 182, 212, 0.15)); }
 .bg-tip::before { background: linear-gradient(135deg, rgba(56, 189, 248, 0.28), rgba(99, 102, 241, 0.14)); }
 
@@ -256,7 +257,7 @@ const bodyHtml = `
       <section class="top-card">
         <div class="kicker">Survey Report</div>
         <h1 class="h1">Your Mouse Fit Analysis</h1>
-        <p class="lead">Generated automatically from your latest survey + measurement data, then reranked with RAG for fit-aware recommendations.</p>
+        <p class="lead">Generated automatically from your latest survey + measurement data, using fit-aware filtering, scoring, and optional chat rerank.</p>
 
         <div class="stats">
           <div class="stat">
@@ -301,7 +302,7 @@ const bodyHtml = `
 `;
 
 export default function ReportPage() {
-  const reportScriptVersion = "20260224-rag-v2";
+  const reportScriptVersion = "20260226-survey-matcher-v2";
   return (
     <>
       <ShellNav currentPage="report" />
@@ -314,3 +315,4 @@ export default function ReportPage() {
     </>
   );
 }
+

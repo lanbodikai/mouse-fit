@@ -41,7 +41,7 @@ export default function ServicesPage() {
       <div 
         className="absolute inset-0 -z-10"
         style={{
-          background: "linear-gradient(135deg, #030806 0%, #0a1a0f 50%, #030806 100%)",
+          background: "linear-gradient(135deg, #05060a 0%, #071022 52%, #0a1c3a 100%)",
         }}
       />
 
@@ -49,7 +49,8 @@ export default function ServicesPage() {
       <div 
         className="absolute inset-0 -z-10 opacity-40"
         style={{
-          background: "radial-gradient(ellipse at 50% 50%, rgba(34, 197, 94, 0.15) 0%, transparent 60%)",
+          background:
+            "radial-gradient(ellipse at 16% 30%, rgba(217, 70, 239, 0.22) 0%, transparent 58%), radial-gradient(ellipse at 84% 70%, rgba(34, 211, 238, 0.2) 0%, transparent 60%)",
         }}
       />
 
@@ -76,7 +77,7 @@ export default function ServicesPage() {
             transition={{ duration: 0.6 }}
             className="text-center mb-8 md:mb-12"
           >
-            <span className="text-green-500 text-xs tracking-[0.3em] uppercase">
+            <span className="text-fuchsia-400 text-xs tracking-[0.3em] uppercase">
               [ ALL FEATURES ]
             </span>
           </motion.div>
@@ -91,7 +92,7 @@ export default function ServicesPage() {
                 transition={{ duration: 0.5, delay: 0.1 * index }}
               >
                 <Link href={feature.link}>
-                  <div className="group relative aspect-[3/4] md:aspect-[2/3] border border-white/10 rounded-lg overflow-hidden bg-black/20 backdrop-blur-sm hover:border-green-500/30 transition-all duration-300">
+                  <div className="group relative aspect-[3/4] md:aspect-[2/3] border border-white/10 rounded-lg overflow-hidden bg-black/20 backdrop-blur-sm hover:border-fuchsia-400/35 transition-all duration-300">
                     {/* Content */}
                     <div className="absolute inset-0 p-4 md:p-5 flex flex-col justify-between">
                       <h3 className="text-base md:text-lg lg:text-xl font-light text-white leading-tight whitespace-pre-line">
@@ -102,14 +103,14 @@ export default function ServicesPage() {
                         <span className="text-[10px] md:text-xs text-white/40 uppercase tracking-wider">
                           {feature.subtitle}
                         </span>
-                        <div className="w-6 h-6 md:w-7 md:h-7 rounded-full border border-white/20 flex items-center justify-center group-hover:border-green-500 group-hover:bg-green-500 transition-all duration-300">
+                        <div className="w-6 h-6 md:w-7 md:h-7 rounded-full border border-white/20 flex items-center justify-center group-hover:border-fuchsia-400 group-hover:bg-fuchsia-500 transition-all duration-300">
                           <ArrowRight className="w-3 h-3 text-white/60 group-hover:text-black transition-colors" />
                         </div>
                       </div>
                     </div>
 
                     {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-fuchsia-500/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                 </Link>
               </motion.div>
@@ -128,7 +129,7 @@ export default function ServicesPage() {
               className="group flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors"
             >
               <span>Settings</span>
-              <ArrowRight className="w-3 h-3 group-hover:text-green-500" />
+              <ArrowRight className="w-3 h-3 group-hover:text-fuchsia-400" />
             </Link>
             <div className="w-px h-3 bg-white/20" />
             <Link 
@@ -136,7 +137,7 @@ export default function ServicesPage() {
               className="group flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors"
             >
               <span>Profile</span>
-              <ArrowRight className="w-3 h-3 group-hover:text-green-500" />
+              <ArrowRight className="w-3 h-3 group-hover:text-fuchsia-400" />
             </Link>
             <div className="w-px h-3 bg-white/20" />
             <Link 
@@ -144,7 +145,7 @@ export default function ServicesPage() {
               className="group flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors"
             >
               <span>Dashboard</span>
-              <ArrowRight className="w-3 h-3 group-hover:text-green-500" />
+              <ArrowRight className="w-3 h-3 group-hover:text-fuchsia-400" />
             </Link>
           </motion.div>
         </div>

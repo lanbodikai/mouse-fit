@@ -5,14 +5,15 @@ import { ShellNav } from "@/components/shell/ShellNav";
 
 const styles = `
 :root {
-  --bg: #030806;
+  --bg: #05060a;
   --fg: #eaf0ff;
-  --sub: #6b8068;
-  --border: rgba(34, 197, 94, 0.15);
-  --accent: #22c55e;
-  --g1: #22c55e;
-  --g2: #10b981;
-  --g3: #14b8a6;
+  --sub: #a6b0c8;
+  --border: rgba(217, 70, 239, 0.15);
+  --accent: #d946ef;
+  --g1: #d946ef;
+  --g2: #22d3ee;
+  --g3: #a855f7;
+  --glow: 0 0 24px rgba(217, 70, 239, 0.24), 0 0 36px rgba(34, 211, 238, 0.16);
 }
 
 .tool-shell, .tool-shell * { box-sizing: border-box; }
@@ -75,7 +76,7 @@ const styles = `
   font-family: 'JetBrains Mono', monospace;
   opacity: 0.8;
   padding: 12px 16px;
-  background: rgba(34, 197, 94, 0.05);
+  background: rgba(217, 70, 239, 0.05);
   border: 1px solid var(--border);
   border-radius: 12px;
 }
@@ -95,6 +96,7 @@ const styles = `
   border-radius: 24px;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
+  box-shadow: var(--glow);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -108,7 +110,7 @@ const styles = `
   justify-content: space-between;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border);
-  background: rgba(34, 197, 94, 0.05);
+  background: rgba(217, 70, 239, 0.05);
 }
 
 .card-head .title {
@@ -121,7 +123,7 @@ const styles = `
   padding: 8px 14px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(217, 70, 239, 0.1);
   color: #fff;
   cursor: pointer;
   font-family: inherit;
@@ -131,8 +133,9 @@ const styles = `
 }
 
 .clear-btn:hover {
-  background: rgba(34, 197, 94, 0.2);
+  background: rgba(217, 70, 239, 0.2);
   border-color: var(--accent);
+  box-shadow: var(--glow);
 }
 
 .messages {
@@ -154,7 +157,7 @@ const styles = `
 
 .msg.user {
   margin-left: auto;
-  background: rgba(34, 197, 94, 0.2);
+  background: rgba(217, 70, 239, 0.2);
   border: 1px solid var(--border);
   color: #fff;
   border-bottom-right-radius: 4px;
@@ -182,7 +185,7 @@ const styles = `
   align-items: center;
   padding: 16px;
   border-top: 1px solid var(--border);
-  background: rgba(34, 197, 94, 0.05);
+  background: rgba(217, 70, 239, 0.05);
 }
 
 textarea {
@@ -215,7 +218,7 @@ textarea::placeholder {
   border-radius: 16px;
   border: 1px solid var(--border);
   cursor: pointer;
-  background: rgba(34, 197, 94, 0.2);
+  background: rgba(217, 70, 239, 0.2);
   color: var(--accent);
   font-size: 18px;
   display: grid;
@@ -226,6 +229,7 @@ textarea::placeholder {
 .send:hover {
   background: var(--accent);
   color: #000;
+  box-shadow: var(--glow);
 }
 
 .recommendations {
@@ -286,7 +290,7 @@ const bodyHtml = `
     <div class="ai-flex">
       <section class="hero">
         <h1>Chat with <span class="ai">AI</span></h1>
-        <p>Natural language recommendations powered by Llama 3.3</p>
+        <p>Natural language recommendations powered by backend /api/chat</p>
         <p class="note">"I have 19x10cm hands and use claw grip. Budget $80."</p>
         <div id="modelBadge" style="margin-top:12px; font-size:12px; color:var(--accent); opacity:0.8;"></div>
       </section>
@@ -331,3 +335,4 @@ export default function AiPage() {
     </>
   );
 }
+

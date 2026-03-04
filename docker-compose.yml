@@ -31,9 +31,16 @@ services:
       # Defaults to local Docker Postgres. Override with DATABASE_URL to use Supabase.
       - DATABASE_URL=${DATABASE_URL:-postgresql://mousefit:mousefit@postgres:5432/mousefit}
       - WEB_CONCURRENCY=${WEB_CONCURRENCY:-1}
-      - MOUSEFIT_WARMUP_RAG=${MOUSEFIT_WARMUP_RAG:-1}
+      - MOUSEFIT_WARMUP_RAG=${MOUSEFIT_WARMUP_RAG:-0}
+      - MOUSEFIT_AUTO_SCHEMA_INIT=${MOUSEFIT_AUTO_SCHEMA_INIT:-0}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - MOUSEFIT_EMBED_MODEL=${MOUSEFIT_EMBED_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+      - ENABLE_AUTH=${ENABLE_AUTH:-0}
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_JWKS_URL=${SUPABASE_JWKS_URL:-}
+      - SUPABASE_JWT_ISSUER=${SUPABASE_JWT_ISSUER:-}
+      - SUPABASE_JWT_AUDIENCE=${SUPABASE_JWT_AUDIENCE:-authenticated}
+      - SENTRY_DSN=${SENTRY_DSN:-}
     volumes:
       - ./backend/data:/app/data
       - ./backend/backend/rag/chroma:/app/backend/rag/chroma
@@ -60,6 +67,12 @@ services:
       - NODE_ENV=production
       # This value is used by the browser, so it must be reachable from your machine.
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+      - NEXT_PUBLIC_ENABLE_AUTH=${NEXT_PUBLIC_ENABLE_AUTH:-0}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+      - NEXT_PUBLIC_USE_SERVER_REPORT_PIPELINE=${NEXT_PUBLIC_USE_SERVER_REPORT_PIPELINE:-0}
+      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN:-}
+      - NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=${NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE:-0.1}
     depends_on:
       backend:
         condition: service_healthy

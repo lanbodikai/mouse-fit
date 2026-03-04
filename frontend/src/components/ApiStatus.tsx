@@ -35,7 +35,7 @@ export function ApiStatus() {
   }
 
   if (state.status === "connected") {
-    return <span className="text-xs text-green-400">API: Connected</span>;
+    return <span className="text-xs text-fuchsia-400">API: Connected</span>;
   }
 
   return (
@@ -52,4 +52,5 @@ export function ApiStatus() {
     </div>
   );
 }
+
 

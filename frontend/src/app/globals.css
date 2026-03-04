@@ -10,6 +10,23 @@
   --shell-pad: clamp(16px, 3vw, 32px);
   --frame-pad: clamp(16px, 2vw, 24px);
   --grid-gap: clamp(12px, 2vw, 18px);
+  --neon-mid: #d946ef;
+  --neon-to: #22d3ee;
+  --neon-violet: #7c3aed;
+  --neon-frame: linear-gradient(
+    90deg,
+    rgba(124, 58, 237, 0.96) 0%,
+    rgba(217, 70, 239, 0.96) 52%,
+    rgba(34, 211, 238, 0.96) 100%
+  );
+  --neon-fill-dark: linear-gradient(
+    135deg,
+    rgba(2, 3, 10, 0.96) 0%,
+    rgba(13, 4, 22, 0.94) 52%,
+    rgba(2, 16, 24, 0.96) 100%
+  );
+  --neon-glow-soft: 0 0 5px rgba(217, 70, 239, 0.16), 0 0 9px rgba(34, 211, 238, 0.1);
+  --neon-glow-strong: 0 0 8px rgba(217, 70, 239, 0.22), 0 0 12px rgba(34, 211, 238, 0.12);
 }
 
 /* Dark mode (default) */
@@ -32,9 +49,9 @@
   --text-secondary: rgba(255, 255, 255, 0.7);
   --text-tertiary: rgba(255, 255, 255, 0.6);
   --border-color: rgba(255, 255, 255, 0.1);
-  --gradient-from: #475569;
-  --gradient-to: #111827;
-  --body-bg: #2a2a2a;
+  --gradient-from: var(--neon-mid);
+  --gradient-to: var(--neon-to);
+  --body-bg: #05060a;
 }
 
 /* Light mode */
@@ -75,6 +92,14 @@ body {
   margin: 0;
   overflow-x: clip;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  background:
+    radial-gradient(1150px 620px at 90% 6%, rgba(217, 70, 239, 0.16), transparent 60%),
+    radial-gradient(1100px 560px at 10% 115%, rgba(34, 211, 238, 0.14), transparent 65%),
+    linear-gradient(135deg, #05060a 0%, #071022 58%, #0a1c3a 100%);
+  background-attachment: fixed;
 }
 
 html {
@@ -368,6 +393,98 @@ html {
 
 .dark .hover\:text-white:hover {
   color: #ffffff;
+}
+
+.dark .mf-neon-card {
+  border: 1px solid transparent;
+  background:
+    var(--neon-fill-dark) padding-box,
+    var(--neon-frame) border-box;
+  box-shadow: 0 0 9px rgba(217, 70, 239, 0.18), 0 0 14px rgba(34, 211, 238, 0.12);
+}
+
+.dark .mf-neon-card-soft {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(135deg, rgba(3, 4, 12, 0.9) 0%, rgba(10, 4, 18, 0.88) 55%, rgba(2, 14, 22, 0.9) 100%) padding-box,
+    linear-gradient(
+        90deg,
+        rgba(124, 58, 237, 0.72),
+        rgba(217, 70, 239, 0.76),
+        rgba(34, 211, 238, 0.76)
+      )
+      border-box;
+  box-shadow: 0 0 6px rgba(217, 70, 239, 0.14), 0 0 10px rgba(34, 211, 238, 0.1);
+}
+
+.dark .mf-neon-surface {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(135deg, rgba(3, 5, 14, 0.86) 0%, rgba(10, 4, 18, 0.82) 52%, rgba(3, 13, 24, 0.84) 100%) padding-box,
+    linear-gradient(90deg, rgba(124, 58, 237, 0.54), rgba(217, 70, 239, 0.58), rgba(34, 211, 238, 0.58)) border-box;
+  box-shadow: 0 0 6px rgba(217, 70, 239, 0.14), 0 0 10px rgba(34, 211, 238, 0.1);
+}
+
+.dark .mf-neon-btn {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(135deg, rgba(6, 7, 16, 0.94) 0%, rgba(11, 5, 18, 0.92) 50%, rgba(4, 12, 20, 0.94) 100%) padding-box,
+    linear-gradient(90deg, rgba(124, 58, 237, 0.9), rgba(217, 70, 239, 0.92), rgba(34, 211, 238, 0.92)) border-box;
+  color: #f4f8ff;
+  box-shadow: 0 0 6px rgba(217, 70, 239, 0.16), 0 0 10px rgba(34, 211, 238, 0.1);
+}
+
+.dark .mf-neon-btn:hover {
+  box-shadow: 0 0 9px rgba(217, 70, 239, 0.22), 0 0 13px rgba(34, 211, 238, 0.12);
+}
+
+.dark .text-fuchsia-500,
+.dark .text-fuchsia-400,
+.dark .text-cyan-400,
+.dark .text-cyan-300 {
+  text-shadow: 0 0 6px rgba(217, 70, 239, 0.18), 0 0 10px rgba(34, 211, 238, 0.12);
+}
+
+.dark .bg-fuchsia-500 {
+  background-color: rgb(192, 38, 211);
+  box-shadow: var(--neon-glow-soft);
+}
+
+.dark .hover\:bg-fuchsia-500:hover {
+  background-color: rgb(217, 70, 239);
+  box-shadow: var(--neon-glow-strong);
+}
+
+.dark .bg-fuchsia-500\/30 {
+  background-color: rgba(217, 70, 239, 0.3);
+}
+
+.dark .bg-fuchsia-500\/20 {
+  background-color: rgba(217, 70, 239, 0.2);
+}
+
+.dark .bg-fuchsia-500\/10 {
+  background-color: rgba(217, 70, 239, 0.1);
+}
+
+.dark .bg-fuchsia-500\/5 {
+  background-color: rgba(217, 70, 239, 0.05);
+}
+
+.dark .border-fuchsia-500 {
+  border-color: rgba(217, 70, 239, 0.72);
+}
+
+.dark .border-fuchsia-500\/40 {
+  border-color: rgba(217, 70, 239, 0.4);
+}
+
+.dark .border-fuchsia-500\/30 {
+  border-color: rgba(217, 70, 239, 0.3);
+}
+
+.dark .hover\:border-fuchsia-500:hover {
+  border-color: rgba(217, 70, 239, 0.72);
 }
 
 .light .hover\:text-white:hover {

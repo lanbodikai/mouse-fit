@@ -31,12 +31,12 @@ export default function SettingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm"
+            className="rounded-2xl p-6 backdrop-blur-sm mf-neon-card-soft"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                  <Palette className="w-5 h-5 text-green-500" />
+                  <Palette className="w-5 h-5 text-fuchsia-500" />
                 </div>
                 <div>
                   <h3 className="text-white font-medium mb-1">Appearance</h3>
@@ -47,7 +47,7 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={toggleTheme}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                className="flex items-center gap-2 rounded-xl px-4 py-2 transition-colors mf-neon-btn"
               >
                 {theme === "dark" ? (
                   <>
@@ -69,20 +69,20 @@ export default function SettingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm"
+            className="rounded-2xl p-6 backdrop-blur-sm mf-neon-card-soft"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-green-500" />
+                  <Bell className="w-5 h-5 text-fuchsia-500" />
                 </div>
                 <div>
                   <h3 className="text-white font-medium mb-1">Notifications</h3>
                   <p className="text-sm text-white/50">Manage notification preferences</p>
                 </div>
               </div>
-              <div className="w-12 h-6 rounded-full bg-green-500/20 border border-green-500/30 relative cursor-pointer">
-                <div className="absolute right-1 top-1 w-4 h-4 rounded-full bg-green-500" />
+              <div className="w-12 h-6 rounded-full bg-fuchsia-500/20 border border-fuchsia-500/30 relative cursor-pointer">
+                <div className="absolute right-1 top-1 w-4 h-4 rounded-full bg-fuchsia-500" />
               </div>
             </div>
           </motion.div>
@@ -92,19 +92,19 @@ export default function SettingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm"
+            className="rounded-2xl p-6 backdrop-blur-sm mf-neon-card-soft"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-green-500" />
+                  <Shield className="w-5 h-5 text-fuchsia-500" />
                 </div>
                 <div>
                   <h3 className="text-white font-medium mb-1">Privacy</h3>
                   <p className="text-sm text-white/50">Data is stored locally on your device</p>
                 </div>
               </div>
-              <span className="text-xs text-green-500 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+              <span className="text-xs text-fuchsia-500 px-3 py-1 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/20">
                 Secure
               </span>
             </div>
@@ -115,11 +115,11 @@ export default function SettingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="p-6 rounded-2xl border border-white/10 bg-black/30 backdrop-blur-sm"
+            className="rounded-2xl p-6 backdrop-blur-sm mf-neon-card-soft"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-                <Info className="w-5 h-5 text-green-500" />
+                <Info className="w-5 h-5 text-fuchsia-500" />
               </div>
               <div>
                 <h3 className="text-white font-medium mb-1">About MouseFit</h3>
@@ -132,3 +132,4 @@ export default function SettingsPage() {
     </>
   );
 }
+

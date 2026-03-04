@@ -28,16 +28,10 @@ export function LandingNav({ currentPage = "Home" }: LandingNavProps) {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border border-transparent bg-transparent px-8 py-6"
       >
-        {/* Logo */}
-        <button
-          onClick={handleNavClick("/")}
-          disabled={isTransitioning}
-          className="flex items-center gap-2 disabled:opacity-50"
-        >
-          <span className="text-lg font-bold tracking-wide text-white">Mousefit Studio</span>
-        </button>
+        {/* Left spacer */}
+        <div className="w-24" aria-hidden />
 
         {/* Profile Button - Top Right */}
         <button
@@ -55,11 +49,11 @@ export function LandingNav({ currentPage = "Home" }: LandingNavProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        className="fixed bottom-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between"
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border border-transparent bg-transparent px-8 py-6"
       >
         {/* Scroll indicator */}
         <div className="flex items-center gap-2 text-white/60 text-sm">
-          <span className="text-green-500">+</span>
+          <span className="text-fuchsia-400 drop-shadow-[0_0_10px_rgba(217,70,239,0.55)]">+</span>
           <span>Scroll to explore</span>
         </div>
 
@@ -72,7 +66,7 @@ export function LandingNav({ currentPage = "Home" }: LandingNavProps) {
               currentPage === "Home" ? "text-white" : "text-white/60 hover:text-white"
             }`}
           >
-            {currentPage === "Home" && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+            {currentPage === "Home" && <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.65)]" />}
             Home
           </button>
           <button
@@ -83,7 +77,7 @@ export function LandingNav({ currentPage = "Home" }: LandingNavProps) {
             }`}
           >
             Services
-            <span className="text-green-500">+</span>
+            <span className="text-fuchsia-400 drop-shadow-[0_0_10px_rgba(217,70,239,0.55)]">+</span>
           </button>
           <button
             onClick={handleNavClick("/navigate")}
@@ -111,3 +105,4 @@ export function LandingNav({ currentPage = "Home" }: LandingNavProps) {
     </>
   );
 }
+

@@ -24,12 +24,33 @@ export async function apiFetch(path, options = {}) {
   if (options.body != null && typeof options.body === "string" && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+  if (!headers.has("X-Request-ID")) {
+    headers.set("X-Request-ID", (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : `req-${Date.now()}`);
+  }
+  if (!headers.has("Authorization")) {
+    try {
+      const raw = localStorage.getItem("mousefit:auth:session");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.access_token === "string" && parsed.access_token) {
+          headers.set("Authorization", `Bearer ${parsed.access_token}`);
+        }
+      }
+    } catch {}
+  }
 
   const res = await fetch(url, { ...options, headers });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     const statusText = res.statusText ? ` ${res.statusText}` : "";
-    throw new Error(`API request failed (${res.status}${statusText}): ${text || "(empty response body)"}`);
+    let message = text || "(empty response body)";
+    try {
+      const parsed = JSON.parse(text || "{}");
+      if (parsed && typeof parsed.message === "string" && parsed.message) {
+        message = parsed.message;
+      }
+    } catch {}
+    throw new Error(`API request failed (${res.status}${statusText}): ${message}`);
   }
 
   return res;
@@ -39,4 +60,3 @@ export async function apiJson(path, options) {
   const res = await apiFetch(path, options);
   return await res.json();
 }
-

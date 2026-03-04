@@ -14,7 +14,7 @@ type SubmitState = "idle" | "submitting" | "success" | "error";
 
 type ContactApiResponse =
   | { ok: true }
-  | { ok: false; error?: string };
+  | { ok?: false; error?: string; message?: string; code?: string };
 
 function isContactApiResponse(v: unknown): v is ContactApiResponse {
   if (!v || typeof v !== "object") return false;
@@ -73,7 +73,11 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
 
       if (!res.ok || !parsed?.ok) {
         setSubmitState("error");
-        setErrorText(parsed && "error" in parsed ? parsed.error ?? "Failed to send message" : "Failed to send message");
+        setErrorText(
+          parsed && "error" in parsed
+            ? parsed.error ?? parsed.message ?? "Failed to send message"
+            : "Failed to send message",
+        );
         return;
       }
 
@@ -112,7 +116,7 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 12, scale: 0.98 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="absolute left-1/2 top-1/2 w-[min(560px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/10 bg-zinc-950/80 p-6 shadow-2xl backdrop-blur"
+        className="absolute left-1/2 top-1/2 w-[min(560px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6 shadow-2xl backdrop-blur mf-neon-card"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -124,7 +128,7 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-fuchsia-500/35 bg-black/40 text-white/70 transition-colors hover:border-fuchsia-400/55 hover:bg-black/60 hover:text-white"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -132,7 +136,7 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
         </div>
 
         {submitState === "success" ? (
-          <div className="mt-6 rounded-xl border border-green-500/20 bg-green-500/10 p-4">
+          <div className="mt-6 rounded-xl p-4 mf-neon-card-soft">
             <p className="text-sm text-white">
               Thanks! Your message was sent successfully.
             </p>
@@ -140,7 +144,7 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full bg-green-500 px-5 py-2 text-sm text-black hover:bg-green-400 transition-colors"
+                className="rounded-full px-5 py-2 text-sm text-white transition-colors mf-neon-btn"
               >
                 Close
               </button>
@@ -157,7 +161,7 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
                   ref={initialFocusRef}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-green-500/50"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-fuchsia-500/50"
                   placeholder="Your name"
                   autoComplete="name"
                   required
@@ -172,7 +176,7 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-green-500/50"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-fuchsia-500/50"
                   placeholder="you@example.com"
                   autoComplete="email"
                   required
@@ -189,7 +193,7 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="mt-2 min-h-[140px] w-full resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-green-500/50"
+                className="mt-2 min-h-[140px] w-full resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-fuchsia-500/50"
                 placeholder="How can we help?"
                 required
                 maxLength={5000}
@@ -206,14 +210,14 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full border border-white/15 bg-white/5 px-5 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                className="rounded-full px-5 py-2 text-sm text-white/85 transition-colors mf-neon-btn"
                 disabled={submitState === "submitting"}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-full bg-green-500 px-5 py-2 text-sm text-black hover:bg-green-400 transition-colors disabled:opacity-60 disabled:hover:bg-green-500"
+                className="rounded-full px-5 py-2 text-sm text-white transition-colors disabled:opacity-60 mf-neon-btn"
                 disabled={!canSubmit}
               >
                 {submitState === "submitting" ? "Sending..." : "Send"}
@@ -225,3 +229,4 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
     </motion.div>
   );
 }
+

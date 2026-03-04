@@ -88,13 +88,6 @@ const PRESETS: Record<HandPreset, { lengthMm: number; widthMm: number }> = {
   large: { lengthMm: 195, widthMm: 98 },
 };
 
-const GRADIENTS = [
-  "from-orange-400 via-fuchsia-500 to-violet-500",
-  "from-violet-500 via-fuchsia-500 to-cyan-400",
-  "from-cyan-400 via-blue-500 to-emerald-400",
-  "from-emerald-400 via-cyan-400 to-violet-500",
-];
-
 const OPTS = {
   grip: [
     { value: "claw", badge: "C", title: "Claw Grip", subtitle: "Arched fingers, control-focused posture" },
@@ -352,7 +345,6 @@ function ChoiceGrid({
     <div className={`mx-auto grid w-full max-w-6xl gap-4 ${colsClass(step.cols)}`}>
       {step.options.map((opt, index) => {
         const selected = step.value === opt.value;
-        const glow = GRADIENTS[index % GRADIENTS.length];
         const active = pulse === `${step.id}:${opt.value}`;
         return (
           <motion.button
@@ -364,7 +356,7 @@ function ChoiceGrid({
             transition={{ duration: 0.24, delay: index * 0.04 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.985 }}
-            className={`rounded-[18px] p-[1px] text-left transition ${selected ? `bg-gradient-to-r ${glow} shadow-[0_0_38px_rgba(217,70,239,0.28)]` : "bg-white/20 hover:bg-white/35"}`}
+            className={`rounded-[18px] p-[1px] text-left transition ${selected ? "border border-fuchsia-400/45 bg-fuchsia-500/20 shadow-[0_0_12px_rgba(217,70,239,0.3),0_0_18px_rgba(34,211,238,0.14)]" : "bg-white/20 hover:bg-white/35"}`}
           >
             <motion.div
               animate={active ? { scale: [1, 0.986, 1] } : { scale: 1 }}
@@ -590,15 +582,14 @@ export default function MousefitSurveyPage() {
               ) : (
                 <div className="mx-auto w-full max-w-5xl space-y-6">
                   <div className="grid gap-4 md:grid-cols-3">
-                    {OPTS.hand.map((opt, idx) => {
+                    {OPTS.hand.map((opt) => {
                       const active = answers.handPreset === opt.value;
-                      const glow = GRADIENTS[idx % GRADIENTS.length];
                       return (
                         <button
                           key={opt.value}
                           type="button"
                           onClick={() => preset(opt.value as HandPreset)}
-                          className={`rounded-[18px] p-[1px] text-left transition ${active ? `bg-gradient-to-r ${glow} shadow-[0_0_30px_rgba(217,70,239,0.22)]` : "bg-white/20 hover:bg-white/35"}`}
+                          className={`rounded-[18px] p-[1px] text-left transition ${active ? "border border-fuchsia-400/45 bg-fuchsia-500/20 shadow-[0_0_12px_rgba(217,70,239,0.28),0_0_16px_rgba(34,211,238,0.12)]" : "bg-white/20 hover:bg-white/35"}`}
                         >
                           <div className="rounded-[17px] border border-white/10 bg-black/95 px-4 py-4">
                             <div className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-white/5 text-[11px] font-semibold text-white">
@@ -654,7 +645,7 @@ export default function MousefitSurveyPage() {
                       type="button"
                       onClick={submit}
                       disabled={submitting}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-fuchsia-400/60 bg-gradient-to-r from-orange-400/20 via-fuchsia-500/20 to-cyan-400/20 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-fuchsia-300 disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-fuchsia-400/60 bg-fuchsia-500/20 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white shadow-[0_0_10px_rgba(217,70,239,0.24),0_0_14px_rgba(34,211,238,0.12)] transition hover:border-fuchsia-300 hover:bg-fuchsia-500/28 disabled:opacity-60"
                     >
                       <Target className="h-3.5 w-3.5" />
                       {submitting ? "Generating..." : "Generate Report"}

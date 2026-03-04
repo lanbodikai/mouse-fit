@@ -7,20 +7,19 @@ type Theme = "light" | "dark";
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
+  const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
-    setMounted(true);
     // Get theme from localStorage or default to dark
     const savedTheme = localStorage.getItem("theme") as Theme | null;
     const initialTheme = savedTheme || "dark";
-    setTheme(initialTheme);
+    setThemeState(initialTheme);
     applyTheme(initialTheme);
   }, []);
 
@@ -36,19 +35,22 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
     if (typeof window !== "undefined") {
       localStorage.setItem("theme", newTheme);
     }
     applyTheme(newTheme);
   };
 
-  // Always provide the context, even during SSR
-  // Use default "dark" theme until mounted and localStorage is checked
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  // Always provide the context, even during SSR.
+  // The initial value is "dark" until client-side localStorage is read.
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

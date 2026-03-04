@@ -89,6 +89,27 @@ const joinName = (pick: StoredPick) => {
 };
 
 export function buildBestMouseFromStorage(): BestMouse | null {
+  const latestReport = readStorageJson<{
+    grip?: { grip?: string };
+    recommendations?: Array<{ brand?: string; model?: string; score?: number }>;
+  }>(["mousefit:latest_report"]);
+  if (latestReport?.recommendations?.length) {
+    const first = latestReport.recommendations[0];
+    const alternatives = latestReport.recommendations
+      .slice(1, 4)
+      .map((item) => [item.brand, item.model].filter(Boolean).join(" ").trim())
+      .filter(Boolean);
+    const gripFromReport = latestReport.grip?.grip ? String(latestReport.grip.grip).toLowerCase() : "palm";
+    return {
+      name: [first.brand, first.model].filter(Boolean).join(" ").trim() || "Unknown",
+      score: typeof first.score === "number" ? first.score : 0,
+      size: "server",
+      recommendedGrip: gripFromReport,
+      notes: "Loaded from latest server report.",
+      alternatives,
+    };
+  }
+
   const recs = readStorageJson<StoredRecs>(["mousefit:recs", "mf:recs"]);
   if (!recs?.top) return null;
 

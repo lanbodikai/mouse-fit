@@ -90,23 +90,26 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
   );
 
   const showFallback = !allowVideo || !src || hasError;
+  const shouldCycleBackdrop = allowVideo && shouldLoadVideo && Boolean(src) && !hasError && isLoaded;
 
   return (
     <div className={`absolute inset-0 overflow-hidden ${className}`}>
-      {/* Gradient fallback - Dark green/black like DOTDNA */}
+      {/* Gradient fallback - Dark neon fill */}
       <div
-        className={`absolute inset-0 transition-opacity duration-500 ${
-          showFallback || !isLoaded ? "opacity-100" : "opacity-0"
+        className={`absolute inset-0 transition-opacity duration-[2500ms] ${
+          showFallback || !isLoaded || shouldCycleBackdrop ? "opacity-100" : "opacity-0"
         }`}
         style={{
-          background: "linear-gradient(135deg, #030806 0%, #061208 25%, #0a1a0f 50%, #071510 75%, #030806 100%)",
+          animation: shouldCycleBackdrop ? "mf-fallback-crossfade 18s ease-in-out infinite" : undefined,
+          background: "linear-gradient(135deg, #05060a 0%, #060913 28%, #0a0a1c 55%, #081428 78%, #05060a 100%)",
         }}
       >
-        {/* Subtle green ambient glow */}
+        {/* Subtle magenta/cyan ambient glow */}
         <div
           className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.08) 0%, transparent 60%), radial-gradient(ellipse at 50% 100%, rgba(34, 197, 94, 0.05) 0%, transparent 50%)",
+            background:
+              "radial-gradient(ellipse at 12% 18%, rgba(217, 70, 239, 0.16) 0%, transparent 62%), radial-gradient(ellipse at 88% 86%, rgba(34, 211, 238, 0.14) 0%, transparent 58%)",
           }}
         />
         
@@ -137,9 +140,12 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
           }}
           onCanPlay={handleVideoReady}
           onError={handleVideoError}
-          className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${
-            isLoaded ? "opacity-100" : "opacity-0"
+          className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-[2500ms] ${
+            shouldCycleBackdrop ? "opacity-0" : isLoaded ? "opacity-100" : "opacity-0"
           }`}
+          style={{
+            animation: shouldCycleBackdrop ? "mf-video-crossfade 18s ease-in-out infinite" : undefined,
+          }}
           muted
           loop
           playsInline
@@ -157,6 +163,38 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
           background: "radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%)",
         }}
       />
+
+      <style jsx>{`
+        @keyframes mf-video-crossfade {
+          0%,
+          18% {
+            opacity: 0;
+          }
+          42%,
+          62% {
+            opacity: 1;
+          }
+          86%,
+          100% {
+            opacity: 0;
+          }
+        }
+
+        @keyframes mf-fallback-crossfade {
+          0%,
+          18% {
+            opacity: 1;
+          }
+          42%,
+          62% {
+            opacity: 0;
+          }
+          86%,
+          100% {
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }

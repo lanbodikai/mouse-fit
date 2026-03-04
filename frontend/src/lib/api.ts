@@ -1,8 +1,13 @@
-import type { Grip, Measurement, Mouse, Report } from "./types";
+import type { Grip, Measurement, Mouse, Report, ThemeMode, UserProfile } from "./types";
+import { getAccessToken } from "./auth";
 
 declare global {
   interface Window {
     __MOUSEFIT_API_BASE__?: string;
+    __MOUSEFIT_FLAGS__?: {
+      USE_SERVER_REPORT_PIPELINE?: boolean;
+      ENABLE_AUTH?: boolean;
+    };
   }
 }
 
@@ -38,6 +43,10 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (options.body != null && typeof options.body === "string" && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
+  const token = getAccessToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
 
   let res: Response;
   try {
@@ -49,7 +58,14 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     const statusText = res.statusText ? ` ${res.statusText}` : "";
-    throw new Error(`API request failed (${res.status}${statusText}): ${text || "(empty response body)"}`);
+    let message = text || "(empty response body)";
+    try {
+      const parsed = JSON.parse(text || "{}") as { message?: string };
+      if (parsed?.message) message = parsed.message;
+    } catch {
+      // ignore JSON parse errors
+    }
+    throw new Error(`API request failed (${res.status}${statusText}): ${message}`);
   }
 
   return res;
@@ -62,6 +78,20 @@ export async function apiJson<T>(path: string, options?: RequestInit): Promise<T
 
 export function getHealth(): Promise<{ ok: boolean }> {
   return apiJson("/api/health");
+}
+
+export function getMyProfile(): Promise<UserProfile> {
+  return apiJson("/api/profile/me");
+}
+
+export function updateMyProfile(payload: {
+  display_name?: string | null;
+  theme?: ThemeMode;
+}): Promise<UserProfile> {
+  return apiJson("/api/profile/me", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export function getMice(): Promise<Mouse[]> {
@@ -104,91 +134,14 @@ export function getLatestReport(sessionId: string): Promise<Report> {
   return apiJson(`/api/report/latest?session_id=${encoded}`);
 }
 
-export function chatAgent(payload: Record<string, unknown>): Promise<{ reply: string }> {
-  return apiJson("/api/agent/chat", {
+export function chat(payload: {
+  messages: Array<{ role: "user" | "assistant" | "system"; content: string }>;
+  model?: string;
+  temperature?: number;
+}): Promise<{ reply: string; request_id?: string }> {
+  return apiJson("/api/chat", {
     method: "POST",
     body: JSON.stringify(payload),
   });
-}
-
-export function ragQuery(payload: {
-  session_id: string;
-  query: string;
-  top_k?: number;
-  prefs?: Record<string, unknown>;
-}): Promise<{
-  answer: string;
-  sources: Array<Record<string, unknown>>;
-  recommendations?: Array<{
-    rank: number;
-    id: string;
-    name: string;
-    rating: number;
-    reasoning: string;
-    score: number;
-  }>;
-}> {
-  return apiJson("/api/rag/query", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export function mlPredict(payload: {
-  session_id: string;
-  payload: Record<string, unknown>;
-}): Promise<{ prediction: string; confidence: number; metadata?: Record<string, unknown> }> {
-  return apiJson("/api/ml/predict", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function yoloPredict(imageData: string | HTMLCanvasElement | ImageData, options?: {
-  conf?: number;
-  iou?: number;
-  maxDet?: number;
-}): Promise<Array<{
-  box: [number, number, number, number]; // x1, y1, x2, y2
-  score: number;
-  class: number;
-}>> {
-  let imageBase64: string;
-  
-  if (typeof imageData === 'string') {
-    imageBase64 = imageData;
-  } else if (imageData instanceof HTMLCanvasElement) {
-    imageBase64 = imageData.toDataURL('image/jpeg', 0.9).split(',')[1];
-  } else {
-    // ImageData - convert to canvas first
-    const canvas = document.createElement('canvas');
-    canvas.width = imageData.width;
-    canvas.height = imageData.height;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.putImageData(imageData, 0, 0);
-      imageBase64 = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
-    } else {
-      throw new Error('Could not create canvas context');
-    }
-  }
-
-  const response = await apiJson<{
-    detections: Array<{
-      box: [number, number, number, number];
-      score: number;
-      class: number;
-    }>;
-  }>("/api/ml/yolo", {
-    method: "POST",
-    body: JSON.stringify({
-      image: imageBase64,
-      conf: options?.conf ?? 0.22,
-      iou: options?.iou ?? 0.45,
-      max_det: options?.maxDet ?? 50,
-    }),
-  });
-
-  return response.detections;
 }
 

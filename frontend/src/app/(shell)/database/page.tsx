@@ -6,12 +6,13 @@ import { ShellNav } from "@/components/shell/ShellNav";
 
 const styles = `
 :root {
-  --bg: #030806;
+  --bg: #05060a;
   --fg: #eaf0ff;
-  --sub: #6b8068;
-  --border: rgba(34, 197, 94, 0.15);
-  --accent: #22c55e;
-  --neon: linear-gradient(90deg, #22c55e 0%, #10b981 50%, #14b8a6 100%);
+  --sub: #a6b0c8;
+  --border: rgba(217, 70, 239, 0.15);
+  --accent: #d946ef;
+  --neon: linear-gradient(90deg, #d946ef 0%, #22d3ee 50%, #a855f7 100%);
+  --glow: 0 0 24px rgba(217, 70, 239, 0.2), 0 0 34px rgba(34, 211, 238, 0.12);
 }
 
 .tool-shell, .tool-shell * { box-sizing: border-box; }
@@ -77,15 +78,16 @@ const styles = `
   font-weight: 600;
   cursor: pointer;
   border: 1px solid var(--border);
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(217, 70, 239, 0.1);
   color: var(--fg);
   transition: all 0.2s;
   font-size: 13px;
 }
 
 .btn:hover {
-  background: rgba(34, 197, 94, 0.2);
+  background: rgba(217, 70, 239, 0.2);
   border-color: var(--accent);
+  box-shadow: var(--glow);
 }
 
 .grid {
@@ -109,7 +111,8 @@ const styles = `
 .pill:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
-  background: rgba(34, 197, 94, 0.05);
+  background: rgba(217, 70, 239, 0.05);
+  box-shadow: var(--glow);
 }
 
 .pill h3 {
@@ -132,13 +135,13 @@ const styles = `
   border-radius: 10px;
   font-size: 0.7rem;
   font-family: 'JetBrains Mono', monospace;
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(217, 70, 239, 0.1);
   color: var(--fg);
   border: 1px solid var(--border);
 }
 
-.chip--weight { background: rgba(34, 197, 94, 0.15); }
-.chip--shape { background: rgba(16, 185, 129, 0.15); }
+.chip--weight { background: rgba(217, 70, 239, 0.15); }
+.chip--shape { background: rgba(34, 211, 238, 0.15); }
 
 #details.card {
   position: sticky;
@@ -148,6 +151,7 @@ const styles = `
   border-radius: 24px;
   padding: 24px;
   backdrop-filter: blur(10px);
+  box-shadow: var(--glow);
 }
 
 #details h2 {
@@ -232,3 +236,4 @@ export default function DatabasePage() {
     </>
   );
 }
+

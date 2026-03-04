@@ -70,7 +70,7 @@ export function PageNav({ currentPage }: PageNavProps) {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border border-transparent bg-transparent px-8 py-6"
       >
         {/* Left side - Back button + Logo */}
         <div className="flex items-center gap-4">
@@ -80,17 +80,13 @@ export function PageNav({ currentPage }: PageNavProps) {
               onClick={handleBack}
               className="flex items-center gap-2 text-white/60 hover:text-white transition-colors group"
             >
-              <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center group-hover:border-green-500 group-hover:bg-green-500/10 transition-all">
+              <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center transition-all group-hover:border-fuchsia-500 group-hover:bg-fuchsia-500/10 group-hover:shadow-[0_0_16px_rgba(217,70,239,0.35)]">
                 <ArrowLeft className="w-4 h-4" />
               </div>
               <span className="text-sm hidden sm:inline">Back</span>
             </button>
           )}
           
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-wide text-white">Mousefit Studio</span>
-          </Link>
         </div>
 
         {/* Profile Button - Top Right */}
@@ -108,11 +104,11 @@ export function PageNav({ currentPage }: PageNavProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        className="fixed bottom-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between"
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border border-transparent bg-transparent px-8 py-6"
       >
         {/* Left indicator */}
         <div className="flex items-center gap-2 text-white/60 text-sm">
-          <span className="text-green-500">+</span>
+          <span className="text-fuchsia-400 drop-shadow-[0_0_10px_rgba(217,70,239,0.55)]">+</span>
           <span className="hidden sm:inline">Explore</span>
         </div>
 
@@ -124,7 +120,7 @@ export function PageNav({ currentPage }: PageNavProps) {
               currentPage === "home" ? "text-white" : "text-white/60 hover:text-white"
             }`}
           >
-            {currentPage === "home" && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+            {currentPage === "home" && <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.65)]" />}
             Home
           </Link>
           <Link
@@ -133,9 +129,9 @@ export function PageNav({ currentPage }: PageNavProps) {
               currentPage === "services" ? "text-white" : "text-white/60 hover:text-white"
             }`}
           >
-            {currentPage === "services" && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+            {currentPage === "services" && <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.65)]" />}
             Services
-            {currentPage !== "services" && <span className="text-green-500">+</span>}
+            {currentPage !== "services" && <span className="text-fuchsia-400 drop-shadow-[0_0_10px_rgba(217,70,239,0.55)]">+</span>}
           </Link>
           <Link
             href="/product"
@@ -143,7 +139,7 @@ export function PageNav({ currentPage }: PageNavProps) {
               currentPage === "product" ? "text-white" : "text-white/60 hover:text-white"
             }`}
           >
-            {currentPage === "product" && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+            {currentPage === "product" && <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.65)]" />}
             Product
           </Link>
           <Link
@@ -152,7 +148,7 @@ export function PageNav({ currentPage }: PageNavProps) {
               currentPage === "about" ? "text-white" : "text-white/60 hover:text-white"
             }`}
           >
-            {currentPage === "about" && <span className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+            {currentPage === "about" && <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500 shadow-[0_0_10px_rgba(217,70,239,0.65)]" />}
             About us
           </Link>
         </div>
@@ -163,3 +159,4 @@ export function PageNav({ currentPage }: PageNavProps) {
     </>
   );
 }
+

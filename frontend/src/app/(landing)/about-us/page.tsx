@@ -20,14 +20,14 @@ export default function AboutUsPage() {
         className="fixed inset-0 -z-10"
         style={{
           background:
-            "linear-gradient(135deg, #020804 0%, #081510 30%, #0a1a12 50%, #061008 70%, #020804 100%)",
+            "linear-gradient(135deg, #05060a 0%, #071022 54%, #0a1c3a 100%)",
         }}
       />
       <div
         className="fixed inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse at 20% 50%, rgba(34, 197, 94, 0.12) 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, rgba(34, 197, 94, 0.06) 0%, transparent 60%)",
+            "radial-gradient(ellipse at 18% 52%, rgba(217, 70, 239, 0.16) 0%, transparent 55%), radial-gradient(ellipse at 82% 18%, rgba(34, 211, 238, 0.14) 0%, transparent 60%)",
         }}
       />
       <div
@@ -75,7 +75,7 @@ export default function AboutUsPage() {
           <div className="mt-8 flex flex-wrap items-center gap-5">
             <Link
               href="/measure"
-              className="inline-flex items-center justify-center rounded-full bg-green-500 px-6 py-3 text-sm font-medium text-black hover:bg-green-400 transition-colors"
+              className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-white transition-colors mf-neon-btn"
             >
               Start Scan
             </Link>
@@ -111,21 +111,21 @@ export default function AboutUsPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <div className="rounded-2xl p-6 mf-neon-card-soft">
               <p className="text-xs tracking-[0.25em] text-white/45 uppercase">
                 Common outcomes
               </p>
               <ul className="mt-4 space-y-2 text-sm text-white/60">
                 <li className="flex items-start gap-3">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500/70" />
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-fuchsia-500/70" />
                   Wrist strain risk
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500/70" />
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-fuchsia-500/70" />
                   Reduced control
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500/70" />
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-fuchsia-500/70" />
                   Faster fatigue
                 </li>
               </ul>
@@ -150,19 +150,19 @@ export default function AboutUsPage() {
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <div className="rounded-2xl p-6 mf-neon-card-soft">
               <p className="text-xs tracking-[0.25em] text-white/45 uppercase">Hand Size</p>
               <p className="mt-3 text-sm text-white/60">
                 Your hand length and width change how you anchor and reach for buttons.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <div className="rounded-2xl p-6 mf-neon-card-soft">
               <p className="text-xs tracking-[0.25em] text-white/45 uppercase">Grip Style</p>
               <p className="mt-3 text-sm text-white/60">
                 Palm, claw, and fingertip grips benefit from different support and contours.
               </p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <div className="rounded-2xl p-6 mf-neon-card-soft">
               <p className="text-xs tracking-[0.25em] text-white/45 uppercase">Mouse Shape</p>
               <p className="mt-3 text-sm text-white/60">
                 Hump height, width, and side curves define stability and comfort.
@@ -198,7 +198,7 @@ export default function AboutUsPage() {
 
 function StepperCard({ step, title, body }: { step: string; title: string; body: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+    <div className="rounded-2xl p-6 mf-neon-card-soft">
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/40 text-xs font-semibold tracking-[0.2em] text-white/70">
           {step}
@@ -209,3 +209,4 @@ function StepperCard({ step, title, body }: { step: string; title: string; body:
     </div>
   );
 }
+

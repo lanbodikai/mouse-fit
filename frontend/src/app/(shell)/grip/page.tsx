@@ -6,14 +6,15 @@ import { ShellNav } from "@/components/shell/ShellNav";
 
 const styles = `
 :root {
-  --bg: #030806;
+  --bg: #05060a;
   --fg: #eaf0ff;
-  --sub: #6b8068;
-  --border: rgba(34, 197, 94, 0.15);
-  --accent: #22c55e;
-  --g1: #22c55e;
-  --g2: #10b981;
-  --g3: #14b8a6;
+  --sub: #a6b0c8;
+  --border: rgba(217, 70, 239, 0.15);
+  --accent: #d946ef;
+  --g1: #d946ef;
+  --g2: #22d3ee;
+  --g3: #a855f7;
+  --glow: 0 0 24px rgba(217, 70, 239, 0.22), 0 0 36px rgba(34, 211, 238, 0.12);
 }
 
 .tool-shell, .tool-shell * { box-sizing: border-box; }
@@ -53,6 +54,7 @@ const styles = `
   border: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
+  box-shadow: var(--glow);
   flex-shrink: 0;
 }
 
@@ -75,7 +77,7 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   right: 4%;
   top: 4%;
   bottom: 4%;
-  border: 2px dashed rgba(34, 197, 94, 0.6);
+  border: 2px dashed rgba(217, 70, 239, 0.6);
   border-radius: 16px;
   background: transparent;
   display: flex;
@@ -102,7 +104,7 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   position: absolute;
   right: 12px;
   top: 12px;
-  background: rgba(34, 197, 94, 0.2);
+  background: rgba(217, 70, 239, 0.2);
   border: 1px solid var(--border);
   color: var(--accent);
   font-size: 11px;
@@ -137,7 +139,7 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   font-size: 20vmin;
   font-weight: 900;
   color: var(--accent);
-  text-shadow: 0 2px 20px rgba(34, 197, 94, 0.5);
+  text-shadow: 0 2px 20px rgba(217, 70, 239, 0.5);
   pointer-events: none;
   z-index: 8;
 }
@@ -162,6 +164,7 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   border: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
+  box-shadow: var(--glow);
   border-radius: 24px;
   padding: 20px;
   scrollbar-width: none;
@@ -176,6 +179,7 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   border: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
+  box-shadow: var(--glow);
   color: var(--fg);
   z-index: 60;
 }
@@ -198,7 +202,7 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   padding: 12px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: rgba(34, 197, 94, 0.05);
+  background: rgba(217, 70, 239, 0.05);
 }
 
 .btn-group { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -210,7 +214,7 @@ canvas#overlay { z-index: 3; pointer-events: none; }
 .pill {
   padding: 6px 10px;
   border-radius: 12px;
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(217, 70, 239, 0.1);
   border: 1px solid var(--border);
   font-size: 11px;
   color: var(--fg);
@@ -221,7 +225,7 @@ canvas#overlay { z-index: 3; pointer-events: none; }
 }
 
 button, .btn-link {
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(217, 70, 239, 0.1);
   color: var(--fg);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -234,8 +238,8 @@ button, .btn-link {
   font-size: 12px;
 }
 
-button:hover, .btn-link:hover { background: rgba(34, 197, 94, 0.2); border-color: var(--accent); }
-button.primary { background: rgba(34, 197, 94, 0.2); border-color: var(--accent); }
+button:hover, .btn-link:hover { background: rgba(217, 70, 239, 0.2); border-color: var(--accent); }
+button.primary { background: rgba(217, 70, 239, 0.2); border-color: var(--accent); box-shadow: var(--glow); }
 
 select {
   background: rgba(0, 0, 0, 0.4);
@@ -261,7 +265,7 @@ select {
   max-width: 90px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(34, 197, 94, 0.05);
+  background: rgba(217, 70, 239, 0.05);
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -351,7 +355,7 @@ const bodyHtml = `
     </div>
   </div>
 
-  <button id="startCamBtn" style="position:absolute; inset:auto 16px 16px auto; z-index:30; background:linear-gradient(90deg,var(--g1),var(--g2)); color:#000; font-weight:600; border:0; padding:12px 16px; border-radius:16px; display:none;">Tap to start</button>
+  <button id="startCamBtn" style="position:absolute; inset:auto 16px 16px auto; z-index:30; background:rgba(217,70,239,.24); color:#fff; font-weight:600; border:1px solid rgba(217,70,239,.45); box-shadow:0 0 10px rgba(217,70,239,.24),0 0 14px rgba(34,211,238,.12); padding:12px 16px; border-radius:16px; display:none;">Tap to start</button>
 `;
 
 export default function GripPage() {
@@ -400,10 +404,11 @@ export default function GripPage() {
           id="grip-finish"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
-            __html: `window.finishGrip = (grip) => {\n  sessionStorage.setItem('mf:grip', grip);\n  location.href = '/report';\n};`,
+            __html: `window.finishGrip = async (grip) => {\n  sessionStorage.setItem('mf:grip', grip);\n\n  const sessionKey = 'mousefit:v2:session_id';\n  let sessionId = localStorage.getItem(sessionKey);\n  if (!sessionId) {\n    sessionId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('session-' + Date.now());\n    localStorage.setItem(sessionKey, sessionId);\n  }\n\n  const apiBase = String(window.__MOUSEFIT_API_BASE__ || 'http://localhost:8000').replace(/\\/+$/, '');\n  const headers = { 'Content-Type': 'application/json' };\n  try {\n    const raw = localStorage.getItem('mousefit:auth:session');\n    if (raw) {\n      const parsed = JSON.parse(raw);\n      if (parsed && parsed.access_token) headers.Authorization = 'Bearer ' + parsed.access_token;\n    }\n  } catch {}\n\n  try {\n    await fetch(apiBase + '/api/grip', {\n      method: 'POST',\n      headers,\n      body: JSON.stringify({\n        session_id: sessionId,\n        grip: String(grip || '').toLowerCase(),\n      }),\n    });\n  } catch {}\n\n  location.href = '/report';\n};`,
           }}
         />
       </div>
     </>
   );
 }
+

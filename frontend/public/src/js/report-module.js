@@ -1,8 +1,13 @@
 import { apiJson } from "./api-client.js";
 import { loadMice as loadMiceApi } from "./mice-api.js";
+import {
+  RERANK_CANDIDATE_LIMIT as CORE_RERANK_CANDIDATE_LIMIT,
+  buildUserProfileFromInputs,
+  runDeterministicMatcher,
+} from "./report-matcher-core.js";
 
 const TOP_MATCH_LIMIT = 3;
-const RERANK_CANDIDATE_LIMIT = 12;
+const RERANK_CANDIDATE_LIMIT = CORE_RERANK_CANDIDATE_LIMIT;
 const MIN_RETRIEVAL_POOL = 40;
 const ALLOWED_GRIPS = new Set(["palm", "claw", "fingertip"]);
 
@@ -213,110 +218,198 @@ function hydrateTopSection(grip, measurement) {
   if ($chosenGripTitle) $chosenGripTitle.textContent = `${formatGripLabel(grip)} Grip Recommendations`;
 }
 
-function buildRagCandidateId(candidate) {
-  const fromName = `${candidate.brand || ""}_${candidate.model || ""}`.toLowerCase();
-  const normalized = fromName.replace(/\s+/g, "_").replace(/[^\w_]/g, "").replace(/^_+|_+$/g, "");
-  if (normalized) return normalized;
-  return String(candidate.id || "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "mouse";
+const CHAT_RERANK_CACHE_PREFIX = "mf:report:chat-rerank:v1:";
+const CHAT_RERANK_CACHE_TTL_MS = 15 * 60 * 1000;
+
+function hashString(value) {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return String(hash >>> 0);
 }
 
-async function rerankWithRag(profile, candidates, localRanked) {
-  const queryParts = [
-    `${profile.grip || "palm"} grip`,
-    Number.isFinite(profile.handLength) ? `hand length ${profile.handLength.toFixed(1)}mm` : "",
-    Number.isFinite(profile.handWidth) ? `hand width ${profile.handWidth.toFixed(1)}mm` : "",
-    profile.featureRequest?.requested?.shell ? `shape ${profile.featureRequest.requested.shell}` : "",
-    "gaming mouse recommendations",
-  ].filter(Boolean);
-
-  const payload = {
-    session_id: "report-page",
-    query: queryParts.join(", "),
-    top_k: TOP_MATCH_LIMIT,
-    prefs: {
-      grip: profile.grip || undefined,
-      shape: profile.featureRequest?.requested?.shell || undefined,
-    },
-  };
-
-  const rag = await apiJson("/api/rag/query", {
-    method: "POST",
-    body: JSON.stringify(payload),
+function buildChatRerankCacheKey(profile, localTop) {
+  const profileKey = JSON.stringify({
+    grip: profile.grip || "",
+    handLength: Number.isFinite(profile.handLength) ? Number(profile.handLength.toFixed(1)) : null,
+    handWidth: Number.isFinite(profile.handWidth) ? Number(profile.handWidth.toFixed(1)) : null,
+    shell: profile.featureRequest?.requested?.shell || "",
+    hump: profile.featureRequest?.requested?.hump || "",
+    side: profile.featureRequest?.requested?.side || "",
+    budgetMin: profile.budgetRange?.min ?? null,
+    budgetMax: profile.budgetRange?.max ?? null,
   });
+  const candidateKey = localTop
+    .map((item) => `${String(item.id)}:${Number.isFinite(item.score) ? Number(item.score).toFixed(2) : "na"}`)
+    .join("|");
+  return `${CHAT_RERANK_CACHE_PREFIX}${hashString(`${profileKey}|${candidateKey}`)}`;
+}
 
-  const recommendations = Array.isArray(rag?.recommendations) ? rag.recommendations.slice(0, TOP_MATCH_LIMIT) : [];
-  if (!recommendations.length) return null;
+function readChatRerankCache(cacheKey) {
+  try {
+    const raw = sessionStorage.getItem(cacheKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.expiresAt <= Date.now()) {
+      sessionStorage.removeItem(cacheKey);
+      return null;
+    }
+    return Array.isArray(parsed.ranked) ? parsed.ranked : null;
+  } catch {
+    return null;
+  }
+}
 
-  const sourceById = new Map();
-  if (Array.isArray(rag?.sources)) {
-    rag.sources.forEach((source) => {
-      if (!source?.id) return;
-      sourceById.set(String(source.id), source);
-    });
+function writeChatRerankCache(cacheKey, ranked) {
+  try {
+    sessionStorage.setItem(
+      cacheKey,
+      JSON.stringify({
+        expiresAt: Date.now() + CHAT_RERANK_CACHE_TTL_MS,
+        ranked,
+      }),
+    );
+  } catch {}
+}
+
+function extractJsonObject(text) {
+  const raw = String(text || "").trim();
+  if (!raw) return null;
+  if (raw.startsWith("{") && raw.endsWith("}")) return raw;
+  const first = raw.indexOf("{");
+  const last = raw.lastIndexOf("}");
+  if (first === -1 || last === -1 || last <= first) return null;
+  return raw.slice(first, last + 1);
+}
+
+function parseChatRerankReply(reply, allowedIds) {
+  const rawJson = extractJsonObject(reply);
+  if (!rawJson) return null;
+
+  let parsed;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch {
+    return null;
   }
 
-  const normalizedLocalById = new Map();
-  (Array.isArray(localRanked) ? localRanked : []).forEach((mouse) => {
-    if (!mouse?.id) return;
-    const key = String(mouse.id).toLowerCase().replace(/[^a-z0-9]/g, "");
-    normalizedLocalById.set(key, mouse);
+  if (!Array.isArray(parsed?.ranked)) return null;
+  const seen = new Set();
+  const ranked = [];
+  for (const item of parsed.ranked) {
+    const id = String(item?.id || "").trim();
+    if (!id || !allowedIds.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    ranked.push({
+      id,
+      score: toFiniteNumber(item?.score),
+      reason: String(item?.reason || "").trim(),
+    });
+  }
+  return ranked.length ? ranked : null;
+}
+
+function applyChatRerank(localTop, ranked, profile) {
+  const byId = new Map(localTop.map((item) => [String(item.id), item]));
+  const used = new Set();
+  const merged = [];
+
+  ranked.forEach((entry) => {
+    const base = byId.get(entry.id);
+    if (!base) return;
+    used.add(entry.id);
+    merged.push({
+      ...base,
+      score: entry.score != null ? clamp(entry.score, 0, 100) : base.score,
+      ragRating: null,
+      rerankReason: entry.reason
+        ? buildNaturalReasoning({
+            grip: profile.grip,
+            recReasoning: entry.reason,
+            shapeKey: base.shapeKey,
+            humpRaw: base.humpRaw,
+            length: base.length,
+            width: base.width,
+            height: base.height,
+            weight: base.weight,
+            wireless: "",
+          })
+        : base.rerankReason || buildFallbackCardReason(base, profile.grip),
+      source: "chat-rerank",
+    });
   });
 
-  const merged = recommendations.map((rec) => {
-    const recId = String(rec.id || "");
-    const source = sourceById.get(recId) || {};
-    const meta = source?.meta || {};
-    const localKey = recId.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const local = normalizedLocalById.get(localKey);
-
-    const length = toFiniteNumber(meta.length_mm) ?? local?.length ?? 0;
-    const width = toFiniteNumber(meta.width_mm) ?? local?.width ?? 0;
-    const height = toFiniteNumber(meta.height_mm) ?? local?.height ?? 0;
-    const weight = toFiniteNumber(meta.weight_g) ?? local?.weight ?? 0;
-    const shapeKey = normalizeShape(meta.shape || local?.shapeRaw || "");
-    const humpRaw = String(meta.hump || local?.humpRaw || "");
-    const sideRaw = String(meta.side_curvature_raw || local?.sideRaw || "");
-    const sideKey = normalizeSide(sideRaw);
-    const gripWidthEstimate = estimateGripWidth(width, sideKey);
-    const rating = toFiniteNumber(rec.rating);
-    const score =
-      rating != null ? clamp(rating * 10, 0, 100) : clamp(((toFiniteNumber(rec.score) ?? 0) + 1) * 50, 0, 100);
-
-    return {
-      id: recId || local?.id || slug(String(rec.name || "")),
-      name: String(rec.name || local?.name || `${meta.brand || ""} ${meta.model || ""}`.trim() || "Unknown"),
-      brand: String(meta.brand || local?.brand || ""),
-      model: String(meta.model || local?.model || ""),
-      length,
-      width,
-      height,
-      weight,
-      price: local?.price ?? null,
-      shapeKey,
-      humpRaw,
-      sideRaw,
-      sideKey,
-      gripWidthEstimate,
-      feature: { mismatchedLabels: [] },
-      score,
-      ragRating: rating,
-      rerankReason: buildNaturalReasoning({
-        grip: profile.grip,
-        recReasoning: String(rec.reasoning || ""),
-        shapeKey,
-        humpRaw,
-        length,
-        width,
-        height,
-        weight,
-        wireless: String(meta.wireless || ""),
-      }),
-      source: "rag-query",
-    };
+  localTop.forEach((item) => {
+    const id = String(item.id);
+    if (!used.has(id)) merged.push(item);
   });
 
-  merged.sort((a, b) => (b.score || 0) - (a.score || 0));
-  return merged.slice(0, TOP_MATCH_LIMIT);
+  return merged;
+}
+
+async function rerankWithChat(profile, localRanked) {
+  if (!Array.isArray(localRanked) || localRanked.length <= TOP_MATCH_LIMIT) return null;
+
+  const localTop = localRanked.slice(0, RERANK_CANDIDATE_LIMIT);
+  const cacheKey = buildChatRerankCacheKey(profile, localTop);
+  const cached = readChatRerankCache(cacheKey);
+  if (cached) {
+    const allowedIds = new Set(localTop.map((item) => String(item.id)));
+    const validCached = cached.filter((item) => item && allowedIds.has(String(item.id)));
+    if (validCached.length) return applyChatRerank(localTop, validCached, profile);
+  }
+
+  const candidates = localTop.map((item) => ({
+    id: String(item.id),
+    local_score: Number.isFinite(item.score) ? Number(item.score.toFixed(2)) : null,
+    length_mm: Number.isFinite(item.length) ? Number(item.length.toFixed(1)) : null,
+    width_mm: Number.isFinite(item.width) ? Number(item.width.toFixed(1)) : null,
+    height_mm: Number.isFinite(item.height) ? Number(item.height.toFixed(1)) : null,
+    weight_g: Number.isFinite(item.weight) ? Number(item.weight.toFixed(1)) : null,
+    shape: item.shapeKey || "",
+    hump: item.humpRaw || "",
+    side: item.sideKey || "",
+  }));
+  const allowedIds = new Set(candidates.map((item) => item.id));
+
+  const messages = [
+    {
+      role: "system",
+      content:
+        "You rerank mouse candidates for fit. Return STRICT JSON only with shape {\"ranked\":[{\"id\":\"...\",\"score\":0-100,\"reason\":\"...\"}]}. Do not include ids outside the input list.",
+    },
+    {
+      role: "user",
+      content: JSON.stringify(
+        {
+          profile: {
+            grip: profile.grip || "palm",
+            hand_length_mm: Number.isFinite(profile.handLength) ? Number(profile.handLength.toFixed(1)) : null,
+            hand_width_mm: Number.isFinite(profile.handWidth) ? Number(profile.handWidth.toFixed(1)) : null,
+            feature_request: profile.featureRequest?.requested || {},
+          },
+          candidates,
+        },
+        null,
+        2,
+      ),
+    },
+  ];
+
+  const response = await apiJson("/api/chat", {
+    method: "POST",
+    body: JSON.stringify({
+      messages,
+      temperature: 0.2,
+    }),
+  });
+
+  const ranked = parseChatRerankReply(response?.reply, allowedIds);
+  if (!ranked) return null;
+  writeChatRerankCache(cacheKey, ranked);
+  return applyChatRerank(localTop, ranked, profile);
 }
 
 function readBudgetRange() {
@@ -466,119 +559,12 @@ function buildUserProfile() {
   const measurement = readMeasurementSnapshot();
   const gripFromStorage = readGripPreference();
   const selections = readSurveySelections();
-
-  const grip = selections.primaryGrip || gripFromStorage || "palm";
-  const handLength = toFiniteNumber(measurement.length_mm) ?? 180;
-  const handWidth = toFiniteNumber(measurement.width_mm) ?? 90;
-  const handBucket = getHandBucket(handLength / 10);
-  const dominantFinger = selections.dominantFinger;
-  const isSlantedHand = selections.fingerDirection === "left" || selections.fingerDirection === "right";
-  const inwardThumb = selections.thumbPosition === "inward";
-  const palmSubtype = grip !== "palm" ? "" : selections.palmFingerCurved === "yes" ? "palm-claw" : "full-palm";
-  const clawSubtype =
-    grip !== "claw"
-      ? ""
-      : selections.clawBackHandTouch === "no"
-        ? "fingertip-claw"
-        : selections.clawRelaxed === "yes"
-          ? "relaxed-claw"
-          : "regular-claw";
-
-  let postureLengthDelta = 0;
-  let postureWidthDelta = 0;
-  const postureNotes = [];
-
-  if (isSlantedHand) {
-    postureLengthDelta += 2;
-    postureWidthDelta += 1;
-    postureNotes.push("slanted hand posture (+2mm length, +1mm width)");
-  }
-  if (inwardThumb) {
-    postureLengthDelta -= 2;
-    postureWidthDelta -= 1.5;
-    postureNotes.push("inward thumb posture (-2mm length, -1.5mm width)");
-  }
-
-  if (grip === "claw") {
-    if (clawSubtype === "regular-claw") {
-      postureLengthDelta += 7;
-      postureWidthDelta += 1;
-      postureNotes.push("regular claw shell sizing (+7mm length, +1mm width)");
-    } else if (clawSubtype === "relaxed-claw") {
-      postureLengthDelta += 5;
-      postureWidthDelta += 0.6;
-      postureNotes.push("relaxed claw shell sizing (+5mm length, +0.6mm width)");
-    } else if (clawSubtype === "fingertip-claw") {
-      postureLengthDelta += 2;
-      postureNotes.push("fingertip-claw shell sizing (+2mm length)");
-    }
-  } else if (grip === "palm") {
-    if (palmSubtype === "palm-claw") {
-      postureLengthDelta += 2.5;
-      postureWidthDelta += 0.7;
-      postureNotes.push("palm-claw shell sizing (+2.5mm length, +0.7mm width)");
-    } else {
-      postureLengthDelta += 1;
-      postureWidthDelta += 0.4;
-      postureNotes.push("full-palm stability sizing (+1mm length, +0.4mm width)");
-    }
-  }
-
-  if (dominantFinger === "ring" && isSlantedHand) {
-    postureLengthDelta += 0.8;
-    postureWidthDelta += 0.4;
-    postureNotes.push("ring-finger slant adjustment (+0.8mm length, +0.4mm width)");
-  }
-
-  const ratioTargetLength = handLength * idealRatio[grip] + postureLengthDelta;
-  const ratioTargetWidth = handWidth * idealWidthRatio[grip] + postureWidthDelta;
-  const personalizedSizing = derivePersonalizedSizing({
-    grip,
-    clawSubtype,
-    palmSubtype,
-    handLength,
-    handWidth,
-    isSlantedHand,
-    inwardThumb,
-    baseTargetLength: ratioTargetLength,
-    baseTargetWidth: ratioTargetWidth,
-  });
-  const isReferenceArchetype =
-    dominantFinger === "ring" &&
-    handLength >= 175 &&
-    handLength <= 185 &&
-    handWidth >= 76 &&
-    handWidth <= 84;
-
-  return {
-    grip,
-    handLength,
-    handWidth,
-    handBucket,
-    dominantFinger,
-    isSlantedHand,
-    inwardThumb,
-    palmSubtype,
-    clawSubtype,
-    isReferenceArchetype,
-    thumbPosition: selections.thumbPosition,
-    fingerDirection: selections.fingerDirection,
-    postureLengthDelta,
-    postureWidthDelta,
-    postureNotes,
-    targetLength: personalizedSizing.targetLength,
-    targetWidth: personalizedSizing.targetWidth,
-    minLength: personalizedSizing.minLength,
-    minWidth: personalizedSizing.minWidth,
-    maxWidth: personalizedSizing.maxWidth,
-    hardMinLength: personalizedSizing.hardMinLength,
-    hardMinWidth: personalizedSizing.hardMinWidth,
-    sizingNotes: personalizedSizing.notes,
-    ratioTargetLength,
-    ratioTargetWidth,
-    featureRequest: buildFeatureRequest(selections),
+  return buildUserProfileFromInputs({
+    measurement,
+    gripFromStorage,
+    selections,
     budgetRange: readBudgetRange(),
-  };
+  });
 }
 
 async function loadMice() {
@@ -1234,11 +1220,93 @@ function describeMode(mode, relaxedLabels) {
   return "fallback retrieval";
 }
 
+function getOrCreateSessionId() {
+  const key = "mousefit:v2:session_id";
+  try {
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const fresh =
+      typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `session-${Date.now()}`;
+    localStorage.setItem(key, fresh);
+    return fresh;
+  } catch {
+    return `session-${Date.now()}`;
+  }
+}
+
+function measurementFromServer(reportMeasurement) {
+  const lengthMm = toFiniteNumber(reportMeasurement?.length_mm);
+  const widthMm = toFiniteNumber(reportMeasurement?.width_mm);
+  const size = getHandSize(lengthMm ?? NaN);
+  return {
+    length_mm: lengthMm,
+    width_mm: widthMm,
+    size,
+    length_text: Number.isFinite(lengthMm) ? `${(lengthMm / 10).toFixed(1)} cm` : "—",
+    width_text: Number.isFinite(widthMm) ? `${(widthMm / 10).toFixed(1)} cm` : "—",
+  };
+}
+
+function hasSurveyDraftData() {
+  const draft = readStorageJson(["mousefit:survey_draft", "mf:survey_draft"]);
+  return Boolean(draft && typeof draft === "object");
+}
+
+function normalizeServerRecommendations(report, grip) {
+  const list = Array.isArray(report?.recommendations) ? report.recommendations : [];
+  return list.slice(0, TOP_MATCH_LIMIT).map((entry) => {
+    const name = `${entry?.brand || ""} ${entry?.model || ""}`.trim() || String(entry?.id || "Unknown");
+    const rawScore = toFiniteNumber(entry?.score) ?? 0;
+    return {
+      id: String(entry?.id || slug(name)),
+      name,
+      score: clamp(rawScore, 0, 100),
+      ragRating: null,
+      shapeKey: "other",
+      humpRaw: "",
+      weight: 0,
+      rerankReason: String(entry?.reason || report?.summary || ""),
+      grip,
+    };
+  });
+}
+
+async function tryServerReport(grip) {
+  const sessionId = getOrCreateSessionId();
+  const encoded = encodeURIComponent(sessionId);
+
+  await apiJson(`/api/report/generate?session_id=${encoded}`, { method: "POST" });
+  const latest = await apiJson(`/api/report/latest?session_id=${encoded}`);
+  try {
+    localStorage.setItem("mousefit:latest_report", JSON.stringify(latest));
+  } catch {}
+
+  const effectiveGrip = normalizeGrip(latest?.grip?.grip || grip) || grip || "palm";
+  const measurement = measurementFromServer(latest?.measurement || {});
+  hydrateTopSection(effectiveGrip, measurement);
+  const recs = normalizeServerRecommendations(latest, effectiveGrip);
+  renderGrid($grid, recs, effectiveGrip);
+  setStatus(String(latest?.summary || "Server report generated."));
+  return true;
+}
+
 async function generateReport() {
   try {
     const profile = buildUserProfile();
     const measurement = readMeasurementSnapshot();
     hydrateTopSection(profile.grip, measurement);
+
+    const useServerPipelineFlag = Boolean(window.__MOUSEFIT_FLAGS__?.USE_SERVER_REPORT_PIPELINE ?? false);
+    const useServerPipeline = useServerPipelineFlag && !hasSurveyDraftData();
+    if (useServerPipeline) {
+      try {
+        setStatus("Generating report from server...");
+        const ok = await tryServerReport(profile.grip);
+        if (ok) return;
+      } catch (error) {
+        console.warn("Server report pipeline failed; falling back.", error);
+      }
+    }
 
     if (!Number.isFinite(measurement.length_mm) || !Number.isFinite(measurement.width_mm)) {
       setStatus("Missing measurement data. Run the survey again from Redo Test.");
@@ -1246,23 +1314,10 @@ async function generateReport() {
       return;
     }
 
-    // RAG-first path: show backend top-3 recommendations with reasoning directly.
-    try {
-      setStatus("Querying RAG top 3...");
-      const ragTopMatches = await rerankWithRag(profile, [], []);
-      if (ragTopMatches?.length) {
-        renderGrid($grid, ragTopMatches.slice(0, TOP_MATCH_LIMIT), profile.grip);
-        setStatus("RAG top 3 with reasoning applied.");
-        return;
-      }
-    } catch (error) {
-      console.warn("RAG top-3 query failed; falling back to local pipeline", error);
-    }
-
     setStatus("Loading mice...");
     const baseRaw = await loadMice();
-    const normalized = baseRaw.map(normalizeMouse);
-    const cleaned = filterOutliers(normalized);
+    const deterministic = runDeterministicMatcher(baseRaw, profile, RERANK_CANDIDATE_LIMIT);
+    const cleaned = deterministic.cleaned;
 
     if (!cleaned.length) {
       setStatus("No eligible mice found after data-quality filtering.");
@@ -1271,8 +1326,8 @@ async function generateReport() {
     }
 
     let budgetStatusNote = "";
-    const budgetFiltered = filterMiceByBudget(cleaned, profile.budgetRange);
-    const scoped = budgetFiltered.list;
+    const budgetFiltered = deterministic.budgetFiltered;
+    const scoped = deterministic.scoped;
 
     if (profile.budgetRange && budgetFiltered.mode === "no-price-data") {
       budgetStatusNote = `No price data available, so budget range $${Math.round(profile.budgetRange.min)}-$${Math.round(profile.budgetRange.max)} was ignored.`;
@@ -1284,24 +1339,16 @@ async function generateReport() {
     }
 
     setStatus("Retrieving candidates...");
-    const retrieval = retrieveByHandBucket(scoped, profile);
+    const retrieval = deterministic.retrieval;
     if (!retrieval.list.length) {
       setStatus("No candidates were retrieved for your hand-size profile.");
       renderGrid($grid, [], profile.grip);
       return;
     }
 
-    const strict = applyStrictFeatureFilters(retrieval.list, profile.featureRequest);
-    let candidatePool = strict.list;
-    let mode = strict.mode;
-    let relaxedLabels = [];
-
-    if (!candidatePool.length) {
-      const fallback = expandWithRelaxedFilters(retrieval.list, profile.featureRequest);
-      candidatePool = fallback.list;
-      mode = fallback.mode;
-      relaxedLabels = fallback.relaxedLabels;
-    }
+    const candidatePool = deterministic.candidatePool;
+    const mode = deterministic.mode;
+    const relaxedLabels = deterministic.relaxedLabels;
 
     if (!candidatePool.length) {
       const selectedBits = profile.featureRequest.labels.length ? profile.featureRequest.labels.join(", ") : "current selections";
@@ -1311,23 +1358,23 @@ async function generateReport() {
     }
 
     setStatus("Scoring locally...");
-    const localRanked = rankAndSelectTop(candidatePool, profile, retrieval, RERANK_CANDIDATE_LIMIT);
+    const localRanked = deterministic.localRanked;
     let topMatches = localRanked.slice(0, TOP_MATCH_LIMIT);
     let rerankStatus = "Local ranking used.";
 
-    if (localRanked.length) {
+    if (localRanked.length > TOP_MATCH_LIMIT) {
       try {
-        setStatus("Querying RAG top 3...");
-        const reranked = await rerankWithRag(profile, localRanked, localRanked);
+        setStatus("Running chat rerank...");
+        const reranked = await rerankWithChat(profile, localRanked.slice(0, RERANK_CANDIDATE_LIMIT));
         if (reranked?.length) {
-          topMatches = reranked;
-          rerankStatus = "RAG top 3 with reasoning applied.";
+          topMatches = reranked.slice(0, TOP_MATCH_LIMIT);
+          rerankStatus = "Chat rerank applied.";
         } else {
-          rerankStatus = "RAG unavailable; local ranking used.";
+          rerankStatus = "Chat rerank unavailable; local ranking used.";
         }
       } catch (error) {
-        console.warn("RAG rerank failed, using local ranking", error);
-        rerankStatus = "RAG failed; local ranking used.";
+        console.warn("Chat rerank failed, using local ranking", error);
+        rerankStatus = "Chat rerank failed; local ranking used.";
       }
     }
 

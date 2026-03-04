@@ -22,10 +22,10 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="relative flex h-[585px] w-[88px] flex-col items-center gap-6 rounded-[32px] bg-theme-primary px-3 py-4 transition-colors">
+    <aside className="relative flex h-[585px] w-[88px] flex-col items-center gap-6 rounded-[32px] px-3 py-4 transition-colors mf-neon-surface">
       <Link
         href="/"
-        className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-theme-primary text-sm font-semibold text-theme-secondary transition hover:bg-white/15 hover:text-white"
+        className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-black/20 text-sm font-semibold text-white/70 transition hover:border-fuchsia-400/40 hover:bg-white/10 hover:text-white"
         aria-label="MouseFit Home"
       >
         <Image
@@ -51,8 +51,8 @@ export default function Sidebar() {
               href={item.href}
               className={`flex h-11 w-11 items-center justify-center rounded-2xl transition ${
                 active
-                  ? "dark:bg-white dark:text-[#06080b] light:bg-black light:text-white"
-                  : "bg-theme-primary text-theme-secondary hover:bg-white/15 hover:text-white"
+                  ? "border border-fuchsia-500/40 bg-fuchsia-500/20 text-fuchsia-200"
+                  : "border border-transparent bg-black/20 text-white/65 hover:border-fuchsia-400/30 hover:bg-white/10 hover:text-white"
               }`}
               aria-label={item.label}
             >
@@ -72,8 +72,8 @@ export default function Sidebar() {
               href={tool.href}
               className={`flex h-11 w-11 items-center justify-center rounded-2xl transition ${
                 active
-                  ? "dark:bg-white dark:text-[#06080b] light:bg-black light:text-white"
-                  : "bg-theme-primary text-theme-secondary hover:bg-white/15 hover:text-white"
+                  ? "border border-fuchsia-500/40 bg-fuchsia-500/20 text-fuchsia-200"
+                  : "border border-transparent bg-black/20 text-white/65 hover:border-fuchsia-400/30 hover:bg-white/10 hover:text-white"
               }`}
               aria-label={tool.label}
               title={tool.label}
