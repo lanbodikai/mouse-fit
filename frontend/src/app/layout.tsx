@@ -38,7 +38,7 @@ export default function RootLayout({
     USE_SERVER_REPORT_PIPELINE: (process.env["NEXT_PUBLIC_USE_SERVER_REPORT_PIPELINE"] ?? "0")
       .toLowerCase()
       .trim() === "1",
-    ENABLE_AUTH: (process.env["NEXT_PUBLIC_ENABLE_AUTH"] ?? "0").toLowerCase().trim() === "1",
+    ENABLE_AUTH: (process.env["NEXT_PUBLIC_ENABLE_AUTH"] ?? "1").toLowerCase().trim() === "1",
   };
   const supabaseConfig = {
     url: process.env["NEXT_PUBLIC_SUPABASE_URL"] ?? "",

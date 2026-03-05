@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9FD8FF" />
+      <stop offset="0.5" stop-color="#B8E5FF" />
+      <stop offset="1" stop-color="#ECF6FF" />
+    </linearGradient>
+    <filter id="blurCloud" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="28" />
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1100" fill="url(#sky)" />
+
+  <g filter="url(#blurCloud)" opacity="0.86">
+    <ellipse cx="250" cy="760" rx="240" ry="110" fill="#FFFFFF" />
+    <ellipse cx="500" cy="710" rx="290" ry="125" fill="#FFFFFF" />
+    <ellipse cx="790" cy="760" rx="320" ry="118" fill="#FFFFFF" />
+    <ellipse cx="1120" cy="700" rx="285" ry="126" fill="#FFFFFF" />
+    <ellipse cx="1390" cy="770" rx="240" ry="108" fill="#FFFFFF" />
+  </g>
+
+  <g opacity="0.52">
+    <ellipse cx="1160" cy="250" rx="140" ry="54" fill="#FFFFFF" />
+    <ellipse cx="340" cy="270" rx="125" ry="48" fill="#FFFFFF" />
+    <ellipse cx="840" cy="185" rx="118" ry="44" fill="#FFFFFF" />
+  </g>
+</svg>
