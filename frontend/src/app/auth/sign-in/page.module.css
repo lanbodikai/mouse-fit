@@ -1,0 +1,302 @@
+.pageTransition {
+  animation: page-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.skyIntro {
+  animation:
+    sky-in 1200ms cubic-bezier(0.22, 1, 0.36, 1) both,
+    sky-drift 18s ease-in-out 1.2s infinite alternate;
+}
+
+.overlayIntro {
+  animation: overlay-in 900ms ease-out both;
+}
+
+.ringIntro {
+  animation: ring-in 980ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+.ringIntroDelayed {
+  animation: ring-in 980ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both;
+}
+
+.cardIntro {
+  position: relative;
+  overflow: hidden;
+  animation: card-in 740ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+.cardIntro::after {
+  content: "";
+  position: absolute;
+  inset: -45% -120%;
+  pointer-events: none;
+  background: linear-gradient(108deg, transparent 35%, rgba(255, 255, 255, 0.38) 50%, transparent 65%);
+  transform: translateX(-60%) rotate(10deg);
+  animation: card-shimmer 1200ms ease-out 360ms both;
+}
+
+.iconIntro {
+  animation: icon-pop 680ms cubic-bezier(0.2, 0.9, 0.2, 1) 260ms both;
+}
+
+.copyIntro {
+  animation: copy-in 620ms cubic-bezier(0.22, 1, 0.36, 1) 300ms both;
+}
+
+.modeSwitchIntro {
+  animation: section-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 320ms both;
+}
+
+.modeSwitchTab {
+  border-radius: 0.65rem;
+  padding: 0.42rem 0.6rem;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgb(71 85 105);
+  transition: background-color 220ms ease, color 220ms ease, box-shadow 220ms ease;
+}
+
+.modeSwitchTab:hover {
+  background-color: rgba(255, 255, 255, 0.82);
+  color: rgb(15 23 42);
+}
+
+.modeSwitchTabActive {
+  background-color: rgba(255, 255, 255, 0.95);
+  color: rgb(15 23 42);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.formIntro > * {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.formIntro > *:nth-child(1) {
+  animation: field-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 340ms both;
+}
+
+.formIntro > *:nth-child(2) {
+  animation: field-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 420ms both;
+}
+
+.formIntro > *:nth-child(3) {
+  animation: field-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 500ms both;
+}
+
+.formIntro > *:nth-child(4) {
+  animation: field-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 580ms both;
+}
+
+.formIntro > *:nth-child(5) {
+  animation: field-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 660ms both;
+}
+
+.formIntro > *:nth-child(6) {
+  animation: field-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 740ms both;
+}
+
+.formIntro > *:nth-child(7) {
+  animation: field-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 800ms both;
+}
+
+.formIntro > *:nth-child(8) {
+  animation: field-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 860ms both;
+}
+
+.socialIntro {
+  animation: section-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 700ms both;
+}
+
+.footerIntro {
+  animation: section-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 820ms both;
+}
+
+.inputMotion {
+  transition:
+    border-color 240ms ease,
+    box-shadow 240ms ease,
+    transform 220ms ease;
+}
+
+.inputMotion:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(59, 130, 246, 0.14);
+}
+
+.primaryButtonMotion {
+  transition:
+    transform 180ms ease,
+    filter 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.primaryButtonMotion:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(17, 24, 39, 0.22);
+}
+
+.primaryButtonMotion:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.socialButton {
+  transition:
+    transform 180ms ease,
+    box-shadow 200ms ease;
+}
+
+.socialButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.14);
+}
+
+@keyframes page-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes sky-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sky-drift {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.03) translate3d(0, -1.8%, 0);
+  }
+}
+
+@keyframes overlay-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes ring-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.86);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes card-in {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes card-shimmer {
+  0% {
+    opacity: 0;
+    transform: translateX(-66%) rotate(10deg);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(72%) rotate(10deg);
+  }
+}
+
+@keyframes icon-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.84);
+  }
+  70% {
+    transform: translateY(-2px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes copy-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes field-in {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes section-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pageTransition,
+  .skyIntro,
+  .overlayIntro,
+  .ringIntro,
+  .ringIntroDelayed,
+  .cardIntro,
+  .cardIntro::after,
+  .iconIntro,
+  .copyIntro,
+  .modeSwitchIntro,
+  .formIntro > *,
+  .socialIntro,
+  .footerIntro {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .inputMotion,
+  .primaryButtonMotion,
+  .socialButton,
+  .modeSwitchTab {
+    transition: none !important;
+  }
+}
