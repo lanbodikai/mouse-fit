@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import Link from "next/link";
 import { ArrowUpRight, Scan, Hand, Database, Bot, BarChart3, LayoutDashboard } from "lucide-react";
 import { PageNav } from "@/components/landing/PageNav";
@@ -89,12 +89,12 @@ const stealthProjects: StealthProject[] = [
   { label: "Project PB", tag: "STEALTH" },
 ];
 
-const stagger = {
+const stagger: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.08 } },
 };
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
 };
