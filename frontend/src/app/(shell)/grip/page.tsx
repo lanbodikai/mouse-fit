@@ -311,8 +311,8 @@ const bodyHtml = `
         <div class="coach-bar"><strong>Quick Guide</strong></div>
         <div class="coach-content">
           <p>1. Position hand (holding mouse) inside box</p>
-          <p>2. Capture <b>Top</b>, <b>Right</b>, then <b>Left</b> views</p>
-          <p>3. Click <b>Classify</b> to detect grip style</p>
+          <p>2. Capture <b>Top</b>, <b>Bottom</b>, then <b>Side</b> views</p>
+          <p>3. We classify <b>palm</b> vs <b>claw</b> from index and middle finger bend</p>
         </div>
       </div>
 
@@ -323,12 +323,12 @@ const bodyHtml = `
           <button id="refreshCams">Refresh</button>
         </div>
         <span id="camName" class="pill" style="display:block; margin-bottom:8px;">—</span>
-        <div id="hint" class="hint">Capture 3 angles: <b>Top</b>, <b>Right</b>, <b>Left</b>.</div>
+        <div id="hint" class="hint">Capture 3 angles: <b>Top</b>, <b>Bottom</b>, <b>Side</b>.</div>
 
         <div class="thumbs">
           <div class="thumb"><img id="thumbTop" alt="Top"><span>Top</span></div>
-          <div class="thumb"><img id="thumbRight" alt="Right"><span>Right</span></div>
-          <div class="thumb"><img id="thumbLeft" alt="Left"><span>Left</span></div>
+          <div class="thumb"><img id="thumbBottom" alt="Bottom"><span>Bottom</span></div>
+          <div class="thumb"><img id="thumbSide" alt="Side"><span>Side</span></div>
         </div>
 
         <div class="toolbar" id="liveBtns">
@@ -396,7 +396,7 @@ export default function GripPage() {
           id="grip-thumbs"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
-            __html: `['thumbTop','thumbRight','thumbLeft'].forEach(id => {\n  const img = document.getElementById(id);\n  const box = img?.closest('.thumb');\n  if (!img || !box) return;\n  const showIfLoaded = () => { if (img.currentSrc && img.naturalWidth > 0) box.classList.add('has-img'); };\n  img.addEventListener('load', showIfLoaded);\n  if (img.complete) showIfLoaded();\n});`,
+            __html: `['thumbTop','thumbBottom','thumbSide'].forEach(id => {\n  const img = document.getElementById(id);\n  const box = img?.closest('.thumb');\n  if (!img || !box) return;\n  const showIfLoaded = () => { if (img.currentSrc && img.naturalWidth > 0) box.classList.add('has-img'); };\n  img.addEventListener('load', showIfLoaded);\n  if (img.complete) showIfLoaded();\n});`,
           }}
         />
         <Script type="module" src="/src/js/grip.js" strategy="afterInteractive" key="grip-js" />

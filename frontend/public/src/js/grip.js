@@ -6,12 +6,18 @@
 // - Robust capture → still image (no black)
 // - Clear logging for debugging model output
 
+import {
+  GRIP_CAPTURE_VIEWS,
+  classifyGripFromSingleLandmarks,
+  classifyGripFromViewLandmarks,
+} from "./grip-classifier-core.js";
+
 /* ================== constants ================== */
 const MP_VERSION = "0.10.32";
 const TASK_URL   = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 const VISION_MJS = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/vision_bundle.mjs`;
 const VISION_WASM = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/wasm`;
-const VIEWS = ["Top","Right","Left"];
+const VIEWS = GRIP_CAPTURE_VIEWS;
 
 // keep the dashed guide visible; we draw above it
 const SHOW_GUIDE_OVERLAY = false;
@@ -49,8 +55,8 @@ const resultPill   = document.getElementById("resultPill");
 const guideLabel   = document.getElementById("guideLabel");
 
 const thumbTop     = document.getElementById("thumbTop");
-const thumbRight   = document.getElementById("thumbRight");
-const thumbLeft    = document.getElementById("thumbLeft");
+const thumbBottom  = document.getElementById("thumbBottom");
+const thumbSide    = document.getElementById("thumbSide");
 
 const retakeAllBtn = document.getElementById("retakeAll");
 const gotoReport   = document.getElementById("gotoReport");
@@ -152,8 +158,8 @@ let panelScale   = getStoredNumber(PREF_PANEL_SCALE, 1, 0.7, 1.25);
 let countdownTimer = null;
 let isFrozen = false;
 
-let currentView = 0; // 0=Top, 1=Right, 2=Left
-let shots = { top:null, right:null, left:null };
+let currentView = 0; // 0=Top, 1=Bottom, 2=Side
+let shots = { top:null, bottom:null, side:null };
 
 let lastFrozenDataURL = null;
 
@@ -264,12 +270,12 @@ function loopLive(){
   video?.addEventListener('loadedmetadata', ensureSkeletonReady);
 
   // restore thumbs
-  const sTop   = getGripKV("mf:grip_view_top");
-  const sRight = getGripKV("mf:grip_view_right");
-  const sLeft  = getGripKV("mf:grip_view_left");
-  if (sTop)   { shots.top   = sTop;   setThumbImage(thumbTop,   sTop); }
-  if (sRight) { shots.right = sRight; setThumbImage(thumbRight, sRight); }
-  if (sLeft)  { shots.left  = sLeft;  setThumbImage(thumbLeft,  sLeft); }
+  const sTop = getGripKV("mf:grip_view_top");
+  const sBottom = getGripKV("mf:grip_view_bottom");
+  const sSide = getGripKV("mf:grip_view_side") || getGripKV("mf:grip_view_right") || getGripKV("mf:grip_view_left");
+  if (sTop) { shots.top = sTop; setThumbImage(thumbTop, sTop); }
+  if (sBottom) { shots.bottom = sBottom; setThumbImage(thumbBottom, sBottom); }
+  if (sSide) { shots.side = sSide; setThumbImage(thumbSide, sSide); }
   updateClassifyEnabled();
 
   if (new URLSearchParams(location.search).get("fresh") === "1") clearAllShots();
@@ -381,7 +387,7 @@ function updateViewUI(){
   if (guideLabel) guideLabel.textContent = `Step ${currentView+1}/3 — ${name.toUpperCase()} view`;
 }
 function updateClassifyEnabled(){
-  const ready = Boolean(getGripKV("mf:grip_view_top") && getGripKV("mf:grip_view_right") && getGripKV("mf:grip_view_left"));
+  const ready = Boolean(getGripKV("mf:grip_view_top") && getGripKV("mf:grip_view_bottom") && getGripKV("mf:grip_view_side"));
   if (classifyBtn) classifyBtn.disabled = !ready;
 }
 function applyGuideScale(){
@@ -678,14 +684,14 @@ function acceptShot(){
 
   const vName = VIEWS[currentView].toLowerCase();
 
-  if (vName === "top")   { shots.top   = img; setThumbImage(thumbTop,   img); }
-  if (vName === "right") { shots.right = img; setThumbImage(thumbRight, img); }
-  if (vName === "left")  { shots.left  = img; setThumbImage(thumbLeft,  img); }
+  if (vName === "top") { shots.top = img; setThumbImage(thumbTop, img); }
+  if (vName === "bottom") { shots.bottom = img; setThumbImage(thumbBottom, img); }
+  if (vName === "side") { shots.side = img; setThumbImage(thumbSide, img); }
 
   saveGripKV("mf:grip_view_" + vName, img);
   try { saveGripKV(`mf:grip_view_${vName}_size`, JSON.stringify({ w: canvas.width, h: canvas.height })); } catch {}
 
-  const haveAll = Boolean(getGripKV("mf:grip_view_top") && getGripKV("mf:grip_view_right") && getGripKV("mf:grip_view_left"));
+  const haveAll = Boolean(getGripKV("mf:grip_view_top") && getGripKV("mf:grip_view_bottom") && getGripKV("mf:grip_view_side"));
   if (currentView < 2) {
     currentView++;
     updateViewUI();
@@ -1179,10 +1185,13 @@ function mapGripPreference(grip){
 
 async function detectLandmarksFromDataUrl(dataUrl, size) {
   return new Promise(async (resolve) => {
-    if (!dataUrl || !size?.w || !size?.h) return resolve(null);
+    if (!dataUrl) return resolve(null);
     const img = new Image(); img.crossOrigin = "anonymous";
     img.onload = async () => {
-      const c = document.createElement('canvas'); c.width = size.w; c.height = size.h;
+      const width = Number(size?.w) || img.naturalWidth || img.width;
+      const height = Number(size?.h) || img.naturalHeight || img.height;
+      if (!width || !height) return resolve(null);
+      const c = document.createElement('canvas'); c.width = width; c.height = height;
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
       try { await mp("IMAGE"); const res = handLandmarker.detect(c); const lm = res?.landmarks?.[0] || null; if (skeletonLive) await mp("VIDEO"); resolve(lm); }
       catch { try { if (skeletonLive) await mp("VIDEO"); } catch {} resolve(null); }
@@ -1198,81 +1207,29 @@ function denormalizeGuideBox(norm, size) {
 
 async function classifyFrom3Views() {
   const tUrl = getGripKV("mf:grip_view_top");
-  const rUrl = getGripKV("mf:grip_view_right");
-  const lUrl = getGripKV("mf:grip_view_left");
-  if (!tUrl || !rUrl || !lUrl) { showToast("Need Top, Right and Left shots."); return null; }
+  const bUrl = getGripKV("mf:grip_view_bottom");
+  const sUrl = getGripKV("mf:grip_view_side");
+  if (!tUrl || !bUrl || !sUrl) { showToast("Need Top, Bottom and Side shots."); return null; }
   const tSize = JSON.parse(getGripKV("mf:grip_view_top_size") || "{}");
-  const rSize = JSON.parse(getGripKV("mf:grip_view_right_size") || "{}");
-  const lSize = JSON.parse(getGripKV("mf:grip_view_left_size") || "{}");
-  const tGuideNorm = JSON.parse(getGripKV("mf:grip_view_top_guide") || "null");
-  const rGuideNorm = JSON.parse(getGripKV("mf:grip_view_right_guide") || "null");
-  const lGuideNorm = JSON.parse(getGripKV("mf:grip_view_left_guide") || "null");
-  const [lmTop, lmRight, lmLeft] = await Promise.all([
+  const bSize = JSON.parse(getGripKV("mf:grip_view_bottom_size") || "{}");
+  const sSize = JSON.parse(getGripKV("mf:grip_view_side_size") || "{}");
+  const [lmTop, lmBottom, lmSide] = await Promise.all([
     detectLandmarksFromDataUrl(tUrl, tSize),
-    detectLandmarksFromDataUrl(rUrl, rSize),
-    detectLandmarksFromDataUrl(lUrl, lSize),
+    detectLandmarksFromDataUrl(bUrl, bSize),
+    detectLandmarksFromDataUrl(sUrl, sSize),
   ]);
-  const [yTop, yRight, yLeft] = await Promise.all([
-    detectBestMouseBoxFromDataUrl(tUrl, tSize),
-    detectBestMouseBoxFromDataUrl(rUrl, rSize),
-    detectBestMouseBoxFromDataUrl(lUrl, lSize),
-  ]);
-  const topBox   = yTop   || (tGuideNorm ? denormalizeGuideBox(tGuideNorm, tSize) : null);
-  const rightBox = yRight || (rGuideNorm ? denormalizeGuideBox(rGuideNorm, rSize) : null);
-  const leftBox  = yLeft  || (lGuideNorm ? denormalizeGuideBox(lGuideNorm, lSize) : null);
-
-  function lmToPx(lm, idx, size) { return { x: lm[idx].x * size.w, y: lm[idx].y * size.h }; }
-  function sideMetrics(lm, size, box, viewName){
-    if (!lm || !size || !box) return { viewName, ok:false };
-    const wrist  = lmToPx(lm, 0, size);
-    const mcpIdx = [5,9,13,17].map(i => lmToPx(lm, i, size));
-    const mcpY   = mcpIdx.reduce((s,p)=>s+p.y,0) / mcpIdx.length;
-    const mouseTop = box.y; // y-axis grows downwards
-    const tol = Math.max(4, box.height * 0.12);
-    const touchingBack = Math.abs(mcpY - mouseTop) <= tol; // dorsum near mouse top
-    const wristLifted  = (mouseTop - wrist.y) >= (box.height * 0.10);
-    const angIndex = pipAngle(lm, 5, 6, 8);
-    const angMiddle= pipAngle(lm, 9,10,12);
-    const curl = (angIndex + angMiddle) / 2; // 180=straight
-    return { viewName, ok:true, touchingBack, wristLifted, curl, wristY:wrist.y, mouseTop };
-  }
-
-  const rightA = sideMetrics(lmRight, rSize, rightBox, "right");
-  const leftA  = sideMetrics(lmLeft,  lSize, leftBox,  "left");
-
-  // Aggregate side cues
-  const sides = [rightA, leftA].filter(v=>v.ok);
-  let scorePalm=0, scoreClaw=0, scoreFingertip=0;
-  for (const s of sides){
-    const straight = s.curl >= 155;
-    const curved   = s.curl < 155 && s.curl >= 125;
-    const veryCurved = s.curl < 125;
-    if (s.touchingBack && !s.wristLifted && straight)      { scorePalm     += 1.0; }
-    if (s.touchingBack && !s.wristLifted && (curved||veryCurved)) { scoreClaw += curved ? 1.0 : 1.2; }
-    if (!s.touchingBack && s.wristLifted)                   { scoreFingertip+= 1.2; }
-  }
-
-  // If no side views are valid, fallback to top finger curl
-  if (!sides.length && lmTop && tSize){
-    const topCurl = (pipAngle(lmTop,5,6,8) + pipAngle(lmTop,9,10,12))/2;
-    if (topCurl >= 160) scorePalm += 0.6; else if (topCurl >= 135) scoreClaw += 0.6; else scoreFingertip += 0.6;
-  }
-
-  let final = { grip: "unknown", score: 0.6 };
-  if (scoreFingertip >= scoreClaw && scoreFingertip >= scorePalm) {
-    final.grip = "fingertip"; final.score = Math.min(0.98, 0.6 + 0.2*scoreFingertip);
-  } else if (scorePalm >= scoreClaw) {
-    final.grip = "palm"; final.score = Math.min(0.98, 0.6 + 0.2*scorePalm);
-  } else {
-    final.grip = "claw"; final.score = Math.min(0.98, 0.6 + 0.2*scoreClaw);
-  }
-  final.grip = String(final.grip).toLowerCase();
-  return final;
+  return classifyGripFromViewLandmarks({
+    top: lmTop,
+    bottom: lmBottom,
+    side: lmSide,
+  });
 }
 
 async function classifyGrip(){
-  const t0 = getGripKV("mf:grip_view_top"), r0 = getGripKV("mf:grip_view_right"), l0 = getGripKV("mf:grip_view_left");
-  if (!t0 || !r0 || !l0){ showToast("Capture Top, Right and Left first."); return; }
+  const t0 = getGripKV("mf:grip_view_top");
+  const b0 = getGripKV("mf:grip_view_bottom");
+  const s0 = getGripKV("mf:grip_view_side");
+  if (!t0 || !b0 || !s0){ showToast("Capture Top, Bottom and Side first."); return; }
   setText(resultPill, "Result: analysing…");
   try {
     const complex = await classifyFrom3Views();
@@ -1299,21 +1256,15 @@ async function classifyGrip(){
   try { if (typeof window.finishGrip === 'function') window.finishGrip(finalGrip); } catch {}
 }
 function classifyFromLandmarks(lm){
-  if (!lm) return { grip:"unknown", confidence:0.4 };
-  const angIndex  = pipAngle(lm, 5, 6, 8);
-  const angMiddle = pipAngle(lm, 9,10,12);
-  const curl = (angIndex + angMiddle)/2;
-  let grip = "unknown", score = 0.5;
-  if (curl >= 160) { grip = "palm"; score = 0.7; }
-  else if (curl >= 135) { grip = "claw"; score = 0.65; }
-  else { grip = "fingertip"; score = 0.65; }
-  return { grip, confidence: score };
+  const result = classifyGripFromSingleLandmarks(lm, "side");
+  if (!result) return { grip:"unknown", confidence:0.4 };
+  return { grip: result.grip, confidence: result.score };
 }
 
 /* ================== Clear / Retake All ================== */
 function clearAllShots(){
-  shots = { top:null, right:null, left:null };
-  [thumbTop, thumbRight, thumbLeft].forEach(el=>{
+  shots = { top:null, bottom:null, side:null };
+  [thumbTop, thumbBottom, thumbSide].forEach(el=>{
     if (!el) return;
     // Revoke blob URLs to prevent memory leaks
     if (el.dataset.blobUrl) {
@@ -1325,9 +1276,12 @@ function clearAllShots(){
     if (box) box.classList.remove('has-img');
   });
   clearGripK([
-    "mf:grip_view_top","mf:grip_view_right","mf:grip_view_left",
-    "mf:grip_view_top_size","mf:grip_view_right_size","mf:grip_view_left_size",
-    "mf:grip_view_top_guide","mf:grip_view_right_guide","mf:grip_view_left_guide",
+    "mf:grip_view_top","mf:grip_view_bottom","mf:grip_view_side",
+    "mf:grip_view_top_size","mf:grip_view_bottom_size","mf:grip_view_side_size",
+    "mf:grip_view_top_guide","mf:grip_view_bottom_guide","mf:grip_view_side_guide",
+    "mf:grip_view_right","mf:grip_view_left",
+    "mf:grip_view_right_size","mf:grip_view_left_size",
+    "mf:grip_view_right_guide","mf:grip_view_left_guide",
     "mf:grip_result","mf:grip_pref","mf:grip"
   ]);
   currentView = 0; updateViewUI();
