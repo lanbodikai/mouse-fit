@@ -54,5 +54,10 @@ docker-compose.yml
 .env
 .env.local
 
+# Local dev/test files
+.pytest_cache/
+tests/
+scripts/
+
 # Scripts (optional - keep if needed)
 # scripts/

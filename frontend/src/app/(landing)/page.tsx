@@ -6,19 +6,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { VideoBackdrop } from "@/components/landing/VideoBackdrop";
 import { ContactModal } from "@/components/landing/ContactModal";
+import { getSession } from "@/lib/auth";
+import { buildAuthIntent, buildLoginUrl, persistAuthIntent, TRY_NOW_DESTINATION } from "@/lib/auth-intent";
 import { 
   HERO_BG_MP4
 } from "@/config/media";
-import { ArrowUpRight, Circle, Sparkles, Pencil, ChevronDown, User } from "lucide-react";
+import { ArrowUpRight, Circle, Pencil, ChevronDown, User } from "lucide-react";
 
-type SectionId = "hero" | "services" | "product" | "contact";
+type SectionId = "hero" | "services" | "contact";
 
-const sections: SectionId[] = ["hero", "services", "product", "contact"];
+const sections: SectionId[] = ["hero", "services", "contact"];
 
 const sectionVideos: Record<SectionId, string> = {
   hero: HERO_BG_MP4,
   services: "",
-  product: "",
   contact: "",
 };
 
@@ -47,7 +48,6 @@ export default function LandingPage() {
   const [currentSection, setCurrentSection] = useState<SectionId>("hero");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const productScrollRef = useRef<HTMLElement | null>(null);
   const navLockRef = useRef(false);
   const navLockTimeoutRef = useRef<number | null>(null);
   const transitionTimeoutRef = useRef<number | null>(null);
@@ -56,10 +56,6 @@ export default function LandingPage() {
 
   const openContactModal = useCallback(() => setIsContactModalOpen(true), []);
   const closeContactModal = useCallback(() => setIsContactModalOpen(false), []);
-  const setProductScrollEl = useCallback((el: HTMLElement | null) => {
-    productScrollRef.current = el;
-  }, []);
-
   useEffect(() => {
     return () => {
       if (navLockTimeoutRef.current !== null) {
@@ -107,14 +103,10 @@ export default function LandingPage() {
     }
   }, [currentSection, navigateToSection]);
 
-  // Keyboard + wheel navigation for the landing home "sections" (hero/services/product/contact).
-  // - Wheel: switches sections, but lets the Product section scroll until you hit its edges.
-  // - ArrowUp/ArrowDown: same as wheel (with scroll within Product until edges).
-  // - ArrowLeft/ArrowRight: cycles navbar pages (/, /services, /product, /about-us).
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const navRoutes = ["/", "/services", "/product", "/about-us"] as const;
+    const navRoutes = ["/", "/services", "/about-us"] as const;
 
     const isTypingTarget = (t: EventTarget | null) => {
       const el = t as HTMLElement | null;
@@ -134,35 +126,12 @@ export default function LandingPage() {
       }, NAV_LOCK_MS);
     };
 
-    const atProductTop = () => {
-      const el = productScrollRef.current;
-      if (!el) return true;
-      return el.scrollTop <= 2;
-    };
-
-    const atProductBottom = () => {
-      const el = productScrollRef.current;
-      if (!el) return true;
-      return el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
-    };
-
-    const scrollProductBy = (delta: number) => {
-      const el = productScrollRef.current;
-      if (!el) return;
-      el.scrollBy({ top: delta, behavior: "smooth" });
-    };
-
     const onKeyDown = (e: KeyboardEvent) => {
       if (isContactModalOpen) return;
       if (isTypingTarget(e.target)) return;
       if (isTransitioning || navLockRef.current) return;
 
       if (e.key === "ArrowDown") {
-        if (currentSection === "product" && !atProductBottom()) {
-          e.preventDefault();
-          scrollProductBy(220);
-          return;
-        }
         e.preventDefault();
         lock();
         goToNextSection();
@@ -170,11 +139,6 @@ export default function LandingPage() {
       }
 
       if (e.key === "ArrowUp") {
-        if (currentSection === "product" && !atProductTop()) {
-          e.preventDefault();
-          scrollProductBy(-220);
-          return;
-        }
         e.preventDefault();
         lock();
         goToPrevSection();
@@ -184,7 +148,7 @@ export default function LandingPage() {
       if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
         e.preventDefault();
         const dir = e.key === "ArrowRight" ? 1 : -1;
-        const idx = 0; // this component is always mounted at "/"
+        const idx = 0;
         const next = (idx + dir + navRoutes.length) % navRoutes.length;
         router.push(navRoutes[next]);
       }
@@ -196,13 +160,6 @@ export default function LandingPage() {
         e.preventDefault();
         return;
       }
-
-      const down = e.deltaY > 0;
-      const canSectionNavigate =
-        currentSection !== "product" || (down ? atProductBottom() : atProductTop());
-
-      // Keep native scrolling inside Product until the user reaches an edge.
-      if (!canSectionNavigate) return;
 
       e.preventDefault();
       wheelAccumRef.current += e.deltaY;
@@ -236,6 +193,17 @@ export default function LandingPage() {
     isContactModalOpen,
     isTransitioning,
   ]);
+
+  const handleTryNow = useCallback(() => {
+    const session = getSession();
+    if (session?.access_token) {
+      router.push("/dashboard");
+      return;
+    }
+
+    persistAuthIntent(buildAuthIntent(TRY_NOW_DESTINATION, "try_now"));
+    router.push(buildLoginUrl(TRY_NOW_DESTINATION));
+  }, [router]);
 
   return (
     <div className="relative h-screen w-screen overflow-hidden overscroll-none">
@@ -271,13 +239,10 @@ export default function LandingPage() {
           className="relative z-10 h-screen w-screen will-change-transform"
         >
           {currentSection === "hero" && (
-            <HeroSection />
+            <HeroSection onTryNow={handleTryNow} />
           )}
           {currentSection === "services" && (
             <ServicesSection onNavigate={navigateToSection} />
-          )}
-          {currentSection === "product" && (
-            <ProductSection onNavigate={navigateToSection} scrollRef={setProductScrollEl} />
           )}
           {currentSection === "contact" && (
             <ContactSection onContactClick={openContactModal} />
@@ -294,7 +259,7 @@ export default function LandingPage() {
             disabled={isTransitioning}
             className={`w-2 h-2 rounded-full transition-all duration-300 disabled:cursor-not-allowed ${
               currentSection === section 
-                ? "bg-fuchsia-500 scale-125 shadow-[0_0_10px_rgba(217,70,239,0.62)]" 
+                ? "bg-[color:var(--accent-violet)] scale-125" 
                 : "bg-white/30 hover:bg-white/50"
             }`}
             aria-label={`Go to section ${index + 1}`}
@@ -371,7 +336,7 @@ function LandingNavigation({
       >
         {/* Scroll indicator */}
         <div className="flex items-center gap-2 text-white/60 text-sm">
-          <span className="text-fuchsia-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.55)]">+</span>
+          <span className="text-[color:var(--accent-violet)]">+</span>
           <span>Scroll to explore</span>
         </div>
 
@@ -381,7 +346,7 @@ function LandingNavigation({
             href="/"
             className="flex items-center gap-2 text-sm text-white"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500 shadow-[0_0_8px_rgba(217,70,239,0.6)]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--accent-violet)]" />
             Home
           </Link>
           <Link
@@ -389,13 +354,7 @@ function LandingNavigation({
             className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
           >
             Services
-            <span className="text-fuchsia-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.55)]">+</span>
-          </Link>
-          <Link
-            href="/product"
-            className="text-sm text-white/60 hover:text-white transition-colors"
-          >
-            Product
+            <span className="text-[color:var(--accent-violet)]">+</span>
           </Link>
           <Link
             href="/about-us"
@@ -413,7 +372,7 @@ function LandingNavigation({
 }
 
 // Hero Section
-function HeroSection() {
+function HeroSection({ onTryNow }: { onTryNow: () => void }) {
   return (
     <main className="relative h-full flex items-center px-8 md:px-16 lg:px-24">
       <div className="w-full max-w-7xl mx-auto">
@@ -440,7 +399,7 @@ function HeroSection() {
                 Mousefit
               </h1>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-light text-white leading-[1.1]">
-                <span className="bg-gradient-to-r from-fuchsia-300 via-fuchsia-200 to-cyan-200 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#00a8e8] via-[#8b5cf6] to-[#34d399] bg-clip-text text-transparent">
                   Studio
                 </span>{" "}
                 <span className="text-white">v2</span>
@@ -453,15 +412,16 @@ function HeroSection() {
               transition={{ duration: 0.6, delay: 0.7 }}
               className="pt-4"
             >
-              <Link
-                href="/mousefit"
+              <button
+                type="button"
+                onClick={onTryNow}
                 className="group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-white transition-all duration-200 mf-neon-btn"
               >
                 <span className="text-white text-sm">Try now</span>
                 <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
-                  <ArrowUpRight className="w-4 h-4 text-fuchsia-300" />
+                  <ArrowUpRight className="w-4 h-4 text-[color:var(--accent-gamer)]" />
                 </div>
-              </Link>
+              </button>
             </motion.div>
           </motion.div>
 
@@ -474,10 +434,10 @@ function HeroSection() {
           >
             <div className="text-right space-y-2">
               <p className="text-4xl md:text-5xl lg:text-6xl font-extralight text-white/90">
-                Built by
+                Built for people
               </p>
               <p className="text-4xl md:text-5xl lg:text-6xl font-extralight text-white/90">
-                gamers.{" "}
+                who care.
               </p>
             </div>
           </motion.div>
@@ -512,8 +472,8 @@ function ServicesSection({
                 <span className="font-normal">fit</span>, confort,
               </h1>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2] flex items-center gap-3">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-fuchsia-500/60 bg-black/45 shadow-[0_0_10px_rgba(217,70,239,0.25)]">
-                  <Circle className="w-3 h-3 text-fuchsia-400" strokeWidth={3} />
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-[color:var(--accent-violet-line)] bg-black/45">
+                  <Circle className="w-3 h-3 text-[color:var(--accent-violet)]" strokeWidth={3} />
                 </span>{" "}
                 control.
               </h1>
@@ -534,7 +494,7 @@ function ServicesSection({
               >
                 <span className="text-white text-sm">Contact us</span>
                 <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
-                  <ArrowUpRight className="w-4 h-4 text-fuchsia-300" />
+                  <ArrowUpRight className="w-4 h-4 text-[color:var(--accent-gamer)]" />
                 </div>
               </button>
             </motion.div>
@@ -549,13 +509,13 @@ function ServicesSection({
           >
             <div className="space-y-6">
               <span className="text-white text-xs tracking-[0.3em] uppercase">
-                [ MOUSEFIT ]
+                [ MOUSEFIT STUDIO ]
               </span>
               <p className="text-white/60 text-sm leading-relaxed max-w-md">
-                · accurately identifies your hand dimensions.<br/>
-                · enriches your grip analysis using our self built ML model.<br/>
-                · streamlines recommendations,<br/>
-                · uncovers the perfect mouse match.
+                · helps users find the best fitting peripherals.<br/>
+                · focuses on top-tier products and user-first service.<br/>
+                · streamlines recommendations from gaming mice to full PC builds.<br/>
+                · helps uncover the perfect gear for your setup.
               </p>
             </div>
           </motion.div>
@@ -565,120 +525,7 @@ function ServicesSection({
   );
 }
 
-// Product Section (third part of home) - Scrollable
-function ProductSection({ 
-  onNavigate,
-  scrollRef,
-}: { 
-  onNavigate: (section: SectionId) => void;
-  scrollRef?: (el: HTMLElement | null) => void;
-}) {
-  return (
-    <main ref={scrollRef} className="relative h-full overflow-y-auto scrollbar-hide">
-      {/* Padding for fixed nav bars: top ~80px, bottom ~100px */}
-      <div className="min-h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24 py-28 md:py-24">
-        <div className="w-full max-w-5xl mx-auto">
-          {/* Centered Headline */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-center space-y-4 mb-12 md:mb-16"
-          >
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2]">
-              True fit{" "}
-              <span className="inline-flex items-center">
-                <Sparkles className="mx-1 h-6 w-6 text-fuchsia-400 [text-shadow:0_0_8px_rgba(217,70,239,0.4)] md:mx-2 md:h-8 md:w-8" />
-              </span>{" "}
-            </h1>
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2]">
-              Clean aim, smooth play
-            </h1>
-            
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="text-white/50 text-sm md:text-base max-w-2xl mx-auto pt-4 md:pt-6 leading-relaxed"
-            >
-              Mousefit Studio builds AI tools to help gamers like you. Our expertise extends across diverse hand sizes and grip styles backed by the highest standards of ergonomic analysis.
-            </motion.p>
-          </motion.div>
-
-          {/* Feature Cards */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="grid md:grid-cols-2 gap-4 md:gap-6"
-          >
-            {/* Left Card */}
-            <motion.div
-              whileHover={{ y: -5 }}
-              onClick={() => onNavigate("services")}
-              className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-[0_0_18px_rgba(217,70,239,0.28)] md:aspect-[4/3] mf-neon-card"
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(3,3,12,0.92)_0%,rgba(10,4,18,0.9)_55%,rgba(3,14,24,0.92)_100%)]" />
-              <div 
-                className="absolute inset-0 opacity-30"
-                style={{
-                  backgroundImage: `linear-gradient(rgba(217, 70, 239, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.08) 1px, transparent 1px)`,
-                  backgroundSize: "60px 60px",
-                }}
-              />
-              <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end">
-                <span className="mb-2 text-xs tracking-[0.2em] text-fuchsia-400/80 uppercase md:mb-3">
-                  FITTING SOLUTIONS
-                </span>
-                <h3 className="text-lg md:text-2xl font-light text-white leading-snug">
-                  We provide solutions for
-                  <br />
-                  your perfect mouse fit
-                </h3>
-              </div>
-              <div className="absolute inset-0 bg-fuchsia-500/6 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            </motion.div>
-
-            {/* Right Card */}
-            <motion.div
-              whileHover={{ y: -5 }}
-              onClick={() => onNavigate("contact")}
-              className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-[0_0_18px_rgba(217,70,239,0.28)] md:aspect-[4/3] mf-neon-card"
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(3,3,12,0.9)_0%,rgba(10,4,18,0.88)_55%,rgba(3,14,24,0.9)_100%)]" />
-              <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-between">
-                <div>
-                  <span className="text-white/40 text-xs tracking-[0.2em] uppercase">
-                    WE STAY UP-TO-DATE
-                  </span>
-                </div>
-                <div className="space-y-2 md:space-y-4">
-                  <h3 className="text-lg md:text-2xl font-light text-white leading-snug">
-                    Our focus is on stay
-                    <span className="mx-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-fuchsia-500/55 bg-black/45 md:h-6 md:w-6">
-                      <span className="text-black text-[10px] md:text-xs">ing</span>
-                    </span>
-                    ahead
-                    <br />
-                    of the curve with the newest
-                    <br />
-                    technologies
-                  </h3>
-                </div>
-                <div className="flex justify-center">
-                  <div className="w-32 md:w-48 h-6 md:h-8 bg-gradient-to-b from-zinc-700/50 to-zinc-800/50 rounded-t-lg border-t border-x border-white/10" />
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-cyan-400/6 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            </motion.div>
-          </motion.div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-// Contact Section (fourth part of home)
+// Contact Section (third part of home)
 function ContactSection({
   onContactClick,
 }: {
@@ -700,8 +547,8 @@ function ContactSection({
             </h1>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2] flex items-center justify-center gap-3">
               Today{" "}
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-fuchsia-500/60 bg-black/45 shadow-[0_0_10px_rgba(217,70,239,0.25)]">
-                <Pencil className="w-4 h-4 text-fuchsia-400" />
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[color:var(--accent-violet-line)] bg-black/45">
+                <Pencil className="w-4 h-4 text-[color:var(--accent-violet)]" />
               </span>
             </h1>
           </div>
@@ -727,7 +574,7 @@ function ContactSection({
             >
               <span className="text-white text-sm">Contact us</span>
               <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
-                <ArrowUpRight className="w-4 h-4 text-fuchsia-300" />
+                <ArrowUpRight className="w-4 h-4 text-[color:var(--accent-gamer)]" />
               </div>
             </button>
           </motion.div>

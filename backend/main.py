@@ -5,7 +5,7 @@ import logging
 import os
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
@@ -287,6 +287,175 @@ def init_db() -> None:
         conn.commit()
 
 
+def _as_optional_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        normalized = value.strip()
+        if not normalized:
+            return None
+        try:
+            return float(normalized)
+        except ValueError:
+            return None
+    return None
+
+
+def _as_optional_bool(value: Any) -> Optional[bool]:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return None
+
+
+def _seed_mice_rows_from_json() -> List[Dict[str, Any]]:
+    path = config.DATASET_DIR / "mice.json"
+    if not path.exists():
+        LOGGER.warning("mice_seed_missing path=%s", path)
+        return []
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        LOGGER.exception("mice_seed_invalid_json path=%s", path)
+        return []
+
+    if not isinstance(payload, list):
+        LOGGER.warning("mice_seed_unexpected_shape path=%s", path)
+        return []
+
+    seen_source_handles: set[str] = set()
+    rows: List[Dict[str, Any]] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+
+        brand = _pick_first_text([item.get("brand")], 120)
+        model = _pick_first_text([item.get("model")], 160)
+        if not brand or not model:
+            continue
+
+        variant = _pick_first_text([item.get("variant")], 160)
+        base_source_handle = _pick_first_text([item.get("source_handle"), item.get("id")], 200)
+        if not base_source_handle:
+            base_source_handle = slugify(" ".join(part for part in [brand, model, variant or ""] if part))
+
+        source_handle = base_source_handle
+        suffix = 2
+        while source_handle in seen_source_handles:
+            source_handle = f"{base_source_handle}-{suffix}"
+            suffix += 1
+        seen_source_handles.add(source_handle)
+
+        rows.append(
+            {
+                "id": source_handle,
+                "brand": brand,
+                "model": model,
+                "variant": variant,
+                "length_mm": _as_optional_float(item.get("length_mm")),
+                "width_mm": _as_optional_float(item.get("width_mm")),
+                "height_mm": _as_optional_float(item.get("height_mm")),
+                "weight_g": _as_optional_float(item.get("weight_g")),
+                "ergo": _as_optional_bool(item.get("ergo")),
+                "wired": _as_optional_bool(item.get("wired")),
+                "shape": _pick_first_text([item.get("shape")], 80),
+                "hump": _pick_first_text([item.get("hump")], 80),
+                "grips": [str(value) for value in _as_list(item.get("grips")) if str(value).strip()],
+                "hands": [str(value) for value in _as_list(item.get("hands")) if str(value).strip()],
+                "product_url": _pick_first_text([item.get("product_url")], 2048),
+                "image_url": _pick_first_text([item.get("image_url")], 2048),
+                "source": _pick_first_text([item.get("source")], 120) or "seed:mice.json",
+                "source_handle": source_handle,
+            }
+        )
+
+    return rows
+
+
+def seed_mice_from_json_if_empty() -> int:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS count FROM mice")
+            row = cur.fetchone()
+            existing_count = int(row.get("count") or 0) if row else 0
+            if existing_count > 0:
+                return 0
+
+            seed_rows = _seed_mice_rows_from_json()
+            if not seed_rows:
+                return 0
+
+            cur.executemany(
+                """
+                INSERT INTO mice (
+                    id,
+                    brand,
+                    model,
+                    variant,
+                    length_mm,
+                    width_mm,
+                    height_mm,
+                    weight_g,
+                    ergo,
+                    wired,
+                    shape,
+                    hump,
+                    grips,
+                    hands,
+                    product_url,
+                    image_url,
+                    source,
+                    source_handle,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s::jsonb, %s::jsonb, %s, %s, %s, %s, NOW(), NOW()
+                )
+                """,
+                [
+                    (
+                        row["id"],
+                        row["brand"],
+                        row["model"],
+                        row["variant"],
+                        row["length_mm"],
+                        row["width_mm"],
+                        row["height_mm"],
+                        row["weight_g"],
+                        row["ergo"],
+                        row["wired"],
+                        row["shape"],
+                        row["hump"],
+                        json.dumps(row["grips"]),
+                        json.dumps(row["hands"]),
+                        row["product_url"],
+                        row["image_url"],
+                        row["source"],
+                        row["source_handle"],
+                    )
+                    for row in seed_rows
+                ],
+            )
+        conn.commit()
+
+    LOGGER.info("mice_seed_loaded count=%s source=%s", len(seed_rows), config.DATASET_DIR / "mice.json")
+    return len(seed_rows)
+
+
 def _iso_ts(value: Any) -> str:
     if isinstance(value, datetime):
         if value.tzinfo is None:
@@ -414,6 +583,7 @@ class ProfileOut(BaseModel):
     id: str
     email: Optional[str] = None
     display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
     theme: Optional[Literal["light", "dark"]] = None
     created_at: str
     updated_at: str
@@ -435,6 +605,19 @@ class ProfileUpdateIn(BaseModel):
         if len(normalized) > 80:
             raise ValueError("display_name must be 80 characters or fewer.")
         return normalized
+
+
+class MeOut(BaseModel):
+    id: str
+    email: Optional[str] = None
+    display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    theme: Optional[Literal["light", "dark"]] = None
+    hasCompletedSurvey: bool = False
+    surveyDismissedUntil: Optional[str] = None
+    created_at: str
+    updated_at: str
+    request_id: Optional[str] = None
 
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -505,6 +688,7 @@ async def request_context_middleware(request: Request, call_next):
     request.state.request_id = request_id
     request.state.user_id = None
     request.state.auth_claims = None
+    request.state.auth_error = None
 
     auth_header = request.headers.get("Authorization")
     token = parse_bearer_token(auth_header)
@@ -514,8 +698,14 @@ async def request_context_middleware(request: Request, call_next):
             request.state.user_id = auth_ctx.user_id
             request.state.auth_claims = auth_ctx.claims
         except AuthError as exc:
-            payload = _error_payload(request, exc.code, exc.message)
-            return JSONResponse(status_code=exc.status_code, content=payload, headers={"X-Request-ID": request_id})
+            request.state.auth_error = exc
+            LOGGER.warning(
+                "auth_token_rejected method=%s path=%s code=%s request_id=%s",
+                request.method,
+                request.url.path,
+                exc.code,
+                request_id,
+            )
 
     started = time.perf_counter()
     response = await call_next(request)
@@ -570,6 +760,7 @@ def on_startup() -> None:
     auto_schema_init = os.getenv("MOUSEFIT_AUTO_SCHEMA_INIT", "0").strip().lower() in {"1", "true", "yes", "on"}
     if auto_schema_init:
         init_db()
+    seed_mice_from_json_if_empty()
     warm = os.getenv("MOUSEFIT_WARMUP_RAG", "0").strip().lower() in {"1", "true", "yes", "on"}
     if warm:
         try:
@@ -648,6 +839,80 @@ def _request_user_email(request: Request) -> Optional[str]:
     return None
 
 
+def _pick_first_text(candidates: List[Any], max_len: int) -> Optional[str]:
+    for candidate in candidates:
+        if not isinstance(candidate, str):
+            continue
+        normalized = candidate.strip()
+        if not normalized:
+            continue
+        if len(normalized) > max_len:
+            normalized = normalized[:max_len]
+        return normalized
+    return None
+
+
+def _normalize_avatar_url(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+    normalized = value.strip()
+    if not normalized:
+        return None
+    lowered = normalized.lower()
+    if not (lowered.startswith("https://") or lowered.startswith("http://")):
+        return None
+    return normalized[:2048]
+
+
+def _request_profile_seed(request: Request) -> tuple[Optional[str], Optional[str]]:
+    claims = getattr(request.state, "auth_claims", None)
+    if not isinstance(claims, dict):
+        return None, None
+
+    metadata_candidates: List[Dict[str, Any]] = []
+    for key in ("user_metadata", "raw_user_meta_data"):
+        maybe_metadata = claims.get(key)
+        if isinstance(maybe_metadata, dict):
+            metadata_candidates.append(maybe_metadata)
+
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    for metadata in metadata_candidates:
+        first_name = _pick_first_text([metadata.get("first_name"), metadata.get("given_name")], 40)
+        last_name = _pick_first_text([metadata.get("last_name"), metadata.get("family_name")], 40)
+        if first_name or last_name:
+            break
+
+    combined_name = " ".join(part for part in [first_name, last_name] if part) or None
+    display_name = _pick_first_text(
+        [
+            *[metadata.get("full_name") for metadata in metadata_candidates],
+            *[metadata.get("name") for metadata in metadata_candidates],
+            *[metadata.get("display_name") for metadata in metadata_candidates],
+            *[metadata.get("preferred_username") for metadata in metadata_candidates],
+            *[metadata.get("username") for metadata in metadata_candidates],
+            claims.get("name"),
+            claims.get("preferred_username"),
+            combined_name,
+        ],
+        80,
+    )
+    avatar_url = _normalize_avatar_url(
+        _pick_first_text(
+            [
+                *[metadata.get("avatar_url") for metadata in metadata_candidates],
+                *[metadata.get("picture") for metadata in metadata_candidates],
+                *[metadata.get("avatar") for metadata in metadata_candidates],
+                claims.get("avatar_url"),
+                claims.get("picture"),
+            ],
+            2048,
+        )
+    )
+
+    return display_name, avatar_url
+
+
 def _normalize_theme(value: Any) -> Optional[str]:
     if not isinstance(value, str):
         return None
@@ -657,18 +922,47 @@ def _normalize_theme(value: Any) -> Optional[str]:
     return None
 
 
+def _normalize_optional_timestamp(value: Any) -> Optional[str]:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return _iso_ts(value)
+    if not isinstance(value, str):
+        return None
+
+    normalized = value.strip()
+    if not normalized:
+        return None
+    if normalized.endswith("Z"):
+        normalized = f"{normalized[:-1]}+00:00"
+
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc).isoformat()
+
+
 def _upsert_profile(
     conn,
     user_id: str,
     email: Optional[str],
     display_name: Optional[str] = None,
+    avatar_url: Optional[str] = None,
     theme: Optional[str] = None,
+    metadata_updates: Optional[Dict[str, Any]] = None,
     update_display_name: bool = False,
 ) -> None:
-    metadata_patch: Dict[str, Any] = {}
+    metadata_patch: Dict[str, Any] = dict(metadata_updates or {})
     normalized_theme = _normalize_theme(theme)
     if normalized_theme:
         metadata_patch["theme"] = normalized_theme
+    normalized_avatar = _normalize_avatar_url(avatar_url)
+    if normalized_avatar:
+        metadata_patch["avatar_url"] = normalized_avatar
     metadata_json = json.dumps(metadata_patch) if metadata_patch else None
     with conn.cursor() as cur:
         cur.execute(
@@ -679,7 +973,7 @@ def _upsert_profile(
             SET email = COALESCE(EXCLUDED.email, profiles.email),
                 display_name = CASE
                     WHEN %s THEN EXCLUDED.display_name
-                    ELSE profiles.display_name
+                    ELSE COALESCE(profiles.display_name, EXCLUDED.display_name)
                 END,
                 metadata = CASE
                     WHEN EXCLUDED.metadata IS NULL THEN profiles.metadata
@@ -710,10 +1004,12 @@ def _read_profile_row(conn, user_id: str) -> Optional[Dict[str, Any]]:
 def _row_to_profile(row: Dict[str, Any], request_id: str) -> ProfileOut:
     metadata = _as_dict(row.get("metadata")) or {}
     theme = _normalize_theme(metadata.get("theme"))
+    avatar_url = _normalize_avatar_url(_pick_first_text([metadata.get("avatar_url"), metadata.get("picture")], 2048))
     return ProfileOut(
         id=str(row.get("id") or ""),
         email=row.get("email"),
         display_name=row.get("display_name"),
+        avatar_url=avatar_url,
         theme=theme if theme in {"light", "dark"} else None,
         created_at=_iso_ts(row.get("created_at")),
         updated_at=_iso_ts(row.get("updated_at")),
@@ -721,7 +1017,30 @@ def _row_to_profile(row: Dict[str, Any], request_id: str) -> ProfileOut:
     )
 
 
+def _row_to_me(row: Dict[str, Any], request_id: str) -> MeOut:
+    profile = _row_to_profile(row, request_id)
+    metadata = _as_dict(row.get("metadata")) or {}
+    return MeOut(
+        id=profile.id,
+        email=profile.email,
+        display_name=profile.display_name,
+        avatar_url=profile.avatar_url,
+        theme=profile.theme,
+        hasCompletedSurvey=_as_optional_bool(metadata.get("has_completed_survey")) is True,
+        surveyDismissedUntil=_normalize_optional_timestamp(metadata.get("survey_dismissed_until")),
+        created_at=profile.created_at,
+        updated_at=profile.updated_at,
+        request_id=profile.request_id,
+    )
+
+
 def _require_authenticated_user(request: Request) -> tuple[str, Optional[str]]:
+    auth_error = getattr(request.state, "auth_error", None)
+    if isinstance(auth_error, AuthError):
+        raise HTTPException(
+            status_code=auth_error.status_code,
+            detail={"code": auth_error.code, "message": auth_error.message},
+        )
     user_id = _request_user_id(request)
     if not user_id:
         raise HTTPException(status_code=401, detail={"code": "auth_required", "message": "Authentication required."})
@@ -847,8 +1166,9 @@ def metrics(request: Request) -> dict:
 @app.get("/api/profile/me", response_model=ProfileOut)
 def get_profile_me(request: Request) -> ProfileOut:
     user_id, user_email = _require_authenticated_user(request)
+    seed_display_name, seed_avatar_url = _request_profile_seed(request)
     with get_conn() as conn:
-        _upsert_profile(conn, user_id, user_email)
+        _upsert_profile(conn, user_id, user_email, display_name=seed_display_name, avatar_url=seed_avatar_url)
         row = _read_profile_row(conn, user_id)
         conn.commit()
     if not row:
@@ -856,15 +1176,30 @@ def get_profile_me(request: Request) -> ProfileOut:
     return _row_to_profile(row, _request_id(request))
 
 
+@app.get("/api/me", response_model=MeOut)
+def get_me(request: Request) -> MeOut:
+    user_id, user_email = _require_authenticated_user(request)
+    seed_display_name, seed_avatar_url = _request_profile_seed(request)
+    with get_conn() as conn:
+        _upsert_profile(conn, user_id, user_email, display_name=seed_display_name, avatar_url=seed_avatar_url)
+        row = _read_profile_row(conn, user_id)
+        conn.commit()
+    if not row:
+        raise HTTPException(status_code=500, detail={"code": "profile_missing", "message": "Profile could not be read."})
+    return _row_to_me(row, _request_id(request))
+
+
 @app.post("/api/profile/me", response_model=ProfileOut)
 def update_profile_me(payload: ProfileUpdateIn, request: Request) -> ProfileOut:
     user_id, user_email = _require_authenticated_user(request)
+    _, seed_avatar_url = _request_profile_seed(request)
     with get_conn() as conn:
         _upsert_profile(
             conn,
             user_id,
             user_email,
             display_name=payload.display_name,
+            avatar_url=seed_avatar_url,
             theme=payload.theme,
             update_display_name=True,
         )
@@ -873,6 +1208,50 @@ def update_profile_me(payload: ProfileUpdateIn, request: Request) -> ProfileOut:
     if not row:
         raise HTTPException(status_code=500, detail={"code": "profile_missing", "message": "Profile could not be read."})
     return _row_to_profile(row, _request_id(request))
+
+
+@app.post("/api/survey/complete", response_model=MeOut)
+def complete_survey(request: Request) -> MeOut:
+    user_id, user_email = _require_authenticated_user(request)
+    seed_display_name, seed_avatar_url = _request_profile_seed(request)
+    with get_conn() as conn:
+        _upsert_profile(
+            conn,
+            user_id,
+            user_email,
+            display_name=seed_display_name,
+            avatar_url=seed_avatar_url,
+            metadata_updates={
+                "has_completed_survey": True,
+                "survey_dismissed_until": None,
+            },
+        )
+        row = _read_profile_row(conn, user_id)
+        conn.commit()
+    if not row:
+        raise HTTPException(status_code=500, detail={"code": "profile_missing", "message": "Profile could not be read."})
+    return _row_to_me(row, _request_id(request))
+
+
+@app.post("/api/survey/dismiss", response_model=MeOut)
+def dismiss_survey(request: Request) -> MeOut:
+    user_id, user_email = _require_authenticated_user(request)
+    seed_display_name, seed_avatar_url = _request_profile_seed(request)
+    dismissed_until = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
+    with get_conn() as conn:
+        _upsert_profile(
+            conn,
+            user_id,
+            user_email,
+            display_name=seed_display_name,
+            avatar_url=seed_avatar_url,
+            metadata_updates={"survey_dismissed_until": dismissed_until},
+        )
+        row = _read_profile_row(conn, user_id)
+        conn.commit()
+    if not row:
+        raise HTTPException(status_code=500, detail={"code": "profile_missing", "message": "Profile could not be read."})
+    return _row_to_me(row, _request_id(request))
 
 
 @app.get("/api/mice", response_model=List[Mouse])
@@ -903,9 +1282,10 @@ def save_measurement(payload: MeasurementIn, request: Request) -> MeasurementOut
     width_cm = round(payload.width_mm / 10, 2)
     user_id = _request_user_id(request)
     user_email = _request_user_email(request)
+    seed_display_name, seed_avatar_url = _request_profile_seed(request)
     with get_conn() as conn:
         if user_id:
-            _upsert_profile(conn, user_id, user_email)
+            _upsert_profile(conn, user_id, user_email, display_name=seed_display_name, avatar_url=seed_avatar_url)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -941,9 +1321,10 @@ def save_grip(payload: GripIn, request: Request) -> GripOut:
     confidence = payload.confidence or 0.0
     user_id = _request_user_id(request)
     user_email = _request_user_email(request)
+    seed_display_name, seed_avatar_url = _request_profile_seed(request)
     with get_conn() as conn:
         if user_id:
-            _upsert_profile(conn, user_id, user_email)
+            _upsert_profile(conn, user_id, user_email, display_name=seed_display_name, avatar_url=seed_avatar_url)
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -973,9 +1354,10 @@ def save_grip(payload: GripIn, request: Request) -> GripOut:
 def generate_report(request: Request, session_id: str = Query(...)) -> Report:
     user_id = _request_user_id(request)
     user_email = _request_user_email(request)
+    seed_display_name, seed_avatar_url = _request_profile_seed(request)
     with get_conn() as conn:
         if user_id:
-            _upsert_profile(conn, user_id, user_email)
+            _upsert_profile(conn, user_id, user_email, display_name=seed_display_name, avatar_url=seed_avatar_url)
         measurement = latest_measurement(conn, session_id, user_id)
         if not measurement:
             raise HTTPException(

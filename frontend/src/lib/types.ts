@@ -75,8 +75,16 @@ export type UserProfile = {
   id: string;
   email?: string | null;
   display_name?: string | null;
+  avatar_url?: string | null;
   theme?: ThemeMode | null;
   created_at: string;
   updated_at: string;
   request_id?: string | null;
 };
+
+export type SurveyStatus = {
+  hasCompletedSurvey: boolean;
+  surveyDismissedUntil?: string | null;
+};
+
+export type CurrentUser = UserProfile & SurveyStatus;

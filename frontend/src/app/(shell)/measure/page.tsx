@@ -6,55 +6,69 @@ import { ShellNav } from "@/components/shell/ShellNav";
 
 const styles = `
 :root {
-  --bg: #05060a;
-  --fg: #eaf0ff;
-  --sub: #a6b0c8;
-  --border: rgba(217, 70, 239, 0.15);
-  --accent: #d946ef;
-  --g1: #d946ef;
-  --g2: #22d3ee;
-  --g3: #a855f7;
-  --glow: 0 0 24px rgba(217, 70, 239, 0.22), 0 0 36px rgba(34, 211, 238, 0.12);
+  --bg: var(--bg0);
+  --fg: var(--text-primary);
+  --sub: var(--text-secondary);
+  --border: var(--border-color);
+  --accent: var(--accent-gamer);
+  --accent-soft: var(--accent-gamer-fill);
+  --accent-soft-strong: var(--accent-gamer-fill-strong);
+  --highlight: var(--accent-highlight);
+  --highlight-soft: var(--accent-highlight-fill);
+  --surface: var(--surface-soft);
+  --surface-elevated: var(--surface-strong);
+  --surface-focus: var(--surface-veil);
+  --on-surface: var(--overlay-text);
+  --glow: var(--accent-gamer-glow);
 }
 
 .tool-shell, .tool-shell * { box-sizing: border-box; }
 
 .tool-shell {
   height: 100%;
+  min-height: 100%;
   margin: 0;
-  overflow: hidden;
-  overscroll-behavior: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   font-family: 'Sora', system-ui, Arial;
   color: var(--fg);
   position: relative;
+  padding: clamp(16px, 2.1vw, 24px) clamp(10px, 1.4vw, 16px) clamp(24px, 3.2vh, 40px);
 }
 
 .wrap {
+  --capture-shell-height: clamp(500px, 76vh, 860px);
   flex: 1 1 auto;
   position: relative;
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 336px);
+  align-items: start;
   justify-content: center;
-  padding: 20px;
-  gap: 24px;
-  overflow: hidden;
-  height: 100%;
+  padding: clamp(16px, 2.2vw, 28px) clamp(12px, 1.8vw, 20px) clamp(20px, 2.8vh, 34px);
+  gap: clamp(18px, 2.2vw, 26px);
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  overflow: visible;
+  min-height: 100%;
 }
 
 .stage {
   position: relative;
-  width: min(1000px, 65vw);
-  min-height: 500px;
-  max-height: 80vh;
+  width: 100%;
+  max-width: 100%;
+  min-height: 0;
+  height: var(--capture-shell-height);
+  max-height: none;
   aspect-ratio: 16/10;
   border-radius: 24px;
   overflow: hidden;
   border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface);
   backdrop-filter: blur(10px);
-  box-shadow: var(--glow);
   flex-shrink: 0;
 }
 
@@ -66,12 +80,16 @@ const styles = `
   object-fit: cover;
 }
 
+.stage > canvas {
+  touch-action: none;
+}
+
 .stage .guides {
   position: absolute;
   left: 4%;
   right: 4%;
-  top: 4%;
-  bottom: 4%;
+  top: 2.5%;
+  bottom: 2.5%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,7 +99,7 @@ const styles = `
 }
 
 .stage .guide {
-  border: 2px dashed rgba(217, 70, 239, 0.6);
+  border: 0;
   border-radius: 16px;
   background: transparent;
   position: relative;
@@ -89,34 +107,38 @@ const styles = `
 
 .stage #handGuide {
   flex: 3 1 0;
-  min-height: 94%;
+  min-height: 96%;
 }
 
 .stage .label {
-  position: absolute;
-  top: -12px;
-  left: 14px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 999px;
+  display: none;
 }
 
 .stage .badge {
   position: absolute;
   right: 12px;
   top: 12px;
-  background: rgba(217, 70, 239, 0.2);
+  background: var(--accent-soft);
   border: 1px solid var(--border);
   color: var(--accent);
   font-size: 11px;
   font-weight: 600;
-  padding: 6px 12px;
+  padding: 6px 12px 6px 22px;
   border-radius: 999px;
   z-index: 6;
+}
+
+.stage .badge::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-emerald, #34d399);
+  box-shadow: 0 0 6px var(--accent-emerald, #34d399);
 }
 
 .stage .toast {
@@ -124,9 +146,9 @@ const styles = `
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--surface-focus);
   border: 1px solid var(--border);
-  color: #fff;
+  color: var(--on-surface);
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 13px;
@@ -140,11 +162,11 @@ const styles = `
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--surface-elevated);
   font-size: 20vmin;
   font-weight: 900;
   color: var(--accent);
-  text-shadow: 0 2px 20px rgba(217, 70, 239, 0.5);
+  text-shadow: 0 2px 20px var(--accent-soft-strong);
   pointer-events: none;
   z-index: 8;
 }
@@ -155,7 +177,7 @@ const styles = `
   height: 18px;
   border-radius: 50%;
   border: 2px solid var(--accent);
-  background: rgba(217, 70, 239, 0.2);
+  background: var(--accent-soft);
   transform: translate(-50%, -50%);
   touch-action: none;
   cursor: grab;
@@ -164,31 +186,33 @@ const styles = `
   z-index: 10;
 }
 
-.point.green { border-color: #d946ef; background: rgba(217, 70, 239, 0.3); }
-.point.blue { border-color: #22d3ee; background: rgba(34, 211, 238, 0.3); }
+.point.green { border-color: var(--accent-emerald, #34d399); background: var(--accent-emerald-fill, rgba(52, 211, 153, 0.14)); }
+.point.blue { border-color: var(--accent-violet, #8b5cf6); background: var(--accent-violet-fill, rgba(139, 92, 246, 0.14)); }
 
 .control-dock {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   z-index: 50;
   padding: 0;
   background: none;
-  flex-shrink: 0;
-  height: 70%;
-  max-height: 600px;
+  flex-shrink: 1;
+  width: 100%;
+  min-width: 0;
+  height: var(--capture-shell-height);
 }
 
 .panel {
-  width: 340px;
-  flex: 1;
+  width: 100%;
+  flex: 1 1 auto;
   overflow: auto;
+  min-height: 0;
+  max-height: none;
   border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface);
   backdrop-filter: blur(10px);
-  box-shadow: var(--glow);
-  border-radius: 24px;
+  border-radius: 20px;
   padding: 20px;
   scrollbar-width: none;
 }
@@ -196,40 +220,48 @@ const styles = `
 .panel::-webkit-scrollbar { width: 0; height: 0; }
 
 .coach {
-  width: 340px;
+  width: 100%;
   padding: 20px;
-  border-radius: 24px;
+  border-radius: 20px;
   border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface);
   backdrop-filter: blur(10px);
-  box-shadow: var(--glow);
   color: var(--fg);
   z-index: 60;
 }
 
 .coach.hidden { display: none; }
 .coach-bar { display: flex; align-items: center; padding: 0; margin: 0 0 12px 0; border: none; background: none; }
-.coach-bar strong { font-size: 14px; font-weight: 700; color: var(--accent); }
+.coach-bar strong { font-size: 14px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+.coach-bar strong::before { content: ''; width: 3px; height: 18px; border-radius: 2px; background: linear-gradient(to bottom, var(--accent), var(--accent-violet, #8b5cf6)); }
 .coach-close { display: none; }
 .coach-content p { margin: 6px 0; color: var(--sub); line-height: 1.5; font-size: 13px; }
 .coach-content b { color: var(--accent); }
 
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; min-width: 0; }
 .row > * { min-width: 0; flex-shrink: 1; }
+.row label { flex: 0 0 auto; }
+.row select { flex: 1 1 160px; }
+.row input[type="range"] { flex: 1 1 160px; accent-color: var(--accent); }
+.zoom-row .pill { flex: 0 0 auto; min-width: 56px; text-align: center; }
 
 .toolbar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 12px;
+  gap: 14px;
+  margin-top: 10px;
+  padding: 18px;
+  min-height: 122px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: rgba(217, 70, 239, 0.05);
+  background: var(--accent-soft);
 }
 
-.btn-group { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.btn-group button { width: 100%; min-height: 36px; }
+.capture-bar { min-height: 138px; }
+
+.btn-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.btn-group button { width: 100%; min-height: 46px; }
+.refine-tools button { width: 100%; min-height: 42px; }
 
 .meta { display: flex; flex-direction: row; gap: 8px; flex-wrap: wrap; }
 .meta .pill { flex: 1; text-align: center; min-width: 0; }
@@ -237,7 +269,7 @@ const styles = `
 .pill {
   padding: 6px 10px;
   border-radius: 12px;
-  background: rgba(217, 70, 239, 0.1);
+  background: var(--accent-soft);
   border: 1px solid var(--border);
   font-size: 11px;
   color: var(--fg);
@@ -248,22 +280,22 @@ const styles = `
 }
 
 button {
-  background: rgba(217, 70, 239, 0.1);
+  background: var(--accent-soft);
   color: var(--fg);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 12px;
+  font-size: 13px;
 }
 
-button:hover { background: rgba(217, 70, 239, 0.2); border-color: var(--accent); }
-button.primary { background: rgba(217, 70, 239, 0.2); border-color: var(--accent); box-shadow: var(--glow); }
+button:hover { background: var(--accent-soft-strong); border-color: var(--accent); }
+button.primary { background: var(--accent-soft-strong); border-color: var(--accent); border-bottom: 2px solid var(--accent); }
 
 select {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface-elevated);
   color: var(--fg);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -276,13 +308,99 @@ select {
 
 label { font-size: 13px; color: var(--sub); }
 
-@media (max-width: 900px) {
-  .tool-shell { overflow: auto; overscroll-behavior: y contain; display: block; }
-  .wrap { height: auto; min-height: calc(100dvh - 120px); padding: 16px; flex-direction: column; gap: 16px; }
-  .stage { width: 100%; max-width: 100%; height: auto; aspect-ratio: 16/10; }
-  .control-dock { width: 100%; height: auto; flex-direction: column; }
-  .coach, .panel { width: 100%; }
+.result-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
 }
+
+.result-popup {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+}
+
+.result-popup .result-label {
+  font-size: 11px;
+  color: var(--sub);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin: 0 0 16px;
+}
+
+.result-popup .result-dims {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.result-popup .result-dim {
+  flex: 1;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--accent-soft);
+}
+
+.result-popup .result-dim-label {
+  display: block;
+  font-size: 10px;
+  color: var(--sub);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 6px;
+}
+
+.result-popup .result-dim-value {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.result-popup .result-desc {
+  font-size: 13px;
+  color: var(--sub);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.result-popup .result-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.result-popup .result-actions > * {
+  flex: 1;
+}
+
+@media (max-width: 1100px) {
+  .tool-shell { display: block; }
+  .wrap {
+    display: flex;
+    height: auto;
+    min-height: calc(100dvh - 140px);
+    max-width: 100%;
+    padding: 18px 14px 24px;
+    flex-direction: column;
+    gap: 12px;
+    overflow: visible;
+  }
+  .stage { width: 100%; max-width: 100%; height: auto; max-height: none; aspect-ratio: 16/10; }
+  .control-dock { width: 100%; min-width: 0; min-height: 0; height: auto; flex-direction: column; }
+  .coach, .panel { width: 100%; }
+  .panel { max-height: none; }
+}
+
 `;
 
 const bodyHtml = `
@@ -318,7 +436,8 @@ const bodyHtml = `
         <div class="coach-content">
           <p>1. Position hand & card inside the box</p>
           <p>2. Press <b>Space</b> to capture</p>
-          <p>3. Double click card corners if needed</p>
+          <p>3. Drag across the card to place its box</p>
+          <p>4. Use <b>Auto snap hand</b>, then adjust corners if needed</p>
         </div>
       </div>
 
@@ -328,36 +447,62 @@ const bodyHtml = `
           <select id="cameraSelect"></select>
           <button id="refreshCams">Refresh</button>
         </div>
+        <div class="row zoom-row" style="gap:10px; margin-bottom:8px;">
+          <label for="zoomRange">Zoom:</label>
+          <input id="zoomRange" type="range" min="1" max="3" step="0.05" value="1" />
+          <span id="zoomValue" class="pill">1.0x</span>
+        </div>
         <span id="camName" class="pill" style="display:block; margin-bottom:8px;">—</span>
-        <div id="hint" class="hint">Tip: Press <b>Space</b> to capture. Keep hand and card in view.</div>
+        <div id="hint" class="hint">Tip: Press <b>Space</b> to capture. After freeze, drag across the card to create its rectangle, then use <b>Auto snap hand</b> to refine fingertip and width.</div>
 
-        <div class="toolbar" id="liveBtns">
+        <div class="toolbar capture-bar" id="liveBtns">
           <div class="btn-group">
-            <button id="timer" class="primary">Capture (Space)</button>
-            <button id="snap">Capture now</button>
-            <button id="toggleSkel">Toggle skeleton</button>
-            <button id="toggleGuide">Hide guides</button>
-            <button id="reset">Reset (Esc)</button>
+            <button id="timer" class="primary">Capture</button>
+            <button id="reset">Reset</button>
           </div>
+          <button id="snap" style="display:none;">Capture now</button>
+          <button id="toggleSkel" style="display:none;">Toggle skeleton</button>
           <div class="meta">
-            <span id="guideState" class="pill">Guides: On</span>
+            <span id="guideState" class="pill" style="display:none;">Guides: On</span>
           </div>
         </div>
 
-        <div class="toolbar" id="refineRow" style="display:none;">
+        <div class="toolbar capture-bar" id="refineRow" style="display:none;">
           <div class="btn-group">
-            <button id="snapEdges">Snap palm edges</button>
-            <button id="snapTip">Snap fingertip</button>
-            <button id="confirm" class="primary">Confirm (Enter)</button>
-            <button id="reset2">Reset (Esc)</button>
+            <button id="confirm" class="primary">Confirm</button>
+            <button id="reset2">Reset</button>
           </div>
-          <div class="meta"><span class="pill">Refine</span></div>
+          <div class="refine-tools">
+            <button id="snapMeasure">Auto snap hand</button>
+          </div>
+          <div class="meta"><span class="pill">Drag card box, then refine</span></div>
         </div>
       </div>
     </div>
   </div>
 
-  <button id="startCamBtn" style="position:absolute; inset:auto 16px 16px auto; z-index:30; background:rgba(217,70,239,.24); color:#fff; font-weight:600; border:1px solid rgba(217,70,239,.45); box-shadow:0 0 10px rgba(217,70,239,.24),0 0 14px rgba(34,211,238,.12); padding:12px 16px; border-radius:16px; display:none;">Tap to start camera</button>
+  <button id="startCamBtn" style="position:fixed; right:16px; bottom:16px; z-index:30; background:var(--accent-soft-strong); color:var(--on-surface); font-weight:600; border:1px solid var(--accent-gamer-line); padding:12px 16px; border-radius:16px; display:none;">Tap to start camera</button>
+
+  <div id="resultPopup" class="result-popup-overlay">
+    <div class="result-popup">
+      <p class="result-label">Hand Measurements</p>
+      <div class="result-dims">
+        <div class="result-dim">
+          <span class="result-dim-label">Length</span>
+          <span id="resultLength" class="result-dim-value">—</span>
+        </div>
+        <div class="result-dim">
+          <span class="result-dim-label">Width</span>
+          <span id="resultWidth" class="result-dim-value">—</span>
+        </div>
+      </div>
+      <p class="result-desc">Your measurements have been saved. You can view your full fit report or continue browsing.</p>
+      <div class="result-actions">
+        <a href="/report" class="btn-link primary">View Report</a>
+        <button onclick="document.getElementById('resultPopup').style.display='none'">Close</button>
+      </div>
+    </div>
+  </div>
 `;
 
 export default function MeasurePage() {
@@ -407,13 +552,13 @@ export default function MeasurePage() {
       clearTimeout(timeoutId1);
       clearTimeout(timeoutId2);
       clearTimeout(timeoutId3);
-      if (typeof window !== 'undefined' && (window as any).stopCam) {
-        try { (window as any).stopCam(); } catch (e) {}
-      }
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then(stream => stream.getTracks().forEach(track => track.stop()))
-          .catch(() => {});
+      if (typeof window !== 'undefined') {
+        const windowWithStop = window as Window & { stopCam?: () => void };
+        if (windowWithStop.stopCam) {
+          try {
+            windowWithStop.stopCam();
+          } catch {}
+        }
       }
     };
   }, []);
@@ -421,7 +566,7 @@ export default function MeasurePage() {
   return (
     <>
       <ShellNav currentPage="measure" />
-      <div className="h-full">
+      <div className="h-full min-h-0">
         <style dangerouslySetInnerHTML={{ __html: styles }} />
         <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
         <Script type="module" src="/src/js/main.js" strategy="afterInteractive" key="main-js" />
@@ -429,7 +574,65 @@ export default function MeasurePage() {
           id="measure-finish"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
-            __html: `window.finishMeasurement = async (l, w) => {\n  sessionStorage.setItem('mf:length_mm', String(l));\n  sessionStorage.setItem('mf:width_mm', String(w));\n\n  const sessionKey = 'mousefit:v2:session_id';\n  let sessionId = localStorage.getItem(sessionKey);\n  if (!sessionId) {\n    sessionId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('session-' + Date.now());\n    localStorage.setItem(sessionKey, sessionId);\n  }\n\n  const apiBase = String(window.__MOUSEFIT_API_BASE__ || 'http://localhost:8000').replace(/\\/+$/, '');\n  const headers = { 'Content-Type': 'application/json' };\n  try {\n    const raw = localStorage.getItem('mousefit:auth:session');\n    if (raw) {\n      const parsed = JSON.parse(raw);\n      if (parsed && parsed.access_token) headers.Authorization = 'Bearer ' + parsed.access_token;\n    }\n  } catch {}\n\n  try {\n    await fetch(apiBase + '/api/measurements', {\n      method: 'POST',\n      headers,\n      body: JSON.stringify({\n        session_id: sessionId,\n        length_mm: Number(l),\n        width_mm: Number(w),\n      }),\n    });\n  } catch {}\n\n  location.href = '/report';\n};`,
+            __html: `window.finishMeasurement = async (l, w) => {
+  var lenMm = Number(l);
+  var widMm = Number(w);
+  sessionStorage.setItem('mf:length_mm', String(lenMm));
+  sessionStorage.setItem('mf:width_mm', String(widMm));
+
+  // Update wizard state so survey picks up measurements
+  var wKeys = ['mousefit:survey_wizard_state', 'mf:survey_wizard_state'];
+  wKeys.forEach(function(k) {
+    try {
+      var raw = localStorage.getItem(k) || sessionStorage.getItem(k);
+      if (raw) {
+        var obj = JSON.parse(raw);
+        obj.lengthMm = lenMm;
+        obj.widthMm = widMm;
+        var s = JSON.stringify(obj);
+        localStorage.setItem(k, s);
+        sessionStorage.setItem(k, s);
+      }
+    } catch {}
+  });
+
+  var sessionKey = 'mousefit:v2:session_id';
+  var sessionId = localStorage.getItem(sessionKey);
+  if (!sessionId) {
+    sessionId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('session-' + Date.now());
+    localStorage.setItem(sessionKey, sessionId);
+  }
+
+  var apiBase = String(window.__MOUSEFIT_API_BASE__ || 'http://127.0.0.1:8000').replace(/\\/+$/, '');
+  var headers = { 'Content-Type': 'application/json' };
+  try {
+    var authRaw = localStorage.getItem('mousefit:auth:session');
+    if (authRaw) {
+      var parsed = JSON.parse(authRaw);
+      if (parsed && parsed.access_token) headers.Authorization = 'Bearer ' + parsed.access_token;
+    }
+  } catch {}
+
+  try {
+    await fetch(apiBase + '/api/measurements', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ session_id: sessionId, length_mm: lenMm, width_mm: widMm }),
+    });
+  } catch {}
+
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('from') === 'survey') {
+    location.href = '/survey';
+  } else {
+    var elL = document.getElementById('resultLength');
+    var elW = document.getElementById('resultWidth');
+    if (elL) elL.textContent = lenMm.toFixed(1) + ' mm';
+    if (elW) elW.textContent = widMm.toFixed(1) + ' mm';
+    var popup = document.getElementById('resultPopup');
+    if (popup) popup.style.display = 'flex';
+  }
+};`,
           }}
         />
       </div>

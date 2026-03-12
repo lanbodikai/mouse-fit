@@ -3,6 +3,10 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Local environment files
+.env
+.env.*
+
 # Local build/dev artifacts
 **/.next.bak-*/
 **/dev.log

@@ -2,153 +2,288 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowUpRight, Scan, Hand, Database, Bot, BarChart3, LayoutDashboard } from "lucide-react";
 import { PageNav } from "@/components/landing/PageNav";
 
-// Feature cards data - links to shell pages (5 items)
-const features = [
+type ServiceItem = {
+  title: string;
+  description: string;
+  kicker: string;
+  href: string;
+  icon: React.ReactNode;
+  gradient: string;
+  accentVar: string;
+};
+
+const services: ServiceItem[] = [
   {
-    title: "Hand\nMeasure",
-    subtitle: "PRECISION",
-    link: "/measure",
+    title: "Hand Measurement",
+    description:
+      "Use your camera to accurately capture hand length, width, and span. Our computer-vision pipeline extracts precise dimensions in seconds.",
+    kicker: "SCAN",
+    href: "/measure",
+    icon: <Scan className="w-5 h-5" />,
+    gradient: "from-[var(--accent-gamer)] to-[var(--accent-violet)]",
+    accentVar: "--accent-gamer",
   },
   {
-    title: "Grip\nAnalysis",
-    subtitle: "AI DETECT",
-    link: "/grip",
+    title: "Grip Analysis",
+    description:
+      "Identify your grip style — palm, claw, or fingertip — through real-time camera analysis powered by our self-built ML model.",
+    kicker: "DETECT",
+    href: "/grip",
+    icon: <Hand className="w-5 h-5" />,
+    gradient: "from-[var(--accent-violet)] to-[var(--accent-emerald)]",
+    accentVar: "--accent-violet",
   },
   {
-    title: "Mouse\nDatabase",
-    subtitle: "200+ MICE",
-    link: "/database",
+    title: "Mouse Database",
+    description:
+      "Browse hundreds of mice with detailed specs — shape, weight, sensor, and dimensions. Filter and compare to find your fit.",
+    kicker: "BROWSE",
+    href: "/database",
+    icon: <Database className="w-5 h-5" />,
+    gradient: "from-[var(--accent-emerald)] to-[var(--accent-amber)]",
+    accentVar: "--accent-emerald",
   },
   {
-    title: "Analysis\nReport",
-    subtitle: "DETAILED",
-    link: "/report",
+    title: "AI Assistant",
+    description:
+      "Ask our AI anything about mice, grip, or ergonomics. Get personalised recommendations based on your measurements and play style.",
+    kicker: "ASK",
+    href: "/ai",
+    icon: <Bot className="w-5 h-5" />,
+    gradient: "from-[var(--accent-amber)] to-[var(--accent-gamer)]",
+    accentVar: "--accent-amber",
   },
   {
-    title: "AI\nChat",
-    subtitle: "INTERACT",
-    link: "/ai",
+    title: "Fit Report",
+    description:
+      "Receive a detailed breakdown of your hand-to-mouse compatibility — comfort score, control rating, and ergonomic notes.",
+    kicker: "ANALYZE",
+    href: "/report",
+    icon: <BarChart3 className="w-5 h-5" />,
+    gradient: "from-[var(--accent-gamer)] to-[var(--accent-emerald)]",
+    accentVar: "--accent-gamer",
+  },
+  {
+    title: "Dashboard",
+    description:
+      "Track your measurements, view past reports, and monitor your fitting journey — all in one unified overview.",
+    kicker: "OVERVIEW",
+    href: "/dashboard",
+    icon: <LayoutDashboard className="w-5 h-5" />,
+    gradient: "from-[var(--accent-violet)] to-[var(--accent-amber)]",
+    accentVar: "--accent-violet",
   },
 ];
 
+type StealthProject = {
+  label: string;
+  tag: string;
+};
+
+const stealthProjects: StealthProject[] = [
+  { label: "Project PF", tag: "STEALTH" },
+  { label: "Project KM", tag: "STEALTH" },
+  { label: "Project PB", tag: "STEALTH" },
+];
+
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
+
 export default function ServicesPage() {
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Background gradient */}
-      <div 
-        className="absolute inset-0 -z-10"
-        style={{
-          background: "linear-gradient(135deg, #05060a 0%, #071022 52%, #0a1c3a 100%)",
-        }}
-      />
-
-      {/* Ambient glow effect */}
-      <div 
-        className="absolute inset-0 -z-10 opacity-40"
+    <div className="relative min-h-screen w-screen overflow-x-hidden bg-theme-primary">
+      {/* Background */}
+      <div
+        className="fixed inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse at 16% 30%, rgba(217, 70, 239, 0.22) 0%, transparent 58%), radial-gradient(ellipse at 84% 70%, rgba(34, 211, 238, 0.2) 0%, transparent 60%)",
+            "linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 52%, var(--bg-tertiary) 100%)",
+        }}
+      />
+      <div
+        className="fixed inset-0 -z-10 opacity-40"
+        style={{
+          background:
+            "radial-gradient(ellipse at 16% 30%, rgba(139, 92, 246, 0.22) 0%, transparent 58%), radial-gradient(ellipse at 84% 70%, rgba(0, 168, 232, 0.2) 0%, transparent 60%)",
+        }}
+      />
+      <div
+        className="fixed inset-0 -z-10 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")',
         }}
       />
 
-      {/* Large background text */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-        <h1 
-          className="text-[18vw] font-extralight text-white/[0.03] tracking-wider select-none"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          services
-        </h1>
-      </div>
-
-      {/* Navigation */}
       <PageNav currentPage="services" />
 
-      {/* Main Content - Fixed height, centered */}
-      <main className="relative h-full flex items-center justify-center px-8 md:px-12 lg:px-16 pt-20 pb-24">
-        <div className="w-full max-w-7xl mx-auto">
-          {/* Section Title */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-8 md:mb-12"
-          >
-            <span className="text-fuchsia-400 text-xs tracking-[0.3em] uppercase">
-              [ ALL FEATURES ]
-            </span>
-          </motion.div>
+      <main className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-28 pb-32 md:px-10">
+        {/* Header */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="mb-16 md:mb-20"
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className="h-px w-10"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, var(--accent-violet))",
+              }}
+            />
+            <p className="text-xs tracking-[0.35em] text-white/50 uppercase">
+              WHAT WE OFFER
+            </p>
+          </div>
 
-          {/* Features Row - 5 items in a row */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 * index }}
-              >
-                <Link href={feature.link}>
-                  <div className="group relative aspect-[3/4] md:aspect-[2/3] border border-white/10 rounded-lg overflow-hidden bg-black/20 backdrop-blur-sm hover:border-fuchsia-400/35 transition-all duration-300">
-                    {/* Content */}
-                    <div className="absolute inset-0 p-4 md:p-5 flex flex-col justify-between">
-                      <h3 className="text-base md:text-lg lg:text-xl font-light text-white leading-tight whitespace-pre-line">
-                        {feature.title}
-                      </h3>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] md:text-xs text-white/40 uppercase tracking-wider">
-                          {feature.subtitle}
-                        </span>
-                        <div className="w-6 h-6 md:w-7 md:h-7 rounded-full border border-white/20 flex items-center justify-center group-hover:border-fuchsia-400 group-hover:bg-fuchsia-500 transition-all duration-300">
-                          <ArrowRight className="w-3 h-3 text-white/60 group-hover:text-black transition-colors" />
-                        </div>
+          <h1 className="mt-6 text-4xl font-light tracking-tight text-white md:text-5xl lg:text-6xl">
+            Services &{" "}
+            <span
+              className="bg-clip-text text-transparent"
+              style={{
+                backgroundImage:
+                  "linear-gradient(90deg, var(--accent-gamer), var(--accent-violet), var(--accent-emerald))",
+              }}
+            >
+              Tools
+            </span>
+          </h1>
+
+          <p className="mt-5 max-w-2xl text-sm leading-relaxed text-white/50 md:text-base">
+            Everything you need to find, measure, and validate your perfect
+            mouse fit — from camera-based scanning to AI-powered recommendations.
+          </p>
+        </motion.section>
+
+        {/* Service Cards Grid */}
+        <motion.section
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+          className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {services.map((s) => (
+            <motion.div key={s.title} variants={fadeUp}>
+              <Link href={s.href} className="group block h-full">
+                <div className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.04]">
+                  {/* Gradient top bar */}
+                  <div
+                    className="h-[2px] w-full"
+                    style={{
+                      background: `linear-gradient(90deg, var(${s.accentVar}), transparent)`,
+                    }}
+                  />
+
+                  <div className="flex flex-1 flex-col p-6 md:p-7">
+                    {/* Icon + kicker */}
+                    <div className="flex items-center justify-between">
+                      <div
+                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-black/30"
+                        style={{ color: `var(${s.accentVar})` }}
+                      >
+                        {s.icon}
                       </div>
+                      <span className="text-[10px] tracking-[0.25em] text-white/30 uppercase">
+                        {s.kicker}
+                      </span>
                     </div>
 
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-fuchsia-500/8 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    {/* Title */}
+                    <h3 className="mt-5 text-lg font-medium text-white/90">
+                      {s.title}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="mt-2 flex-1 text-sm leading-relaxed text-white/45">
+                      {s.description}
+                    </p>
+
+                    {/* CTA */}
+                    <div className="mt-5 flex items-center gap-2 text-sm text-white/40 transition-colors group-hover:text-white/70">
+                      <span>Open</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </div>
                   </div>
-                </Link>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </motion.section>
+
+        {/* Divider */}
+        <div className="my-16 md:my-20">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        </div>
+
+        {/* Stealth Projects */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.4 }}
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div
+              className="h-px w-10"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, var(--accent-amber))",
+              }}
+            />
+            <p className="text-xs tracking-[0.35em] text-white/50 uppercase">
+              COMING SOON
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {stealthProjects.map((p, i) => (
+              <motion.div
+                key={p.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 + i * 0.08 }}
+                className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-5 py-4 backdrop-blur-sm"
+              >
+                <span className="text-sm text-white/60">{p.label}</span>
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-0.5 text-[10px] tracking-[0.2em] text-white/30 uppercase">
+                  {p.tag}
+                </span>
               </motion.div>
             ))}
           </div>
+        </motion.section>
 
-          {/* Quick Links Row */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="mt-8 md:mt-12 flex items-center justify-center gap-4 md:gap-8"
+        {/* Bottom CTA */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.6 }}
+          className="mt-16 md:mt-20 text-center"
+        >
+          <p className="text-sm text-white/40 mb-5">
+            Ready to find your fit?
+          </p>
+          <Link
+            href="/survey"
+            className="group inline-flex items-center gap-3 rounded-full px-6 py-3 text-sm text-white transition-all duration-200 mf-neon-btn"
           >
-            <Link 
-              href="/settings"
-              className="group flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors"
-            >
-              <span>Settings</span>
-              <ArrowRight className="w-3 h-3 group-hover:text-fuchsia-400" />
-            </Link>
-            <div className="w-px h-3 bg-white/20" />
-            <Link 
-              href="/user"
-              className="group flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors"
-            >
-              <span>Profile</span>
-              <ArrowRight className="w-3 h-3 group-hover:text-fuchsia-400" />
-            </Link>
-            <div className="w-px h-3 bg-white/20" />
-            <Link 
-              href="/dashboard"
-              className="group flex items-center gap-2 text-xs text-white/40 hover:text-white transition-colors"
-            >
-              <span>Dashboard</span>
-              <ArrowRight className="w-3 h-3 group-hover:text-fuchsia-400" />
-            </Link>
-          </motion.div>
-        </div>
+            <span>Get started</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
+              <ArrowUpRight className="w-4 h-4 text-[color:var(--accent-gamer)]" />
+            </div>
+          </Link>
+        </motion.section>
       </main>
     </div>
   );

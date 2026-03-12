@@ -33,6 +33,8 @@ const cameraSelect = document.getElementById("cameraSelect");
 const refreshCams  = document.getElementById("refreshCams");
 const startCamBtn  = document.getElementById("startCamBtn");
 const camName      = document.getElementById("camName");
+const zoomRange    = document.getElementById("zoomRange");
+const zoomValue    = document.getElementById("zoomValue");
 
 const statusBadge  = document.getElementById("status");
 const toast        = document.getElementById("toast");
@@ -131,6 +133,7 @@ const PREF_SKELETON    = "mf:pref:skeleton-live";
 const PREF_GUIDE_VIS   = "mf:pref:guide-visible";
 const PREF_GUIDE_SCALE = "mf:pref:guide-scale";
 const PREF_PANEL_SCALE = "mf:pref:panel-scale";
+const PREF_CAM_ZOOM    = "mf:pref:grip-camera-zoom";
 
 function getStoredBool(key, fallback = false){
   const value = localStorage.getItem(key);
@@ -157,6 +160,11 @@ let guideScale   = getStoredNumber(PREF_GUIDE_SCALE, 1, 0.6, 1.4);
 let panelScale   = getStoredNumber(PREF_PANEL_SCALE, 1, 0.7, 1.25);
 let countdownTimer = null;
 let isFrozen = false;
+let currentZoom = getStoredNumber(PREF_CAM_ZOOM, 1, 1, 3);
+let zoomMin = 1;
+let zoomMax = 3;
+let zoomStep = 0.05;
+let zoomMode = "digital";
 
 let currentView = 0; // 0=Top, 1=Bottom, 2=Side
 let shots = { top:null, bottom:null, side:null };
@@ -187,6 +195,69 @@ function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
 
 async function detectMouseBoxes(_imageLike, _options = {}) {
   return [];
+}
+
+function updateZoomUI(){
+  if (zoomRange) {
+    zoomRange.min = String(zoomMin);
+    zoomRange.max = String(zoomMax);
+    zoomRange.step = String(zoomStep);
+    zoomRange.value = String(clamp(currentZoom, zoomMin, zoomMax));
+  }
+  if (zoomValue) {
+    zoomValue.textContent = `${currentZoom.toFixed(1)}x`;
+  }
+}
+
+function drawVideoFrame(){
+  if (zoomMode !== "digital" || currentZoom <= 1.001) {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return;
+  }
+  const vw = video.videoWidth || canvas.width;
+  const vh = video.videoHeight || canvas.height;
+  const cropW = vw / currentZoom;
+  const cropH = vh / currentZoom;
+  const sx = (vw - cropW) / 2;
+  const sy = (vh - cropH) / 2;
+  ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
+}
+
+async function applyZoom(value){
+  currentZoom = clamp(Number(value) || 1, zoomMin, zoomMax);
+  localStorage.setItem(PREF_CAM_ZOOM, currentZoom.toFixed(2));
+  updateZoomUI();
+
+  const track = stream?.getVideoTracks?.()[0];
+  if (!track || zoomMode !== "hardware") return;
+
+  try {
+    await track.applyConstraints({ advanced: [{ zoom: currentZoom }] });
+  } catch {
+    zoomMode = "digital";
+  }
+}
+
+async function setupZoomForTrack(track){
+  zoomMode = "digital";
+  zoomMin = 1;
+  zoomMax = 3;
+  zoomStep = 0.05;
+
+  try {
+    const caps = track?.getCapabilities?.();
+    const z = caps?.zoom;
+    if (z && typeof z.min === "number" && typeof z.max === "number") {
+      zoomMode = "hardware";
+      zoomMin = Math.max(1, z.min);
+      zoomMax = Math.max(zoomMin, z.max);
+      zoomStep = typeof z.step === "number" && z.step > 0 ? z.step : 0.05;
+    }
+  } catch {}
+
+  currentZoom = clamp(currentZoom, zoomMin, zoomMax);
+  updateZoomUI();
+  await applyZoom(currentZoom);
 }
 
 /* ================== loop / drawing ================== */
@@ -234,7 +305,7 @@ function loopLive(){
     if (!isFrozen){
       // Guard: drawImage can throw if video hasn't produced a frame yet.
       if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        drawVideoFrame();
         // No mouse detection pre-capture; optional hand skeleton OK
         if (skeletonLive) drawSkeletonLive();
       }
@@ -300,9 +371,10 @@ async function populateCams(force=false) {
 }
 async function startCam(deviceId) {
   stopCam();
-  let constraints = deviceId
+  // Keep first request lightweight for faster camera warm-up.
+  const constraints = deviceId
     ? { video: { deviceId: { exact: deviceId } }, audio: false }
-    : { video: { facingMode: { ideal: "user" }, width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:30} }, audio:false };
+    : { video: { facingMode: { ideal: "user" } }, audio: false };
   try { stream = await navigator.mediaDevices.getUserMedia(constraints); }
   catch { try { stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false }); }
           catch (e3) { return handleGUMError(e3); } }
@@ -316,6 +388,7 @@ async function startCam(deviceId) {
   }
   const track = stream.getVideoTracks()[0]; const settings = track.getSettings?.() || {};
   currentDeviceId = settings.deviceId || deviceId || null; 
+  setupZoomForTrack(track).catch(() => {});
   if (camName) {
     const label = track.label || "Camera";
     // Truncate long camera names to prevent UI overflow
@@ -324,6 +397,9 @@ async function startCam(deviceId) {
     camName.title = label; // Show full name on hover
   }
   if (currentDeviceId && cameraSelect) { [...cameraSelect.options].some(o => (o.value===currentDeviceId && (cameraSelect.value=o.value,true))); }
+  if (cameraSelect && cameraSelect.options.length === 0) {
+    populateCams(false).catch(() => {});
+  }
 }
 function stopCam(){ 
   if (stream) { 
@@ -342,19 +418,25 @@ if (typeof window !== 'undefined') {
 }
 function handleGUMError(e){ showToast("Camera error: " + (e?.message || e)); }
 async function initCameraLayer() {
+  if (!/\/grip\/?$/.test(location.pathname)) {
+    stopCam();
+    return;
+  }
   if (!(location.protocol==="https:" || location.hostname==="localhost")) {
     showToast("Use HTTPS or localhost (not file://) for camera."); return;
   }
   video.setAttribute("playsinline",""); video.playsInline = true; video.muted = true;
-  await ensureCamPermission();
-  await populateCams(true);
   await startCam();
+  if (stream) {
+    populateCams(false).catch(() => {});
+  }
   cameraSelect.onchange = async () => startCam(cameraSelect.value);
-  refreshCams.onclick   = () => populateCams(true);
+  refreshCams.onclick   = () => populateCams(false);
 }
 
 /* ================== UI ================== */
 function wireUI(){
+  if (zoomRange) zoomRange.oninput = (e) => applyZoom(e.target.value);
   if (timerBtn)   timerBtn.onclick = () => startCountdown(5);
   if (snapBtn)    snapBtn.onclick  = () => capture();
   if (acceptBtn)  acceptBtn.onclick= () => acceptShot();
@@ -630,7 +712,7 @@ async function capture(){
   ensureCanvasSizes();
 
   // draw the current camera frame to #frame
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  drawVideoFrame();
 
   // draw red outline (mask/box) to #overlay
   await drawMouseOutlineRedOnFrozen(); // one-time detection after freeze
@@ -1168,12 +1250,6 @@ async function detectBestMouseBoxFromDataUrl(dataUrl, size) {
   return null;
 }
 
-function pipAngle(lm, mcp, pip, tip){
-  const a = { x: lm[mcp].x, y: lm[mcp].y }, b = { x: lm[pip].x, y: lm[pip].y }, c = { x: lm[tip].x, y: lm[tip].y };
-  const v1 = { x: a.x - b.x, y: a.y - b.y }, v2 = { x: c.x - b.x, y: c.y - b.y };
-  const dot = v1.x*v2.x + v1.y*v2.y; const L1 = Math.hypot(v1.x,v1.y), L2 = Math.hypot(v2.x,v2.y);
-  const cos = Math.max(-1, Math.min(1, dot/(L1*L2||1))); return Math.acos(cos) * 180/Math.PI;
-}
 function mapGripPreference(grip){
   const g = String(grip || "").toLowerCase().trim();
   if (g.includes("relaxed") && g.includes("claw")) return { grip: "claw", relaxed: true };

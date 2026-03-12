@@ -101,7 +101,8 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
         }`}
         style={{
           animation: shouldCycleBackdrop ? "mf-fallback-crossfade 18s ease-in-out infinite" : undefined,
-          background: "linear-gradient(135deg, #05060a 0%, #060913 28%, #0a0a1c 55%, #081428 78%, #05060a 100%)",
+          background:
+            "linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 28%, var(--bg-secondary) 55%, var(--bg-tertiary) 78%, var(--bg0) 100%)",
         }}
       >
         {/* Subtle magenta/cyan ambient glow */}
@@ -109,7 +110,7 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse at 12% 18%, rgba(217, 70, 239, 0.16) 0%, transparent 62%), radial-gradient(ellipse at 88% 86%, rgba(34, 211, 238, 0.14) 0%, transparent 58%)",
+              "radial-gradient(ellipse at 12% 18%, rgba(139, 92, 246, 0.16) 0%, transparent 62%), radial-gradient(ellipse at 88% 86%, rgba(0, 168, 232, 0.14) 0%, transparent 58%)",
           }}
         />
         

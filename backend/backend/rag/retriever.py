@@ -2,15 +2,20 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 from backend import config
 from backend.rag.index_builder import build_embeddings
 from backend.rag.schemas import RagPreferences, RagSource
+
+try:
+    from sentence_transformers import SentenceTransformer
+except Exception:  # pragma: no cover - optional dependency
+    SentenceTransformer = None  # type: ignore[assignment]
 
 try:
     import chromadb
@@ -24,10 +29,15 @@ _embedder: Optional[SentenceTransformer] = None
 _collection = None
 
 
-def _get_embedder() -> SentenceTransformer:
+def _get_embedder() -> Optional[SentenceTransformer]:
     global _embedder
+    if SentenceTransformer is None:
+        return None
     if _embedder is None:
-        _embedder = SentenceTransformer(config.EMBED_MODEL_NAME)
+        try:
+            _embedder = SentenceTransformer(config.EMBED_MODEL_NAME)
+        except Exception:
+            return None
     return _embedder
 
 
@@ -63,6 +73,22 @@ def _load_docs(path: Path) -> List[Dict[str, Any]]:
 def _cosine(a: np.ndarray, b: np.ndarray) -> float:
     denom = (np.linalg.norm(a) * np.linalg.norm(b)) + 1e-9
     return float(np.dot(a, b) / denom)
+
+
+def _tokenize(text: str) -> set[str]:
+    return {tok for tok in re.findall(r"[a-z0-9]+", (text or "").lower()) if tok}
+
+
+def _lexical_score(query_tokens: set[str], text: str) -> float:
+    if not query_tokens:
+        return 0.0
+    tokens = _tokenize(text)
+    if not tokens:
+        return 0.0
+    overlap = len(query_tokens & tokens)
+    if overlap <= 0:
+        return 0.0
+    return overlap / math.sqrt(len(tokens))
 
 
 def _hard_filter(meta: Dict[str, Any], prefs: RagPreferences) -> bool:
@@ -108,26 +134,30 @@ def retrieve(query: str, prefs: Optional[RagPreferences] = None, k: int = 8) -> 
 
     if collection is not None:
         n_results = min(max(k * 8, 32), 256)
-        results = collection.query(query_texts=[query], n_results=n_results)
-        docs: List[RagSource] = []
-        relaxed: List[RagSource] = []
-        ids = results.get("ids", [[]])[0]
-        texts = results.get("documents", [[]])[0]
-        metas = results.get("metadatas", [[]])[0]
-        distances = results.get("distances", [[]])[0]
-        for doc_id, text, meta, dist in zip(ids, texts, metas, distances):
-            meta = meta or {}
-            score = 1.0 - float(dist) if dist is not None else 0.0
-            item = RagSource(id=doc_id, text=text or "", meta=meta, score=score)
-            if _hard_filter(meta, prefs):
-                docs.append(item)
-            else:
-                relaxed.append(item)
-            if len(docs) >= k:
-                break
-        if len(docs) < k:
-            docs.extend(relaxed[: k - len(docs)])
-        return docs
+        try:
+            results = collection.query(query_texts=[query], n_results=n_results)
+        except Exception:
+            results = None
+        if results is not None:
+            docs: List[RagSource] = []
+            relaxed: List[RagSource] = []
+            ids = results.get("ids", [[]])[0]
+            texts = results.get("documents", [[]])[0]
+            metas = results.get("metadatas", [[]])[0]
+            distances = results.get("distances", [[]])[0]
+            for doc_id, text, meta, dist in zip(ids, texts, metas, distances):
+                meta = meta or {}
+                score = 1.0 - float(dist) if dist is not None else 0.0
+                item = RagSource(id=doc_id, text=text or "", meta=meta, score=score)
+                if _hard_filter(meta, prefs):
+                    docs.append(item)
+                else:
+                    relaxed.append(item)
+                if len(docs) >= k:
+                    break
+            if len(docs) < k:
+                docs.extend(relaxed[: k - len(docs)])
+            return docs
 
     docs = _load_docs(config.RAG_EMBEDDINGS_PATH)
     if not docs:
@@ -140,12 +170,17 @@ def retrieve(query: str, prefs: Optional[RagPreferences] = None, k: int = 8) -> 
         return []
 
     embedder = _get_embedder()
-    query_vec = embedder.encode(query, normalize_embeddings=True)
+    query_vec = embedder.encode(query, normalize_embeddings=True) if embedder is not None else None
+    query_tokens = _tokenize(query)
     strict: List[RagSource] = []
     relaxed: List[RagSource] = []
     for doc in docs:
         meta = doc.get("meta") or {}
-        score = _cosine(query_vec, np.array(doc.get("vector", []), dtype=np.float32))
+        if query_vec is not None:
+            score = _cosine(query_vec, np.array(doc.get("vector", []), dtype=np.float32))
+        else:
+            haystack = f"{doc.get('text', '')}\n{json.dumps(meta, sort_keys=True)}"
+            score = _lexical_score(query_tokens, haystack)
         item = RagSource(
             id=str(doc.get("id", "")),
             text=str(doc.get("text", "")),

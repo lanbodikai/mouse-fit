@@ -178,7 +178,7 @@ def test_chat_invalid_request_uses_error_envelope():
     assert data["request_id"]
 
 
-def test_invalid_token_returns_401_envelope(monkeypatch):
+def test_invalid_token_does_not_break_public_routes(monkeypatch):
     def _always_fail(_: str):
         raise AuthError("auth_invalid_token", "Invalid token", status_code=401)
 
@@ -187,6 +187,21 @@ def test_invalid_token_returns_401_envelope(monkeypatch):
 
     client = TestClient(api_main.app)
     response = client.get("/api/health", headers={"Authorization": "Bearer bad-token"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["ok"] is True
+    assert data["request_id"]
+
+
+def test_invalid_token_still_fails_protected_routes(monkeypatch):
+    def _always_fail(_: str):
+        raise AuthError("auth_invalid_token", "Invalid token", status_code=401)
+
+    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(api_main, "verify_bearer_token", _always_fail, raising=True)
+
+    client = TestClient(api_main.app)
+    response = client.get("/api/profile/me", headers={"Authorization": "Bearer bad-token"})
     assert response.status_code == 401
     data = response.json()
     assert data["code"] == "auth_invalid_token"
@@ -240,6 +255,79 @@ def test_profile_me_upserts_and_returns_profile(monkeypatch):
     assert data["email"] == "user@example.com"
     assert data["theme"] == "dark"
     assert data["request_id"]
+
+
+def test_me_returns_survey_status(monkeypatch):
+    from backend.auth import AuthContext
+
+    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(
+        api_main,
+        "verify_bearer_token",
+        lambda _token: AuthContext(user_id="user-1", claims={"email": "user@example.com"}),
+        raising=True,
+    )
+    conn = _ProfileConn()
+    conn.profile["metadata"] = {
+        "theme": "dark",
+        "has_completed_survey": True,
+        "survey_dismissed_until": "2026-03-06T12:00:00+00:00",
+    }
+    monkeypatch.setattr(api_main, "get_conn", lambda: conn, raising=True)
+
+    client = TestClient(api_main.app)
+    response = client.get("/api/me", headers={"Authorization": "Bearer valid-token"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == "user-1"
+    assert data["hasCompletedSurvey"] is True
+    assert data["surveyDismissedUntil"] == "2026-03-06T12:00:00+00:00"
+    assert data["theme"] == "dark"
+
+
+def test_complete_survey_sets_completion_flag(monkeypatch):
+    from backend.auth import AuthContext
+
+    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(
+        api_main,
+        "verify_bearer_token",
+        lambda _token: AuthContext(user_id="user-1", claims={"email": "user@example.com"}),
+        raising=True,
+    )
+    conn = _ProfileConn()
+    monkeypatch.setattr(api_main, "get_conn", lambda: conn, raising=True)
+
+    client = TestClient(api_main.app)
+    response = client.post("/api/survey/complete", headers={"Authorization": "Bearer valid-token"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["hasCompletedSurvey"] is True
+    assert data["surveyDismissedUntil"] is None
+    assert conn.profile["metadata"]["has_completed_survey"] is True
+    assert conn.profile["metadata"]["survey_dismissed_until"] is None
+
+
+def test_dismiss_survey_sets_24h_snooze(monkeypatch):
+    from backend.auth import AuthContext
+
+    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(
+        api_main,
+        "verify_bearer_token",
+        lambda _token: AuthContext(user_id="user-1", claims={"email": "user@example.com"}),
+        raising=True,
+    )
+    conn = _ProfileConn()
+    monkeypatch.setattr(api_main, "get_conn", lambda: conn, raising=True)
+
+    client = TestClient(api_main.app)
+    response = client.post("/api/survey/dismiss", headers={"Authorization": "Bearer valid-token"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["hasCompletedSurvey"] is False
+    assert isinstance(data["surveyDismissedUntil"], str)
+    assert conn.profile["metadata"]["survey_dismissed_until"] == data["surveyDismissedUntil"]
 
 
 def test_profile_me_update_saves_display_name_and_theme(monkeypatch):

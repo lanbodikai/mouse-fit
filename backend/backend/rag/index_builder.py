@@ -7,9 +7,12 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from sentence_transformers import SentenceTransformer
-
 from backend import config
+
+try:
+    from sentence_transformers import SentenceTransformer
+except Exception:  # pragma: no cover - optional dependency
+    SentenceTransformer = None  # type: ignore[assignment]
 
 try:
     import psycopg
@@ -465,10 +468,16 @@ def build_embeddings(rebuild: bool = False) -> int:
     if not _needs_rebuild(rebuild=rebuild):
         return 0
 
+    if SentenceTransformer is None:
+        return 0
+
     sources = _read_sources()
     mice = _collect_mice()
 
-    embedder = SentenceTransformer(config.EMBED_MODEL_NAME)
+    try:
+        embedder = SentenceTransformer(config.EMBED_MODEL_NAME)
+    except Exception:
+        return 0
 
     docs: List[Dict[str, Any]] = []
     seen_ids: Dict[str, int] = {}

@@ -6,34 +6,40 @@ import { ShellNav } from "@/components/shell/ShellNav";
 
 const styles = `
 :root {
-  --bg: #05060a;
-  --fg: #eaf0ff;
-  --sub: #a6b0c8;
-  --border: rgba(217, 70, 239, 0.15);
-  --accent: #d946ef;
-  --neon: linear-gradient(90deg, #d946ef 0%, #22d3ee 50%, #a855f7 100%);
-  --glow: 0 0 24px rgba(217, 70, 239, 0.2), 0 0 34px rgba(34, 211, 238, 0.12);
+  --bg: var(--bg0);
+  --fg: var(--text-primary);
+  --sub: var(--text-secondary);
+  --border: var(--border-color);
+  --accent: var(--accent-gamer);
+  --accent-soft: var(--accent-gamer-fill);
+  --accent-soft-strong: var(--accent-gamer-fill-strong);
+  --highlight-soft: var(--accent-highlight-fill);
+  --surface: var(--surface-soft);
+  --surface-elevated: var(--surface-strong);
+  --surface-focused: var(--surface-veil);
+  --glow: var(--accent-gamer-glow);
 }
 
 .tool-shell, .tool-shell * { box-sizing: border-box; }
 
 .tool-shell {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   font-family: 'Sora', system-ui, Arial;
   color: var(--fg);
+  padding: clamp(10px, 1.4vw, 16px);
 }
 
 .page {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 20px;
+  padding: 28px 26px 36px;
 }
 
 .layout {
   display: grid;
   grid-template-columns: 1fr 320px;
-  gap: 24px;
+  gap: 28px;
   align-items: start;
 }
 
@@ -45,8 +51,8 @@ const styles = `
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  gap: 12px;
+  margin-bottom: 24px;
+  gap: 16px;
 }
 
 .search-bar input[type="text"] {
@@ -54,7 +60,7 @@ const styles = `
   min-width: 200px;
   padding: 14px 18px;
   border-radius: 16px;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface-elevated);
   border: 1px solid var(--border);
   color: var(--fg);
   font-family: inherit;
@@ -65,7 +71,7 @@ const styles = `
 .search-bar input[type="text"]:focus {
   outline: none;
   border-color: var(--accent);
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--surface-focused);
 }
 
 .search-bar input[type="text"]::placeholder {
@@ -78,31 +84,30 @@ const styles = `
   font-weight: 600;
   cursor: pointer;
   border: 1px solid var(--border);
-  background: rgba(217, 70, 239, 0.1);
+  background: var(--accent-soft);
   color: var(--fg);
   transition: all 0.2s;
   font-size: 13px;
 }
 
 .btn:hover {
-  background: rgba(217, 70, 239, 0.2);
+  background: var(--accent-soft-strong);
   border-color: var(--accent);
-  box-shadow: var(--glow);
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
 .pill {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 18px;
+  gap: 12px;
+  padding: 22px;
   border-radius: 20px;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface);
   border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -111,8 +116,8 @@ const styles = `
 .pill:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
-  background: rgba(217, 70, 239, 0.05);
-  box-shadow: var(--glow);
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--accent);
 }
 
 .pill h3 {
@@ -135,23 +140,36 @@ const styles = `
   border-radius: 10px;
   font-size: 0.7rem;
   font-family: 'JetBrains Mono', monospace;
-  background: rgba(217, 70, 239, 0.1);
+  background: var(--accent-soft);
   color: var(--fg);
   border: 1px solid var(--border);
 }
 
-.chip--weight { background: rgba(217, 70, 239, 0.15); }
-.chip--shape { background: rgba(34, 211, 238, 0.15); }
+.chip--weight {
+  background: var(--accent-emerald-fill, rgba(52, 211, 153, 0.14));
+  border-color: var(--accent-emerald-line, rgba(52, 211, 153, 0.28));
+  color: var(--accent-emerald, #34d399);
+}
+.chip--shape {
+  background: var(--accent-violet-fill, rgba(139, 92, 246, 0.14));
+  border-color: var(--accent-violet-line, rgba(139, 92, 246, 0.28));
+  color: var(--accent-violet, #8b5cf6);
+}
+.chip--sensor {
+  background: var(--accent-amber-fill, rgba(245, 158, 11, 0.14));
+  border-color: var(--accent-amber-line, rgba(245, 158, 11, 0.28));
+  color: var(--accent-amber, #f59e0b);
+}
 
 #details.card {
   position: sticky;
   top: 100px;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--surface);
   border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
   border-radius: 24px;
-  padding: 24px;
+  padding: 28px;
   backdrop-filter: blur(10px);
-  box-shadow: var(--glow);
 }
 
 #details h2 {
@@ -218,7 +236,7 @@ export default function DatabasePage() {
   return (
     <>
       <ShellNav currentPage="database" />
-      <div className="h-full">
+      <div className="h-full min-h-0">
         <style dangerouslySetInnerHTML={{ __html: styles }} />
         <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
         <Script
@@ -236,4 +254,3 @@ export default function DatabasePage() {
     </>
   );
 }
-

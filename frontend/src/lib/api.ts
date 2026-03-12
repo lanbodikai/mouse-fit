@@ -1,5 +1,5 @@
-import type { Grip, Measurement, Mouse, Report, ThemeMode, UserProfile } from "./types";
-import { getAccessToken } from "./auth";
+import type { CurrentUser, Grip, Measurement, Mouse, Report, ThemeMode, UserProfile } from "./types";
+import { getAccessToken, handleUnauthorizedSession } from "./auth";
 
 declare global {
   interface Window {
@@ -24,7 +24,7 @@ export function getApiBase(): string {
   const envBase = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (typeof envBase === "string" && envBase.trim()) return normalizeBase(envBase);
 
-  if (process.env.NODE_ENV === "development") return "http://localhost:8000";
+  if (process.env.NODE_ENV === "development") return "http://127.0.0.1:8000";
 
   return "https://api.mousefit.pro";
 }
@@ -54,6 +54,9 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new Error(`API request failed (network error) for ${url}: ${message}`);
+  }
+  if (res.status === 401) {
+    handleUnauthorizedSession();
   }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -91,6 +94,22 @@ export function updateMyProfile(payload: {
   return apiJson("/api/profile/me", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export function getMe(): Promise<CurrentUser> {
+  return apiJson("/api/me");
+}
+
+export function completeSurvey(): Promise<CurrentUser> {
+  return apiJson("/api/survey/complete", {
+    method: "POST",
+  });
+}
+
+export function dismissSurveyReminder(): Promise<CurrentUser> {
+  return apiJson("/api/survey/dismiss", {
+    method: "POST",
   });
 }
 

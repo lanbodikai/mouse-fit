@@ -1,9 +1,4 @@
-import nodemailer from "nodemailer";
-
-function getEnv(name: string): string | undefined {
-  const v = process.env[name];
-  return v && v.trim() ? v.trim() : undefined;
-}
+import { createSmtpTransport, EMAIL_PATTERN, getEnv, getSmtpConfig } from "@/lib/server/mail";
 
 function json(status: number, data: unknown) {
   return new Response(JSON.stringify(data), {
@@ -73,7 +68,7 @@ export async function POST(req: Request) {
   if (!safeName || safeName.length > 120) {
     return json(400, { code: "invalid_name", message: "Name is required", request_id: rid });
   }
-  if (!safeEmail || safeEmail.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(safeEmail)) {
+  if (!safeEmail || safeEmail.length > 254 || !EMAIL_PATTERN.test(safeEmail)) {
     return json(400, { code: "invalid_email", message: "Valid email is required", request_id: rid });
   }
   if (!safeMessage || safeMessage.length > 5000) {
@@ -81,14 +76,10 @@ export async function POST(req: Request) {
   }
 
   const toEmail = getEnv("CONTACT_TO") ?? "lanbodikai@gmail.com";
-
-  const smtpHost = getEnv("SMTP_HOST");
-  const smtpPort = Number(getEnv("SMTP_PORT") ?? "587");
-  const smtpUser = getEnv("SMTP_USER");
-  const smtpPass = getEnv("SMTP_PASS");
+  const smtpConfig = getSmtpConfig();
 
   // You must configure SMTP credentials; we don't hardcode secrets.
-  if (!smtpHost || !smtpUser || !smtpPass || !Number.isFinite(smtpPort)) {
+  if (!smtpConfig) {
     return json(500, {
       code: "email_not_configured",
       message:
@@ -97,17 +88,8 @@ export async function POST(req: Request) {
     });
   }
 
-  const fromEmail = getEnv("CONTACT_FROM") ?? smtpUser;
-
-  const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-  });
+  const fromEmail = getEnv("CONTACT_FROM") ?? smtpConfig.user;
+  const transporter = createSmtpTransport(smtpConfig);
 
   try {
     await transporter.sendMail({

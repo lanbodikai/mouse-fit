@@ -9,6 +9,7 @@ yarn-error.log*
 out/
 build/
 dist/
+*.tsbuildinfo
 
 # Environment
 .env
@@ -40,7 +41,9 @@ docker-compose.yml
 # Testing
 coverage/
 .nyc_output/
+tests/
 
 # Misc
 *.log
 .cache/
+README.md

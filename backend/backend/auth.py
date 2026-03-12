@@ -9,6 +9,8 @@ from jwt import InvalidTokenError, PyJWKClient
 
 from backend import config
 
+SUPPORTED_JWT_ALGORITHMS = {"RS256", "ES256", "EdDSA"}
+
 
 class AuthError(Exception):
     def __init__(self, code: str, message: str, status_code: int = 401):
@@ -52,6 +54,23 @@ def parse_bearer_token(header_value: str | None) -> Optional[str]:
     return token or None
 
 
+def _jwt_algorithms_for_token(token: str) -> list[str]:
+    try:
+        header = jwt.get_unverified_header(token)
+    except InvalidTokenError as exc:
+        raise AuthError("auth_invalid_token", f"Invalid token: {exc}", status_code=401) from exc
+
+    algorithm = header.get("alg")
+    if not isinstance(algorithm, str) or algorithm not in SUPPORTED_JWT_ALGORITHMS:
+        raise AuthError(
+            "auth_invalid_token",
+            f"Invalid token: unsupported signing algorithm {algorithm!r}.",
+            status_code=401,
+        )
+
+    return [algorithm]
+
+
 def verify_bearer_token(token: str) -> AuthContext:
     if not config.ENABLE_AUTH:
         raise AuthError("auth_disabled", "Authentication is disabled on this server.", status_code=403)
@@ -60,12 +79,13 @@ def verify_bearer_token(token: str) -> AuthContext:
         raise AuthError("auth_missing_token", "Missing bearer token.", status_code=401)
 
     try:
+        algorithms = _jwt_algorithms_for_token(token)
         signing_key = _jwks_client().get_signing_key_from_jwt(token)
         options = {"verify_aud": bool(config.SUPABASE_JWT_AUDIENCE)}
         claims = jwt.decode(
             token,
             signing_key.key,
-            algorithms=["RS256"],
+            algorithms=algorithms,
             audience=config.SUPABASE_JWT_AUDIENCE if config.SUPABASE_JWT_AUDIENCE else None,
             issuer=config.SUPABASE_JWT_ISSUER if config.SUPABASE_JWT_ISSUER else None,
             options=options,

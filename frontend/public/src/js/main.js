@@ -4,11 +4,7 @@ import { loadMice } from "./mice-api.js";
 
 // ===== mouse DB (backend API) =====
 let MICE = [];
-try {
-  MICE = await loadMice();
-} catch (e) {
-  console.warn("Failed to load mice from API — recommendations will be skipped (ok for now).", e);
-}
+let miceLoadPromise = null;
 
 /* ================== constants ================== */
 const CARD_W_MM = 85.60, CARD_H_MM = 53.98;        // ISO/IEC 7810 ID-1
@@ -33,6 +29,8 @@ const cameraSelect = document.getElementById("cameraSelect");
 const refreshCams  = document.getElementById("refreshCams");
 const startCamBtn  = document.getElementById("startCamBtn");
 const camName      = document.getElementById("camName");
+const zoomRange    = document.getElementById("zoomRange");
+const zoomValue    = document.getElementById("zoomValue");
 
 const statusBadge  = document.getElementById("status");
 const toast        = document.getElementById("toast");
@@ -41,7 +39,6 @@ const countdownEl  = document.getElementById("countdown");
 // NOTE: .guides is a CLASS in your HTML
 const guides       = document.querySelector(".guides");
 const handGuide    = document.getElementById("handGuide");
-const cardGuide    = document.getElementById("cardGuide");
 
 const liveBtns     = document.getElementById("liveBtns");
 const refineRow    = document.getElementById("refineRow");
@@ -49,19 +46,26 @@ const timerBtn     = document.getElementById("timer");
 const snapBtn      = document.getElementById("snap");
 const resetBtn     = document.getElementById("reset");
 const confirmBtn   = document.getElementById("confirm");
-const snapEdgesBtn = document.getElementById("snapEdges");
-const snapTipBtn   = document.getElementById("snapTip");
+const snapMeasureBtn = document.getElementById("snapMeasure");
 
 const toggleSkel   = document.getElementById("toggleSkel");
-const skelState    = null; // Removed from UI
+const skelState    = document.getElementById("skelState");
 // Correct ID: measure.html uses id="stepPill"
 const stepPill     = null; // Removed from UI
 const toggleGuide  = document.getElementById("toggleGuide");
 const guideState   = document.getElementById("guideState");
 const dockPanel    = document.querySelector('.control-dock .panel');
 const footerYear   = document.getElementById("y");
+const PREF_SKELETON = "mf:pref:skeleton-live";
+const PREF_CAM_ZOOM = "mf:pref:measure-camera-zoom";
 
 if (footerYear) footerYear.textContent = new Date().getFullYear();
+
+function getStoredBool(key, fallback = false) {
+  const value = localStorage.getItem(key);
+  if (value === null) return fallback;
+  return value === "1" || value === "true";
+}
 
 // === required draggable handles (must exist in measure.html) ===
 const pEls = ["p0","p1","p2","p3"].map(id => document.getElementById(id));
@@ -80,14 +84,26 @@ let wrist = null, tip = null, palmL = null, palmR = null;
 
 let handLandmarker = null, runMode = null;
 let mpFailed = false;
+let skeletonInitPromise = null;
 
 // live skeleton state + user preference (remember across resets)
-let skeletonLive = false;
-let userPrefSkeletonOn = true; // default ON
+let skeletonLive = getStoredBool(PREF_SKELETON, true);
 
 let countdownTimer = null;
 let isFrozen = false; // controls live vs frozen rendering
-let nextCorner = 0;
+let cardDrag = null;
+let currentZoom = 1;
+let zoomMin = 1;
+let zoomMax = 3;
+let zoomStep = 0.05;
+let zoomMode = "digital";
+
+try {
+  const savedZoom = parseFloat(localStorage.getItem(PREF_CAM_ZOOM) || "1");
+  if (Number.isFinite(savedZoom)) {
+    currentZoom = Math.max(1, Math.min(3, savedZoom));
+  }
+} catch {}
 
 /* ================== boot ================== */
 (async function boot() {
@@ -97,20 +113,79 @@ let nextCorner = 0;
   restoreDockScale();
   resize();
   requestAnimationFrame(loopLive);
-
-  // Start skeleton overlay by default (respect user preference)
-  await waitForVideoReady();
-  if (userPrefSkeletonOn) await startSkeleton();
   updateSkeletonUI();
+  ensureSkeletonReady();
+  video?.addEventListener("loadeddata", ensureSkeletonReady);
+  video?.addEventListener("loadedmetadata", ensureSkeletonReady);
 })();
 
-function waitForVideoReady(){
-  return new Promise(res=>{
-    if (video.readyState>=2 && (video.videoWidth||0)>0) return res();
-    const done=()=>{ res(); cleanup(); };
-    const cleanup=()=>{ video.removeEventListener('loadedmetadata',done); video.removeEventListener('playing',done); };
-    video.addEventListener('loadedmetadata',done); video.addEventListener('playing',done);
-  });
+function clampZoom(value, min = zoomMin, max = zoomMax) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function updateZoomUI() {
+  if (zoomRange) {
+    zoomRange.min = String(zoomMin);
+    zoomRange.max = String(zoomMax);
+    zoomRange.step = String(zoomStep);
+    zoomRange.value = String(clampZoom(currentZoom));
+  }
+  if (zoomValue) {
+    zoomValue.textContent = `${currentZoom.toFixed(1)}x`;
+  }
+}
+
+function drawVideoFrame() {
+  if (zoomMode !== "digital" || currentZoom <= 1.001) {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    return;
+  }
+  const vw = video.videoWidth || canvas.width;
+  const vh = video.videoHeight || canvas.height;
+  const cropW = vw / currentZoom;
+  const cropH = vh / currentZoom;
+  const sx = (vw - cropW) / 2;
+  const sy = (vh - cropH) / 2;
+  ctx.drawImage(video, sx, sy, cropW, cropH, 0, 0, canvas.width, canvas.height);
+}
+
+async function applyZoom(value) {
+  currentZoom = clampZoom(Number(value) || 1);
+  try {
+    localStorage.setItem(PREF_CAM_ZOOM, currentZoom.toFixed(2));
+  } catch {}
+  updateZoomUI();
+
+  const track = stream?.getVideoTracks?.()[0];
+  if (!track || zoomMode !== "hardware") return;
+
+  try {
+    await track.applyConstraints({ advanced: [{ zoom: currentZoom }] });
+  } catch {
+    zoomMode = "digital";
+  }
+}
+
+async function setupZoomForTrack(track) {
+  zoomMode = "digital";
+  zoomMin = 1;
+  zoomMax = 3;
+  zoomStep = 0.05;
+
+  try {
+    const caps = track?.getCapabilities?.();
+    const z = caps?.zoom;
+    if (z && typeof z.min === "number" && typeof z.max === "number") {
+      zoomMode = "hardware";
+      zoomMin = Math.max(1, z.min);
+      zoomMax = Math.max(zoomMin, z.max);
+      zoomStep = typeof z.step === "number" && z.step > 0 ? z.step : 0.05;
+    }
+  } catch {}
+
+  currentZoom = clampZoom(currentZoom);
+  updateZoomUI();
+  await applyZoom(currentZoom);
 }
 
 /* ================== CAMERA (robust for localhost/iOS) ================== */
@@ -147,24 +222,19 @@ async function populateCams(force=false) {
 async function startCam(deviceId) {
   stopCam();
 
-  // prefer user-facing @ 1280x720; fallbacks chained below
-  let constraints = deviceId
+  // Keep first request lightweight for faster camera warm-up.
+  const constraints = deviceId
     ? { video: { deviceId: { exact: deviceId } }, audio: false }
-    : { video: { facingMode: { ideal: "user" }, width: {ideal:1280}, height: {ideal:720}, frameRate:{ideal:30} }, audio: false };
+    : { video: { facingMode: { ideal: "user" } }, audio: false };
 
   try {
     stream = await navigator.mediaDevices.getUserMedia(constraints);
   } catch (e1) {
     console.warn("Exact/ideal failed:", e1?.name, e1?.message);
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio:false });
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     } catch (e2) {
-      console.warn("Env fallback failed:", e2?.name, e2?.message);
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
-      } catch (e3) {
-        return handleGUMError(e3);
-      }
+      return handleGUMError(e2);
     }
   }
 
@@ -173,13 +243,13 @@ async function startCam(deviceId) {
   try {
     await video.play();
     if (startCamBtn) startCamBtn.style.display = "none";
-  } catch (playErr) {
+  } catch {
     // autoplay blocked (iOS/Safari/strict desktop)
     if (startCamBtn) {
       startCamBtn.style.display = "block";
       startCamBtn.onclick = async () => {
         try { await video.play(); startCamBtn.style.display = "none"; }
-        catch (e) { showToast("Tap blocked; click the address-bar camera icon, then try again."); }
+        catch { showToast("Tap blocked; click the address-bar camera icon, then try again."); }
       };
     } else {
       const oneTap = async () => { try { await video.play(); } catch {} document.removeEventListener("click", oneTap, true); };
@@ -190,6 +260,7 @@ async function startCam(deviceId) {
   const track = stream.getVideoTracks()[0];
   const settings = track.getSettings?.() || {};
   currentDeviceId = settings.deviceId || deviceId || null;
+  setupZoomForTrack(track).catch(() => {});
   if (camName) {
     const label = track.label || "Camera";
     // Truncate long camera names to prevent UI overflow
@@ -200,6 +271,9 @@ async function startCam(deviceId) {
 
   if (currentDeviceId && cameraSelect) {
     [...cameraSelect.options].some(o => (o.value === currentDeviceId && (cameraSelect.value = o.value, true)));
+  }
+  if (cameraSelect && cameraSelect.options.length === 0) {
+    populateCams(false).catch(() => {});
   }
 
   // restart if tab returns and stream died
@@ -237,6 +311,10 @@ function handleGUMError(e) {
 }
 
 async function initCameraLayer() {
+  if (!/\/measure\/?$/.test(location.pathname)) {
+    stopCam();
+    return;
+  }
   if (!(location.protocol === "https:" || location.hostname === "localhost")) {
     showToast("Use HTTPS or localhost (not file://) for camera.");
     return;
@@ -244,22 +322,26 @@ async function initCameraLayer() {
   // iOS/Safari-friendly
   video.setAttribute("playsinline",""); video.playsInline = true; video.muted = true;
 
-  await ensureCamPermission();
-  await populateCams(true);
   await startCam();
+  if (stream) {
+    populateCams(false).catch(() => {});
+  }
 
   cameraSelect.onchange = async () => startCam(cameraSelect.value);
-  refreshCams.onclick   = () => populateCams(true);
+  refreshCams.onclick   = () => populateCams(false);
 }
 
 /* ================== UI ================== */
 function wireUI() {
+  if (zoomRange) {
+    zoomRange.oninput = (e) => applyZoom(e.target.value);
+  }
   timerBtn.onclick   = () => startCountdown(5);
   snapBtn.onclick    = () => capture();
   resetBtn.onclick   = async () => {
     resetAll();
     await startCam(currentDeviceId);
-    if (userPrefSkeletonOn && !skeletonLive) await startSkeleton();
+    if (skeletonLive) await startSkeleton();
     updateSkeletonUI();
   };
   // Also wire the Reset in the refine toolbar
@@ -268,25 +350,28 @@ function wireUI() {
     resetBtn2.onclick = async () => {
       resetAll();
       await startCam(currentDeviceId);
-      if (userPrefSkeletonOn && !skeletonLive) await startSkeleton();
+      if (skeletonLive) await startSkeleton();
       updateSkeletonUI();
     };
   }
   confirmBtn.onclick = () => confirmCard();
+  if (snapMeasureBtn) {
+    snapMeasureBtn.onclick = async () => {
+      if (!frameData) return;
+      await snapHandMeasurements();
+    };
+  }
 
-  snapEdgesBtn.onclick = () => { if (frameData) snapPalmEdgesSmart(); };
-  snapTipBtn.onclick   = () => snapFingertip();
-
-  toggleSkel.onclick = async () => {
-    if (skeletonLive) {
-      skeletonLive = false;
-      userPrefSkeletonOn = false;
-    } else {
-      await startSkeleton();
-      userPrefSkeletonOn = true;
-    }
-    updateSkeletonUI();
-  };
+  if (toggleSkel) {
+    toggleSkel.onclick = async () => {
+      skeletonLive = !skeletonLive;
+      if (skeletonLive) {
+        await mp("VIDEO");
+        ensureSkeletonReady();
+      }
+      updateSkeletonUI();
+    };
+  }
   if (toggleGuide) {
     toggleGuide.onclick = () => {
       const hidden = guides?.style.display === 'none';
@@ -342,13 +427,55 @@ function wireUI() {
     );
   });
 
-  canvas.addEventListener("dblclick", (e) => {
-    if (!isFrozen) return;
-    const pt = clientToCanvas(e.clientX, e.clientY);
-    movePointEl(pEls[nextCorner], pt);
-    nextCorner = (nextCorner + 1) % 4;
+  canvas.addEventListener("pointerdown", (ev) => {
+    if (!isFrozen || ev.button !== 0) return;
+    cardDrag = {
+      pointerId: ev.pointerId,
+      start: clientToCanvas(ev.clientX, ev.clientY),
+      current: null,
+      active: false,
+      previousCorners: getCardCorners()
+    };
+    if (canvas.setPointerCapture) {
+      try { canvas.setPointerCapture(ev.pointerId); } catch {}
+    }
+  });
+
+  canvas.addEventListener("pointermove", (ev) => {
+    if (!cardDrag || ev.pointerId !== cardDrag.pointerId) return;
+    const pt = clientToCanvas(ev.clientX, ev.clientY);
+    cardDrag.current = pt;
+    if (!cardDrag.active && distance(cardDrag.start, pt) < 8) return;
+    cardDrag.active = true;
+    setCardCornersFromRect(cardDrag.start, pt);
     redrawFrozen();
   });
+
+  const finishCardDrag = (ev) => {
+    if (!cardDrag || ev.pointerId !== cardDrag.pointerId) return;
+    if (canvas.releasePointerCapture) {
+      try { canvas.releasePointerCapture(ev.pointerId); } catch {}
+    }
+    const drag = cardDrag;
+    cardDrag = null;
+    if (!drag.active || !drag.current) return;
+
+    const width = Math.abs(drag.current.x - drag.start.x);
+    const height = Math.abs(drag.current.y - drag.start.y);
+    if (width < 20 || height < 20) {
+      restoreCardCorners(drag.previousCorners);
+      redrawFrozen();
+      showToast("Drag across the card to place its rectangle.", 2400);
+      return;
+    }
+
+    setCardCornersFromRect(drag.start, drag.current);
+    redrawFrozen();
+    showToast("Card box placed. Drag the corners to refine it.", 2200);
+  };
+
+  canvas.addEventListener("pointerup", finishCardDrag);
+  canvas.addEventListener("pointercancel", finishCardDrag);
 }
 
 function updateSkeletonUI() {
@@ -359,6 +486,7 @@ function updateSkeletonUI() {
     if (skelState) skelState.textContent = "Skeleton: Off";
     if (toggleSkel) toggleSkel.textContent = "Turn on skeleton";
   }
+  localStorage.setItem(PREF_SKELETON, skeletonLive ? "1" : "0");
 }
 function updateGuidesUI(){
   const hidden = guides?.style.display === 'none';
@@ -379,7 +507,8 @@ function loopLive() {
       // Guard: drawImage can throw if video hasn't produced a frame yet.
       if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
         resize();
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        drawVideoFrame();
+        ensureSkeletonReady();
         if (skeletonLive) drawSkeletonLive();
       }
     } else if (frameData) {
@@ -423,9 +552,40 @@ async function mp(mode) {
 }
 
 async function startSkeleton() {
-  const lm = await mp("VIDEO");
-  if (!lm) return;
-  skeletonLive = true;
+  if (handLandmarker && runMode === "VIDEO") return handLandmarker;
+  if (skeletonInitPromise) return skeletonInitPromise;
+  skeletonInitPromise = mp("VIDEO");
+  try {
+    return await skeletonInitPromise;
+  } finally {
+    skeletonInitPromise = null;
+  }
+}
+
+function ensureSkeletonReady() {
+  if (!skeletonLive) return;
+  if (skeletonInitPromise) return;
+  if (handLandmarker && runMode === "VIDEO") return;
+  startSkeleton().catch((err) => console.warn("[Skeleton] init failed", err));
+}
+
+async function ensureMiceLoaded() {
+  if (MICE.length) return MICE;
+  if (!miceLoadPromise) {
+    miceLoadPromise = loadMice()
+      .then((rows) => {
+        MICE = Array.isArray(rows) ? rows : [];
+        return MICE;
+      })
+      .catch((e) => {
+        console.warn("Failed to load mice from API — recommendations will be skipped (ok for now).", e);
+        return [];
+      })
+      .finally(() => {
+        miceLoadPromise = null;
+      });
+  }
+  return miceLoadPromise;
 }
 
 function drawSkeletonLive() {
@@ -473,40 +633,24 @@ function startCountdown(seconds = 5) {
 
 function capture() {
   resize();
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  drawVideoFrame();
   frameData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const handGuideRect = handGuide?.getBoundingClientRect?.() || null;
 
   // Freeze
   isFrozen = true;
-  nextCorner = 0;
+  cardDrag = null;
   statusBadge.textContent = "Frozen";
   if (guides) guides.style.display = "none";
   liveBtns.style.display = "none";
   refineRow.style.display = "flex";
   if (stepPill) stepPill.textContent = "Step: card";
 
-  // Seed card corners from visible guide (cardGuide if present; else handGuide)
-  const rectC = canvas.getBoundingClientRect();
-  const guideRect = (cardGuide && cardGuide.getBoundingClientRect()) || handGuide.getBoundingClientRect();
-  const toCanvas = (x, y) => ({
-    x: (x - rectC.left) * canvas.width  / rectC.width,
-    y: (y - rectC.top)  * canvas.height / rectC.height
-  });
-  const pad = 16;
-  const TL = toCanvas(guideRect.left  + pad, guideRect.top    + pad);
-  const TR = toCanvas(guideRect.right - pad, guideRect.top    + pad);
-  const BR = toCanvas(guideRect.right - pad, guideRect.bottom - pad);
-  const BL = toCanvas(guideRect.left  + pad, guideRect.bottom - pad);
-  [TL, TR, BR, BL].forEach((pt, i) => {
-    pEls[i].style.display = "block";
-    movePointEl(pEls[i], pt);
-  });
-  if (!cardGuide || cardGuide.style.display === "none") {
-    showToast("Tip: double-click to place corners TL → TR → BR → BL.", 2600);
-  }
+  clearCardCorners();
+  showToast("Drag from one card corner to the opposite corner, then fine-tune the handles.", 3000);
 
   // Default handles for length + width within handGuide
-  seedDefaultHandles();
+  seedDefaultHandles(handGuideRect);
 
   // Auto seed via AI (frozen frame) — but only snap when user presses buttons
   autoSeedFromImage().catch(()=>{});
@@ -514,14 +658,14 @@ function capture() {
   redrawFrozen();
 }
 
-function confirmCard() {
+async function confirmCard() {
   // Ensure all 4 corners are placed
-  if (pEls.some(el => !el.dataset.x)) {
-    showToast("Place all 4 card corners first.");
+  if (!hasCardCorners()) {
+    showToast("Drag across the card to place its rectangle first.");
     return;
   }
   computeH();             // homography from card
-  const measure = computeAndStore();      // save results + snapshot
+  const measure = await computeAndStore();      // save results + snapshot
   try {
     if (measure && typeof window.finishMeasurement === "function") {
       window.finishMeasurement(measure.lengthMm, measure.widthMm);
@@ -538,6 +682,7 @@ function resetAll() {
     countdownEl.style.display = "none";
   }
   isFrozen = false;
+  cardDrag = null;
 
   H = null;
   frameData = null;
@@ -557,9 +702,16 @@ function resetAll() {
 }
 
 /* ================== Seeding & snapping ================== */
-function seedDefaultHandles() {
+function seedDefaultHandles(handRect = handGuide?.getBoundingClientRect?.()) {
   const rc = canvas.getBoundingClientRect();
-  const rh = handGuide.getBoundingClientRect();
+  const rh = handRect && handRect.width > 0 && handRect.height > 0
+    ? handRect
+    : {
+        left: rc.left + rc.width * 0.12,
+        right: rc.left + rc.width * 0.88,
+        top: rc.top + rc.height * 0.08,
+        bottom: rc.top + rc.height * 0.92
+      };
   const toCanvas = (x, y) => ({
     x: (x - rc.left) * canvas.width  / rc.width,
     y: (y - rc.top)  * canvas.height / rc.height
@@ -604,21 +756,31 @@ async function autoSeedFromImage() {
     redrawFrozen();
   } catch (err) {
     console.warn("Auto-seed failed:", err);
+  } finally {
+    try { if (skeletonLive) await mp("VIDEO"); } catch {}
   }
 }
 
-function snapPalmEdgesSmart() {
+async function snapHandMeasurements() {
+  const fingertipSnapped = await snapFingertip();
+  const widthSnapped = await snapPalmEdgesSmart();
+  if (fingertipSnapped || widthSnapped) {
+    showToast("Hand points snapped. Adjust them manually if needed.", 2200);
+  } else {
+    showToast("Couldn’t auto-snap the hand. Adjust the handles manually.", 2400);
+  }
+}
+
+async function snapPalmEdgesSmart() {
   // read latest handle positions so visuals == math
   wrist = getXY(hA); tip = getXY(hB);
-  if (!frameData) return;
+  if (!frameData) return false;
 
-  const useHB = async () => {
-    try {
-      await mp("IMAGE");
-      const res = handLandmarker.detect(canvas);
-      const lm = res?.landmarks?.[0];
-      if (!lm) return false;
-
+  try {
+    const detector = await mp("IMAGE");
+    const res = detector?.detect(canvas);
+    const lm = res?.landmarks?.[0];
+    if (lm) {
       // HB line ≈ index MCP (5) to pinky MCP (17)
       const p5  = { x: lm[5].x  * canvas.width, y: lm[5].y  * canvas.height };
       const p17 = { x: lm[17].x * canvas.width, y: lm[17].y * canvas.height };
@@ -627,46 +789,47 @@ function snapPalmEdgesSmart() {
       const center = { x: (p5.x + p17.x) / 2, y: (p5.y + p17.y) / 2 };
       const dirHB  = unitVec({ x: p17.x - p5.x, y: p17.y - p5.y });
 
-      const leftHB  = searchEdge(center, { x: -dirHB.x, y: -dirHB.y }, EDGE_SEARCH);
-      const rightHB = searchEdge(center, { x:  dirHB.x, y:  dirHB.y }, EDGE_SEARCH);
-
-      palmL = leftHB; palmR = rightHB;
+      palmL = searchEdge(center, { x: -dirHB.x, y: -dirHB.y }, EDGE_SEARCH);
+      palmR = searchEdge(center, { x:  dirHB.x, y:  dirHB.y }, EDGE_SEARCH);
       movePointEl(wL, palmL); movePointEl(wR, palmR);
       redrawFrozen();
       return true;
-    } catch { return false; }
-  };
-
-  useHB().then((ok) => {
-    if (ok) return;
-
-    // fallback: original max-span search perpendicular to wrist→tip
-    const axis = unitVec({ x: tip.x - wrist.x, y: tip.y - wrist.y });
-    const norm = { x: -axis.y, y: axis.x };
-    const span = distance(wrist, tip);
-
-    let bestSpan = -1, bestLeft = null, bestRight = null;
-    for (let i = 0; i < 7; i++) {
-      const t = 0.40 + (i/6) * 0.25; // scan mid-palm region
-      const center = { x: wrist.x + axis.x * span * t, y: wrist.y + axis.y * span * t };
-      const leftPt  = searchEdge(center, { x: -norm.x, y: -norm.y }, EDGE_SEARCH);
-      const rightPt = searchEdge(center, { x:  norm.x, y:  norm.y }, EDGE_SEARCH);
-      const widthPixels = distance(leftPt, rightPt);
-      if (widthPixels > bestSpan) { bestSpan = widthPixels; bestLeft = leftPt; bestRight = rightPt; }
     }
+  } catch {}
+  finally {
+    try { if (skeletonLive) await mp("VIDEO"); } catch {}
+  }
+
+  // fallback: original max-span search perpendicular to wrist→tip
+  const axis = unitVec({ x: tip.x - wrist.x, y: tip.y - wrist.y });
+  const norm = { x: -axis.y, y: axis.x };
+  const span = distance(wrist, tip);
+
+  let bestSpan = -1, bestLeft = null, bestRight = null;
+  for (let i = 0; i < 7; i++) {
+    const t = 0.40 + (i/6) * 0.25; // scan mid-palm region
+    const center = { x: wrist.x + axis.x * span * t, y: wrist.y + axis.y * span * t };
+    const leftPt  = searchEdge(center, { x: -norm.x, y: -norm.y }, EDGE_SEARCH);
+    const rightPt = searchEdge(center, { x:  norm.x, y:  norm.y }, EDGE_SEARCH);
+    const widthPixels = distance(leftPt, rightPt);
+    if (widthPixels > bestSpan) { bestSpan = widthPixels; bestLeft = leftPt; bestRight = rightPt; }
+  }
+  if (bestLeft && bestRight) {
     palmL = bestLeft; palmR = bestRight;
     movePointEl(wL, palmL); movePointEl(wR, palmR);
     redrawFrozen();
-  });
+    return true;
+  }
+  return false;
 }
 
 async function snapFingertip() {
   wrist = getXY(hA); tip = getXY(hB);
   try {
-    await mp("IMAGE");
-    const res = handLandmarker.detect(canvas);
+    const detector = await mp("IMAGE");
+    const res = detector?.detect(canvas);
     const lm = res?.landmarks?.[0];
-    if (!lm) return;
+    if (!lm) return false;
     const middlePIP = { x: lm[10].x * canvas.width, y: lm[10].y * canvas.height };
     const middleTip = { x: lm[12].x * canvas.width, y: lm[12].y * canvas.height };
     const baseDir = unitVec({ x: middleTip.x - middlePIP.x, y: middleTip.y - middlePIP.y });
@@ -683,8 +846,12 @@ async function snapFingertip() {
     tip = bestPoint;
     movePointEl(hB, tip);
     redrawFrozen();
+    return true;
   } catch (err) {
     console.warn("Fingertip snap failed:", err);
+    return false;
+  } finally {
+    try { if (skeletonLive) await mp("VIDEO"); } catch {}
   }
 }
 
@@ -723,7 +890,7 @@ function computeH() {
   H = homography(src, dst);
 }
 
-function computeAndStore() {
+async function computeAndStore() {
   wrist = getXY(hA); tip = getXY(hB); palmL = getXY(wL); palmR = getXY(wR);
   if (!H || !wrist || !tip || !palmL || !palmR) return null;
 
@@ -744,8 +911,9 @@ function computeAndStore() {
   const img = canvas.toDataURL("image/jpeg", 0.8);
   localStorage.setItem("mousefit:snapshot", img);
 
-  if (MICE.length) {
-    const rec = recommend(lengthMm, widthMm, 6);
+  const mice = await ensureMiceLoaded();
+  if (mice.length) {
+    const rec = recommend(lengthMm, 6);
     localStorage.setItem("mousefit:recs", JSON.stringify(rec));
   } else {
     localStorage.removeItem("mousefit:recs");
@@ -778,8 +946,8 @@ function redrawFrozen() {
 }
 
 function drawCardOverlay() {
-  if (!pEls[0].dataset.x) return;
-  const c = pEls.map(getXY);
+  const c = getCardCorners();
+  if (!c) return;
   ctx.save();
   ctx.lineWidth = 3;
   ctx.strokeStyle = "rgba(110,231,255,0.9)";
@@ -825,8 +993,52 @@ function movePointEl(el, p) {
 }
 function clientToCanvas(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
-  return { x: (clientX - rect.left) * canvas.width / rect.width,
-           y: (clientY - rect.top)  * canvas.height / rect.height };
+  return clampPointToCanvas({
+    x: (clientX - rect.left) * canvas.width / rect.width,
+    y: (clientY - rect.top)  * canvas.height / rect.height
+  });
+}
+function clampPointToCanvas(p) {
+  return {
+    x: Math.max(0, Math.min(canvas.width, p.x)),
+    y: Math.max(0, Math.min(canvas.height, p.y))
+  };
+}
+function getCardCorners() {
+  if (!hasCardCorners()) return null;
+  return pEls.map(getXY);
+}
+function hasCardCorners() {
+  return pEls.every((el) => Number.isFinite(parseFloat(el.dataset.x)) && Number.isFinite(parseFloat(el.dataset.y)));
+}
+function clearCardCorners() {
+  pEls.forEach((el) => {
+    el.style.display = "none";
+    el.removeAttribute("data-x");
+    el.removeAttribute("data-y");
+  });
+}
+function restoreCardCorners(corners) {
+  if (!Array.isArray(corners) || corners.length !== 4) {
+    clearCardCorners();
+    return;
+  }
+  corners.forEach((pt, i) => movePointEl(pEls[i], clampPointToCanvas(pt)));
+}
+function setCardCornersFromRect(a, b) {
+  const start = clampPointToCanvas(a);
+  const end = clampPointToCanvas(b);
+  const left = Math.min(start.x, end.x);
+  const right = Math.max(start.x, end.x);
+  const top = Math.min(start.y, end.y);
+  const bottom = Math.max(start.y, end.y);
+  const corners = [
+    { x: left, y: top },
+    { x: right, y: top },
+    { x: right, y: bottom },
+    { x: left, y: bottom }
+  ];
+  corners.forEach((pt, i) => movePointEl(pEls[i], pt));
 }
 
 /* Homography algebra */
@@ -883,19 +1095,18 @@ function specOf(mouse) {
   const H = mouse.height_mm ?? mouse.height;
   const WT = mouse.weight_g ?? mouse.weight ?? 999;
   const shape = (mouse.shape || "").toLowerCase();
-  const hump  = (mouse.hump  || "").toLowerCase();
   const brand = mouse.brand || "";
   const tags  = mouse.tags  || [];
-  return { L, W, H, WT, shape, hump, brand, tags };
+  return { L, W, H, WT, shape, brand, tags };
 }
-function recommend(handLenMm, handWidMm, topN = 5) {
+function recommend(handLenMm, topN = 5) {
   const grips = ["palm", "claw", "fingertip"];
   const sizeCategory = handLenMm < 170 ? "small" :
                        handLenMm < 190 ? "medium" :
                        handLenMm < 210 ? "large" : "xlarge";
   const topPicks = {};
   for (const grip of grips) {
-    topPicks[grip] = MICE.map(mouse => ({ ...mouse, ...scoreMouse(mouse, grip, handLenMm, handWidMm) }))
+    topPicks[grip] = MICE.map(mouse => ({ ...mouse, ...scoreMouse(mouse, grip, handLenMm) }))
                         .sort((a, b) => b.score - a.score)
                         .slice(0, topN);
   }
@@ -910,8 +1121,8 @@ function nameIncludes(mouse, s) {
   const n = ((mouse.model || mouse.name || "") + " " + (mouse.brand || "")).toLowerCase();
   return n.includes(s.toLowerCase());
 }
-function scoreMouse(mouse, grip, handLenMm, handWidMm) {
-  const { L, W, H, WT, shape, hump, brand, tags } = specOf(mouse);
+function scoreMouse(mouse, grip, handLenMm) {
+  const { L, W, H, WT, shape, brand, tags } = specOf(mouse);
   const isSym  = shape.includes("sym");
   const isErgo = shape.includes("ergo");
 

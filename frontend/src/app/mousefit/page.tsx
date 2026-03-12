@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { Check, ChevronLeft, MousePointer2, Ruler, Target } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, DollarSign, Hand, Loader2, MousePointer2, Ruler, SkipForward, Target } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { completeSurvey } from "@/lib/api";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 type Grip = "claw" | "palm" | "fingertip";
 type ClawStyle = "relaxed" | "aggressive";
@@ -14,7 +16,6 @@ type PalmFinger = "whole" | "fingertip";
 type PalmThumb = "inward" | "flat";
 type FingerPos = "top" | "middle" | "bottom";
 type BudgetTier = "entry" | "balanced" | "performance" | "premium";
-type Purpose = "gaming" | "casual-work";
 type HandPreset = "small" | "medium" | "large";
 type ChoiceKey =
   | "primaryGrip"
@@ -23,20 +24,19 @@ type ChoiceKey =
   | "clawHandPosition"
   | "palmFingerContact"
   | "palmThumbPlacement"
-  | "fingerStackPosition"
-  | "budgetTier"
-  | "purpose";
+  | "fingerStackPosition";
 
 type Answers = {
   primaryGrip: Grip | null;
+  gripSkipped: boolean;
   clawStyle: ClawStyle | null;
   clawPalmContact: ClawContact | null;
   clawHandPosition: ClawPos | null;
   palmFingerContact: PalmFinger | null;
   palmThumbPlacement: PalmThumb | null;
   fingerStackPosition: FingerPos | null;
-  budgetTier: BudgetTier | null;
-  purpose: Purpose | null;
+  budgetMin: number;
+  budgetMax: number;
   handPreset: HandPreset | null;
   lengthMm: number;
   widthMm: number;
@@ -52,8 +52,9 @@ type OptionStep = {
   options: Opt[];
   cols: "two" | "three" | "four";
 };
+type BudgetStep = { id: "budget"; type: "budget"; title: string };
 type MeasureStep = { id: "measure"; type: "measure"; title: string };
-type Step = OptionStep | MeasureStep;
+type Step = OptionStep | BudgetStep | MeasureStep;
 
 const SURVEY_KEYS = ["mousefit:survey_draft", "mf:survey_draft"] as const;
 const WIZARD_KEYS = ["mousefit:survey_wizard_state", "mf:survey_wizard_state"] as const;
@@ -62,14 +63,15 @@ const RECS_KEYS = ["mousefit:recs", "mf:recs"] as const;
 
 const DEFAULT: Answers = {
   primaryGrip: null,
+  gripSkipped: false,
   clawStyle: null,
   clawPalmContact: null,
   clawHandPosition: null,
   palmFingerContact: null,
   palmThumbPlacement: null,
   fingerStackPosition: null,
-  budgetTier: null,
-  purpose: null,
+  budgetMin: 0,
+  budgetMax: 400,
   handPreset: null,
   lengthMm: 180,
   widthMm: 90,
@@ -120,16 +122,6 @@ const OPTS = {
     { value: "top", badge: "1", title: "Top", subtitle: "Thumb above ring/little" },
     { value: "middle", badge: "2", title: "Middle", subtitle: "Thumb aligned in middle" },
     { value: "bottom", badge: "3", title: "Bottom", subtitle: "Thumb below ring/little" },
-  ] as Opt[],
-  budget: [
-    { value: "entry", badge: "$", title: "Entry", subtitle: "$0 - $80" },
-    { value: "balanced", badge: "$$", title: "Balanced", subtitle: "$80 - $160" },
-    { value: "performance", badge: "$$$", title: "Performance", subtitle: "$160 - $260" },
-    { value: "premium", badge: "$$$$", title: "Premium", subtitle: "$260 - $400" },
-  ] as Opt[],
-  purpose: [
-    { value: "gaming", badge: "G", title: "Gaming", subtitle: "Speed, control and precision" },
-    { value: "casual-work", badge: "W", title: "Casual Work", subtitle: "All-day comfort and productivity" },
   ] as Opt[],
   hand: [
     { value: "small", badge: "S", title: "Small Hand", subtitle: "~165mm x 82mm" },
@@ -206,22 +198,30 @@ function loadInitial(): Answers {
   const l3 = toNum(src?.handLengthMm);
   const w3 = toNum(src?.handWidthMm);
 
-  const bTier =
-    (src?.budgetTier as BudgetTier | null) ??
-    (toNum(src?.budgetMin) !== null && toNum(src?.budgetMax) !== null
-      ? nearBudget(toNum(src?.budgetMin) as number, toNum(src?.budgetMax) as number)
-      : null);
+  const savedBudgetMin = toNum(src?.budgetMin);
+  const savedBudgetMax = toNum(src?.budgetMax);
+  const savedTier = src?.budgetTier as BudgetTier | null;
+  let bMin = DEFAULT.budgetMin;
+  let bMax = DEFAULT.budgetMax;
+  if (savedBudgetMin !== null && savedBudgetMax !== null) {
+    bMin = savedBudgetMin;
+    bMax = savedBudgetMax;
+  } else if (savedTier && RANGES[savedTier]) {
+    bMin = RANGES[savedTier].min;
+    bMax = RANGES[savedTier].max;
+  }
 
   return {
     primaryGrip: (src?.primaryGrip as Grip | null) ?? null,
+    gripSkipped: (src?.gripSkipped as boolean) ?? false,
     clawStyle: (src?.clawStyle as ClawStyle | null) ?? null,
     clawPalmContact: (src?.clawPalmContact as ClawContact | null) ?? null,
     clawHandPosition: (src?.clawHandPosition as ClawPos | null) ?? null,
     palmFingerContact: (src?.palmFingerContact as PalmFinger | null) ?? null,
     palmThumbPlacement: (src?.palmThumbPlacement as PalmThumb | null) ?? null,
     fingerStackPosition: (src?.fingerStackPosition as FingerPos | null) ?? null,
-    budgetTier: bTier,
-    purpose: (src?.purpose as Purpose | null) ?? null,
+    budgetMin: clamp(bMin, 0, 400),
+    budgetMax: clamp(bMax, 0, 400),
     handPreset: (src?.handPreset as HandPreset | null) ?? null,
     lengthMm: clamp(l1 ?? l2 ?? l3 ?? DEFAULT.lengthMm, 100, 260),
     widthMm: clamp(w1 ?? w2 ?? w3 ?? DEFAULT.widthMm, 50, 130),
@@ -230,12 +230,12 @@ function loadInitial(): Answers {
 
 function toDraft(a: Answers) {
   const grip = (a.primaryGrip ?? "palm") as Grip;
-  const budget = RANGES[(a.budgetTier ?? "balanced") as BudgetTier];
   const fingerDirection =
     a.fingerStackPosition === "top" ? "left" : a.fingerStackPosition === "bottom" ? "right" : "center";
 
   return {
     primaryGrip: grip,
+    gripSkipped: a.gripSkipped,
     shellShape: grip === "palm" ? "ergo" : "sym",
     humpPosition: grip === "claw" ? (a.clawHandPosition === "back" ? "back" : "center") : "center",
     sideShape:
@@ -263,10 +263,9 @@ function toDraft(a: Answers) {
     palmFingerCurved: grip === "palm" ? (a.palmFingerContact === "fingertip" ? "yes" : "no") : "",
     clawRelaxed: grip === "claw" ? (a.clawStyle === "relaxed" ? "yes" : "no") : "",
     clawBackHandTouch: grip === "claw" ? (a.clawPalmContact === "none" ? "no" : "yes") : "",
-    budgetTier: a.budgetTier,
-    budgetMin: budget.min,
-    budgetMax: budget.max,
-    purpose: a.purpose,
+    budgetTier: nearBudget(a.budgetMin, a.budgetMax),
+    budgetMin: a.budgetMin,
+    budgetMax: a.budgetMax,
     handPreset: a.handPreset,
     handLengthMm: Math.round(a.lengthMm),
     handWidthMm: Math.round(a.widthMm),
@@ -280,16 +279,17 @@ function toDraft(a: Answers) {
 }
 
 function validate(a: Answers): string {
-  if (!a.primaryGrip) return "Choose your preferred grip.";
-  if (a.primaryGrip === "claw" && (!a.clawStyle || !a.clawPalmContact || !a.clawHandPosition)) {
-    return "Complete all claw follow-up questions.";
-  }
-  if (a.primaryGrip === "palm" && (!a.palmFingerContact || !a.palmThumbPlacement)) {
-    return "Complete all palm follow-up questions.";
+  if (!a.gripSkipped) {
+    if (!a.primaryGrip) return "Choose your preferred grip.";
+    if (a.primaryGrip === "claw" && (!a.clawStyle || !a.clawPalmContact || !a.clawHandPosition)) {
+      return "Complete all claw follow-up questions.";
+    }
+    if (a.primaryGrip === "palm" && (!a.palmFingerContact || !a.palmThumbPlacement)) {
+      return "Complete all palm follow-up questions.";
+    }
   }
   if (!a.fingerStackPosition) return "Choose your finger positioning.";
-  if (!a.budgetTier) return "Choose your budget range.";
-  if (!a.purpose) return "Choose your purpose.";
+  if (a.budgetMin > a.budgetMax) return "Budget minimum cannot exceed maximum.";
   if (!Number.isFinite(a.lengthMm) || a.lengthMm < 100 || a.lengthMm > 260) {
     return "Hand length must be between 100 and 260 mm.";
   }
@@ -316,20 +316,25 @@ function persist(a: Answers) {
   window.sessionStorage.setItem("mf:length_mm", String(lengthMm));
   window.sessionStorage.setItem("mf:width_mm", String(widthMm));
 
-  const range = RANGES[(a.budgetTier ?? "balanced") as BudgetTier];
   const recs = readJson<Record<string, unknown>>(RECS_KEYS) ?? {};
   writeJson(RECS_KEYS, {
     ...recs,
     size: sizeFromLen(lengthMm),
-    budget_min: range.min,
-    budget_max: range.max,
+    budget_min: a.budgetMin,
+    budget_max: a.budgetMax,
   });
 }
 
 function colsClass(cols: OptionStep["cols"]) {
   if (cols === "four") return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
-  if (cols === "three") return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+  if (cols === "three") return "grid-cols-1 sm:grid-cols-3";
   return "grid-cols-1 sm:grid-cols-2";
+}
+
+function maxWidthClass(cols: OptionStep["cols"]) {
+  if (cols === "four") return "max-w-4xl";
+  if (cols === "three") return "max-w-3xl";
+  return "max-w-2xl";
 }
 
 function ChoiceGrid({
@@ -342,7 +347,7 @@ function ChoiceGrid({
   onChoose: (value: string) => void;
 }) {
   return (
-    <div className={`mx-auto grid w-full max-w-6xl gap-4 ${colsClass(step.cols)}`}>
+    <div className={`mx-auto grid w-full gap-4 ${maxWidthClass(step.cols)} ${colsClass(step.cols)}`}>
       {step.options.map((opt, index) => {
         const selected = step.value === opt.value;
         const active = pulse === `${step.id}:${opt.value}`;
@@ -356,7 +361,7 @@ function ChoiceGrid({
             transition={{ duration: 0.24, delay: index * 0.04 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.985 }}
-            className={`rounded-[18px] p-[1px] text-left transition ${selected ? "border border-fuchsia-400/45 bg-fuchsia-500/20 shadow-[0_0_12px_rgba(217,70,239,0.3),0_0_18px_rgba(34,211,238,0.14)]" : "bg-white/20 hover:bg-white/35"}`}
+            className={`rounded-[18px] p-[1px] text-left transition ${selected ? "border border-[color:var(--accent-violet-line)] bg-[color:var(--accent-violet-fill)]" : "bg-white/20 hover:bg-white/35"}`}
           >
             <motion.div
               animate={active ? { scale: [1, 0.986, 1] } : { scale: 1 }}
@@ -364,7 +369,7 @@ function ChoiceGrid({
               className="relative min-h-[150px] rounded-[17px] border border-white/10 bg-black/95 px-4 py-5 md:min-h-[168px]"
             >
               {selected ? (
-                <div className="absolute right-3 top-3 rounded-full border border-white/20 bg-emerald-400/10 p-1 text-emerald-300">
+                <div className="absolute right-3 top-3 rounded-full border border-[color:var(--accent-emerald-line)] bg-[color:var(--accent-emerald-fill)] p-1 text-[color:var(--accent-emerald)]">
                   <Check className="h-3.5 w-3.5" />
                 </div>
               ) : null}
@@ -383,6 +388,7 @@ function ChoiceGrid({
 export default function MousefitSurveyPage() {
   const router = useRouter();
   const timerRef = useRef<number | null>(null);
+  const authReady = useRequireAuth();
 
   const [answers, setAnswers] = useState<Answers>(() => loadInitial());
   const [stepIndex, setStepIndex] = useState(0);
@@ -479,21 +485,8 @@ export default function MousefitSurveyPage() {
       },
       {
         id: "budget",
-        type: "options",
+        type: "budget",
         title: "Budget Range",
-        key: "budgetTier",
-        value: answers.budgetTier,
-        options: OPTS.budget,
-        cols: "four",
-      },
-      {
-        id: "purpose",
-        type: "options",
-        title: "General Purpose",
-        key: "purpose",
-        value: answers.purpose,
-        options: OPTS.purpose,
-        cols: "two",
       },
       {
         id: "measure",
@@ -503,7 +496,7 @@ export default function MousefitSurveyPage() {
     );
 
     return list;
-  }, [answers.primaryGrip, answers.clawStyle, answers.clawPalmContact, answers.clawHandPosition, answers.palmFingerContact, answers.palmThumbPlacement, answers.fingerStackPosition, answers.budgetTier, answers.purpose]);
+  }, [answers.primaryGrip, answers.clawStyle, answers.clawPalmContact, answers.clawHandPosition, answers.palmFingerContact, answers.palmThumbPlacement, answers.fingerStackPosition]);
 
   const safeStepIndex = Math.min(stepIndex, Math.max(0, steps.length - 1));
   const current = steps[safeStepIndex];
@@ -515,7 +508,11 @@ export default function MousefitSurveyPage() {
   };
 
   const choose = (step: OptionStep, value: string) => {
-    setAnswers((prev) => ({ ...prev, [step.key]: value }));
+    setAnswers((prev) => ({
+      ...prev,
+      [step.key]: value,
+      ...(step.key === "primaryGrip" ? { gripSkipped: false } : {}),
+    }));
     setPulse(`${step.id}:${value}`);
     setError("");
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
@@ -538,21 +535,45 @@ export default function MousefitSurveyPage() {
     setError("");
   };
 
-  const submit = () => {
-    const msg = validate(answers);
-    if (msg) {
-      setError(msg);
-      return;
-    }
-    try {
-      setSubmitting(true);
-      persist(answers);
-      router.push("/report");
-    } catch (e) {
-      setSubmitting(false);
-      setError(e instanceof Error ? e.message : "Failed to save survey.");
-    }
+  const skipGrip = () => {
+    setAnswers((prev) => ({ ...prev, gripSkipped: true, primaryGrip: null }));
+    setError("");
+    next();
   };
+
+  const submit = () => {
+    void (async () => {
+      const msg = validate(answers);
+      if (msg) {
+        setError(msg);
+        return;
+      }
+      try {
+        setSubmitting(true);
+        persist(answers);
+        await completeSurvey();
+        router.push("/dashboard");
+      } catch (e) {
+        setSubmitting(false);
+        setError(e instanceof Error ? e.message : "Failed to save survey.");
+      }
+    })();
+  };
+
+  if (!authReady) {
+    return (
+      <section className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-black px-4 text-white md:px-8">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute left-[4%] top-[8%] h-72 w-72 rounded-full blur-[120px]" style={{ background: "rgba(139, 92, 246, 0.18)" }} />
+          <div className="absolute right-[6%] top-[16%] h-72 w-72 rounded-full blur-[130px]" style={{ background: "rgba(0, 168, 232, 0.16)" }} />
+        </div>
+        <div className="inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-white/75">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading survey...
+        </div>
+      </section>
+    );
+  }
 
   const panel: Variants = {
     enter: (d: number) => ({ opacity: 0, x: d > 0 ? 56 : -56, filter: "blur(8px)" }),
@@ -568,8 +589,8 @@ export default function MousefitSurveyPage() {
   return (
     <section className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-black px-4 text-white md:px-8">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-[4%] top-[8%] h-72 w-72 rounded-full bg-fuchsia-600/18 blur-[120px]" />
-        <div className="absolute right-[6%] top-[16%] h-72 w-72 rounded-full bg-cyan-500/16 blur-[130px]" />
+        <div className="absolute left-[4%] top-[8%] h-72 w-72 rounded-full blur-[120px]" style={{ background: "rgba(139, 92, 246, 0.18)" }} />
+        <div className="absolute right-[6%] top-[16%] h-72 w-72 rounded-full blur-[130px]" style={{ background: "rgba(0, 168, 232, 0.16)" }} />
       </div>
 
       <div className="w-full max-w-7xl">
@@ -578,10 +599,112 @@ export default function MousefitSurveyPage() {
             <motion.div key={current.id} custom={dir} variants={panel} initial="enter" animate="center" exit="exit" className="w-full">
               <h1 className="mb-9 text-center text-2xl font-semibold text-white md:text-4xl">{current.title}</h1>
               {current.type === "options" ? (
-                <ChoiceGrid step={current} pulse={pulse} onChoose={(v) => choose(current, v)} />
+                <>
+                  <ChoiceGrid step={current} pulse={pulse} onChoose={(v) => choose(current, v)} />
+                  {current.id === "grip" && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.2 }}
+                      className="mx-auto mt-6 flex max-w-3xl items-center justify-center gap-3"
+                    >
+                      <Link
+                        href="/grip?from=survey"
+                        onClick={() => writeJson(WIZARD_KEYS, answers)}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-[color:var(--accent-gamer-line)] bg-[color:var(--accent-gamer-fill)] px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:bg-[color:var(--accent-gamer)] hover:text-white"
+                      >
+                        <Hand className="h-3.5 w-3.5" />
+                        Test your grip
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={skipGrip}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white/60 transition hover:border-white/25 hover:text-white/80"
+                      >
+                        <SkipForward className="h-3.5 w-3.5" />
+                        Skip
+                      </button>
+                    </motion.div>
+                  )}
+                </>
+              ) : current.type === "budget" ? (
+                <div className="mx-auto w-full max-w-lg space-y-10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--accent-amber-line)] bg-[color:var(--accent-amber-fill)]">
+                        <DollarSign className="h-4 w-4 text-[color:var(--accent-amber)]" />
+                      </div>
+                      <span className="text-2xl font-semibold text-white">${answers.budgetMin}</span>
+                    </div>
+                    <span className="text-sm text-white/30">to</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-semibold text-white">${answers.budgetMax}</span>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--accent-violet-line)] bg-[color:var(--accent-violet-fill)]">
+                        <DollarSign className="h-4 w-4 text-[color:var(--accent-violet)]" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative h-2">
+                    <div className="absolute inset-0 rounded-full bg-white/10" />
+                    <div
+                      className="absolute top-0 h-full rounded-full"
+                      style={{
+                        left: `${(answers.budgetMin / 400) * 100}%`,
+                        right: `${100 - (answers.budgetMax / 400) * 100}%`,
+                        background: "linear-gradient(90deg, var(--accent-amber), var(--accent-violet))",
+                      }}
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={400}
+                      step={10}
+                      value={answers.budgetMin}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setAnswers((p) => ({ ...p, budgetMin: Math.min(v, p.budgetMax - 10) }));
+                      }}
+                      className="budget-thumb pointer-events-none absolute inset-0 w-full appearance-none bg-transparent"
+                      style={{ zIndex: answers.budgetMin > 350 ? 5 : 3 }}
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={400}
+                      step={10}
+                      value={answers.budgetMax}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        setAnswers((p) => ({ ...p, budgetMax: Math.max(v, p.budgetMin + 10) }));
+                      }}
+                      className="budget-thumb pointer-events-none absolute inset-0 w-full appearance-none bg-transparent"
+                      style={{ zIndex: 4 }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-white/30">
+                    <span>$0</span>
+                    <span>$100</span>
+                    <span>$200</span>
+                    <span>$300</span>
+                    <span>$400</span>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={next}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[color:var(--accent-violet-line)] bg-[color:var(--accent-violet-fill)] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[color:var(--accent-violet)]"
+                    >
+                      Confirm
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
               ) : (
-                <div className="mx-auto w-full max-w-5xl space-y-6">
-                  <div className="grid gap-4 md:grid-cols-3">
+                <div className="mx-auto w-full max-w-xl space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-3">
                     {OPTS.hand.map((opt) => {
                       const active = answers.handPreset === opt.value;
                       return (
@@ -589,7 +712,7 @@ export default function MousefitSurveyPage() {
                           key={opt.value}
                           type="button"
                           onClick={() => preset(opt.value as HandPreset)}
-                          className={`rounded-[18px] p-[1px] text-left transition ${active ? "border border-fuchsia-400/45 bg-fuchsia-500/20 shadow-[0_0_12px_rgba(217,70,239,0.28),0_0_16px_rgba(34,211,238,0.12)]" : "bg-white/20 hover:bg-white/35"}`}
+                          className={`rounded-[18px] p-[1px] text-left transition ${active ? "border border-[color:var(--accent-violet-line)] bg-[color:var(--accent-violet-fill)]" : "bg-white/20 hover:bg-white/35"}`}
                         >
                           <div className="rounded-[17px] border border-white/10 bg-black/95 px-4 py-4">
                             <div className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/20 bg-white/5 text-[11px] font-semibold text-white">
@@ -602,10 +725,10 @@ export default function MousefitSurveyPage() {
                     })}
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-2">
                       <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-white/55">
-                        <Ruler className="h-3.5 w-3.5 text-fuchsia-300" />
+                        <Ruler className="h-3.5 w-3.5 text-[color:var(--accent-violet)]" />
                         Hand Length (mm)
                       </span>
                       <input
@@ -617,13 +740,13 @@ export default function MousefitSurveyPage() {
                           const n = clamp(Number(e.target.value || answers.lengthMm), 100, 260);
                           setAnswers((p) => ({ ...p, lengthMm: Number.isFinite(n) ? n : p.lengthMm }));
                         }}
-                        className="w-full rounded-xl border border-white/20 bg-black/65 px-3 py-2 text-white outline-none transition focus:border-fuchsia-300"
+                        className="w-full rounded-xl border border-white/20 bg-black/65 px-3 py-2 text-white outline-none transition focus:border-[color:var(--accent-violet)]"
                       />
                     </label>
 
                     <label className="space-y-2">
                       <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-white/55">
-                        <Ruler className="h-3.5 w-3.5 text-cyan-300" />
+                        <Ruler className="h-3.5 w-3.5 text-[color:var(--accent-gamer)]" />
                         Hand Width (mm)
                       </span>
                       <input
@@ -635,7 +758,7 @@ export default function MousefitSurveyPage() {
                           const n = clamp(Number(e.target.value || answers.widthMm), 50, 130);
                           setAnswers((p) => ({ ...p, widthMm: Number.isFinite(n) ? n : p.widthMm }));
                         }}
-                        className="w-full rounded-xl border border-white/20 bg-black/65 px-3 py-2 text-white outline-none transition focus:border-cyan-300"
+                        className="w-full rounded-xl border border-white/20 bg-black/65 px-3 py-2 text-white outline-none transition focus:border-[color:var(--accent-gamer)]"
                       />
                     </label>
                   </div>
@@ -645,16 +768,16 @@ export default function MousefitSurveyPage() {
                       type="button"
                       onClick={submit}
                       disabled={submitting}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-fuchsia-400/60 bg-fuchsia-500/20 px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white shadow-[0_0_10px_rgba(217,70,239,0.24),0_0_14px_rgba(34,211,238,0.12)] transition hover:border-fuchsia-300 hover:bg-fuchsia-500/28 disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[color:var(--accent-violet-line)] bg-[color:var(--accent-violet-fill)] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[color:var(--accent-violet)] disabled:opacity-60"
                     >
                       <Target className="h-3.5 w-3.5" />
                       {submitting ? "Generating..." : "Generate Report"}
                     </button>
 
                     <Link
-                      href="/measure"
+                      href="/measure?from=survey"
                       onClick={() => writeJson(WIZARD_KEYS, answers)}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:border-cyan-300/50 hover:text-cyan-100"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:border-[color:var(--accent-gamer-line)] hover:text-[color:var(--accent-gamer)]"
                     >
                       <MousePointer2 className="h-3.5 w-3.5" />
                       Open Measure Tool
@@ -665,14 +788,16 @@ export default function MousefitSurveyPage() {
             </motion.div>
           </AnimatePresence>
 
-          <div className="mt-10 w-full max-w-4xl">
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="mt-10 flex w-full max-w-2xl items-center gap-3">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-orange-400 via-fuchsia-500 to-cyan-400 shadow-[0_0_24px_rgba(217,70,239,0.7)]"
+                className="h-full rounded-full"
+                style={{ background: "linear-gradient(90deg, var(--accent-amber), var(--accent-violet), var(--accent-gamer))" }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.28, ease: "easeOut" }}
               />
             </div>
+            <span className="text-xs font-medium tabular-nums text-white/40">{progress}%</span>
           </div>
         </div>
 
@@ -689,7 +814,7 @@ export default function MousefitSurveyPage() {
         </footer>
 
         {error ? (
-          <p className="mt-3 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{error}</p>
+          <p className="mt-3 rounded-xl border px-3 py-2 text-sm" style={{ borderColor: "var(--tone-warning-line)", background: "var(--tone-warning-fill)", color: "var(--tone-warning-text)" }}>{error}</p>
         ) : null}
       </div>
     </section>

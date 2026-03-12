@@ -14,20 +14,19 @@ function SectionDivider() {
 
 export default function AboutUsPage() {
   return (
-    <div className="relative min-h-screen w-screen overflow-x-hidden bg-black">
+    <div className="relative min-h-screen w-screen overflow-x-hidden bg-theme-primary">
       {/* Background */}
       <div
         className="fixed inset-0 -z-10"
         style={{
-          background:
-            "linear-gradient(135deg, #05060a 0%, #071022 54%, #0a1c3a 100%)",
+          background: "linear-gradient(135deg, var(--bg0) 0%, var(--bg1) 54%, var(--bg-tertiary) 100%)",
         }}
       />
       <div
         className="fixed inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse at 18% 52%, rgba(217, 70, 239, 0.16) 0%, transparent 55%), radial-gradient(ellipse at 82% 18%, rgba(34, 211, 238, 0.14) 0%, transparent 60%)",
+            "radial-gradient(ellipse at 18% 52%, rgba(139, 92, 246, 0.16) 0%, transparent 55%), radial-gradient(ellipse at 82% 18%, rgba(0, 168, 232, 0.14) 0%, transparent 60%)",
         }}
       />
       <div
@@ -117,15 +116,15 @@ export default function AboutUsPage() {
               </p>
               <ul className="mt-4 space-y-2 text-sm text-white/60">
                 <li className="flex items-start gap-3">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-fuchsia-500/70" />
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[color:var(--accent-gamer)]" />
                   Wrist strain risk
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-fuchsia-500/70" />
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[color:var(--accent-violet)]" />
                   Reduced control
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-fuchsia-500/70" />
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[color:var(--accent-amber)]" />
                   Faster fatigue
                 </li>
               </ul>
