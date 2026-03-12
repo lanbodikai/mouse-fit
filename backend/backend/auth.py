@@ -90,6 +90,8 @@ def verify_bearer_token(token: str) -> AuthContext:
             issuer=config.SUPABASE_JWT_ISSUER if config.SUPABASE_JWT_ISSUER else None,
             options=options,
         )
+    except AuthError:
+        raise
     except InvalidTokenError as exc:
         raise AuthError("auth_invalid_token", f"Invalid token: {exc}", status_code=401) from exc
     except Exception as exc:

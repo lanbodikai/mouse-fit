@@ -35,6 +35,15 @@ function joinUrl(base: string, path: string) {
   return `${baseTrimmed}${pathTrimmed}`;
 }
 
+function shouldForceSignOut(code: string | undefined): boolean {
+  return (
+    code === "auth_required" ||
+    code === "auth_missing_token" ||
+    code === "auth_invalid_token" ||
+    code === "auth_invalid_claims"
+  );
+}
+
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const apiBase = getApiBase();
   const url = /^https?:\/\//.test(path) ? path : joinUrl(apiBase, path);
@@ -55,18 +64,20 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     const message = err instanceof Error ? err.message : String(err);
     throw new Error(`API request failed (network error) for ${url}: ${message}`);
   }
-  if (res.status === 401) {
-    handleUnauthorizedSession();
-  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     const statusText = res.statusText ? ` ${res.statusText}` : "";
+    let errorCode: string | undefined;
     let message = text || "(empty response body)";
     try {
-      const parsed = JSON.parse(text || "{}") as { message?: string };
+      const parsed = JSON.parse(text || "{}") as { message?: string; code?: string };
+      errorCode = parsed?.code;
       if (parsed?.message) message = parsed.message;
     } catch {
       // ignore JSON parse errors
+    }
+    if (res.status === 401 && shouldForceSignOut(errorCode)) {
+      handleUnauthorizedSession();
     }
     throw new Error(`API request failed (${res.status}${statusText}): ${message}`);
   }

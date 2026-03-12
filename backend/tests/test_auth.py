@@ -55,3 +55,15 @@ def test_verify_bearer_token_rejects_unsupported_algorithm(monkeypatch):
 
     assert exc_info.value.code == "auth_invalid_token"
     assert "unsupported signing algorithm" in exc_info.value.message
+
+
+def test_verify_bearer_token_preserves_auth_configuration_errors(monkeypatch):
+    monkeypatch.setattr(auth_module.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(auth_module.config, "SUPABASE_JWKS_URL", "", raising=False)
+    monkeypatch.setattr(auth_module.jwt, "get_unverified_header", lambda _token: {"alg": "ES256"}, raising=True)
+
+    with pytest.raises(auth_module.AuthError) as exc_info:
+        auth_module.verify_bearer_token("token-value")
+
+    assert exc_info.value.code == "auth_not_configured"
+    assert exc_info.value.status_code == 500
