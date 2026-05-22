@@ -39,10 +39,14 @@ export async function apiFetch(path, options = {}) {
     } catch {}
   }
 
-  const res = await fetch(url, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(url, { ...options, headers });
+  } catch {
+    throw new Error("MouseFit cannot reach the app server. Start the backend server first, then try again.");
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    const statusText = res.statusText ? ` ${res.statusText}` : "";
     let message = text || "(empty response body)";
     try {
       const parsed = JSON.parse(text || "{}");
@@ -50,7 +54,10 @@ export async function apiFetch(path, options = {}) {
         message = parsed.message;
       }
     } catch {}
-    throw new Error(`API request failed (${res.status}${statusText}): ${message}`);
+    if (res.status === 401) throw new Error("Please sign in again to continue.");
+    if (res.status === 404) throw new Error("We could not find that item. Refresh the page and try again.");
+    if (res.status >= 500) throw new Error("MouseFit could not reach the server correctly. Start or restart the backend server, then try again.");
+    throw new Error(message && message !== "(empty response body)" ? message : "Something went wrong. Try again.");
   }
 
   return res;

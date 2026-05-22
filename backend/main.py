@@ -154,6 +154,7 @@ def init_db() -> None:
                     hands JSONB NOT NULL DEFAULT '[]'::jsonb,
                     product_url TEXT,
                     image_url TEXT,
+                    image_urls JSONB NOT NULL DEFAULT '[]'::jsonb,
                     source TEXT,
                     source_handle TEXT,
                     availability_status TEXT,
@@ -246,6 +247,7 @@ def init_db() -> None:
                 "source": "TEXT",
                 "source_handle": "TEXT",
                 "availability_status": "TEXT",
+                "image_urls": "JSONB NOT NULL DEFAULT '[]'::jsonb",
                 "shape_raw": "TEXT",
                 "hump_raw": "TEXT",
                 "hump_bucket": "TEXT",
@@ -376,6 +378,7 @@ def _seed_mice_rows_from_json() -> List[Dict[str, Any]]:
                 "hands": [str(value) for value in _as_list(item.get("hands")) if str(value).strip()],
                 "product_url": _pick_first_text([item.get("product_url")], 2048),
                 "image_url": _pick_first_text([item.get("image_url")], 2048),
+                "image_urls": [str(value).strip() for value in _as_list(item.get("image_urls")) if str(value).strip()],
                 "source": _pick_first_text([item.get("source")], 120) or "seed:mice.json",
                 "source_handle": source_handle,
             }
@@ -416,6 +419,7 @@ def seed_mice_from_json_if_empty() -> int:
                     hands,
                     product_url,
                     image_url,
+                    image_urls,
                     source,
                     source_handle,
                     created_at,
@@ -423,7 +427,7 @@ def seed_mice_from_json_if_empty() -> int:
                 )
                 VALUES (
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s::jsonb, %s::jsonb, %s, %s, %s, %s, NOW(), NOW()
+                    %s::jsonb, %s::jsonb, %s, %s, %s::jsonb, %s, %s, NOW(), NOW()
                 )
                 """,
                 [
@@ -444,6 +448,7 @@ def seed_mice_from_json_if_empty() -> int:
                         json.dumps(row["hands"]),
                         row["product_url"],
                         row["image_url"],
+                        json.dumps(row["image_urls"]),
                         row["source"],
                         row["source_handle"],
                     )
@@ -511,6 +516,7 @@ class Mouse(BaseModel):
     hands: List[str] = Field(default_factory=list)
     product_url: Optional[str] = None
     image_url: Optional[str] = None
+    image_urls: List[str] = Field(default_factory=list)
     source_handle: Optional[str] = None
     availability_status: Optional[str] = None
     shape_raw: Optional[str] = None
@@ -526,6 +532,8 @@ class Mouse(BaseModel):
     price_usd: Optional[float] = None
     price_status: Optional[str] = None
     source_payload: Optional[Dict[str, Any]] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
 
 
 class MeasurementIn(BaseModel):
@@ -651,10 +659,11 @@ def _parse_cors_origins(value: str | None) -> List[str]:
 
 
 EXTRA_CORS_ORIGINS = _parse_cors_origins(os.getenv("CORS_ALLOW_ORIGINS"))
-CORS_ORIGIN_REGEX = os.getenv(
-    "CORS_ALLOW_ORIGIN_REGEX",
-    r"^https://((mouse-fit|mousefit)(?:-[a-z0-9-]+)?\.vercel\.app|([a-z0-9-]+\.)?mousefit\.pro)$",
+DEFAULT_CORS_ORIGIN_REGEX = (
+    r"^(http://(localhost|127\.0\.0\.1):\d+|"
+    r"https://((mouse-fit|mousefit)(?:-[a-z0-9-]+)?\.vercel\.app|([a-z0-9-]+\.)?mousefit\.pro))$"
 )
+CORS_ORIGIN_REGEX = os.getenv("CORS_ALLOW_ORIGIN_REGEX", DEFAULT_CORS_ORIGIN_REGEX)
 
 app.add_middleware(
     CORSMiddleware,
@@ -804,6 +813,7 @@ def row_to_mouse(row: Dict[str, Any]) -> Mouse:
         hands=hands,
         product_url=row.get("product_url"),
         image_url=row.get("image_url"),
+        image_urls=[str(x) for x in _as_list(row.get("image_urls")) if str(x).strip()],
         source_handle=row.get("source_handle"),
         availability_status=row.get("availability_status"),
         shape_raw=row.get("shape_raw"),
@@ -819,6 +829,8 @@ def row_to_mouse(row: Dict[str, Any]) -> Mouse:
         price_usd=(None if row.get("price_usd") is None else float(row["price_usd"])),
         price_status=row.get("price_status"),
         source_payload=_as_dict(row.get("source_payload")),
+        created_at=_iso_ts(row.get("created_at")) if row.get("created_at") else None,
+        updated_at=_iso_ts(row.get("updated_at")) if row.get("updated_at") else None,
     )
 
 

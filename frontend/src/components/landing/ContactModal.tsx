@@ -75,8 +75,8 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
         setSubmitState("error");
         setErrorText(
           parsed && "error" in parsed
-            ? parsed.error ?? parsed.message ?? "Failed to send message"
-            : "Failed to send message",
+            ? parsed.error ?? parsed.message ?? "Could not send your message. Please try again."
+            : "Could not send your message. Please try again.",
         );
         return;
       }
@@ -88,7 +88,7 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
       setMessage("");
     } catch {
       setSubmitState("error");
-      setErrorText("Failed to send message");
+      setErrorText("Could not send your message. Please try again.");
     }
   }
 
@@ -202,7 +202,7 @@ function ContactModalInner({ onClose }: { onClose: () => void }) {
 
             {submitState === "error" && (
               <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-white/80">
-                {errorText || "Failed to send message"}
+                {errorText || "Could not send your message. Please try again."}
               </div>
             )}
 

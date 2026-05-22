@@ -117,7 +117,7 @@ export async function POST(req: Request) {
   if (!smtpConfig) {
     return json(503, {
       code: "email_not_configured",
-      message: "Email is not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and optionally WELCOME_EMAIL_FROM.",
+      message: "Welcome email is not available right now. You can still continue.",
       request_id: rid,
     });
   }
@@ -139,7 +139,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("Welcome email send failed:", err);
-    return json(500, { code: "email_send_failed", message: "Failed to send welcome email", request_id: rid });
+    return json(500, { code: "email_send_failed", message: "Welcome email could not be sent. You can still continue.", request_id: rid });
   }
 
   return json(200, { ok: true, request_id: rid });

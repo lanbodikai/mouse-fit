@@ -100,7 +100,7 @@ export function getSupabaseCallbackUrl(): string | null {
 function requireSupabaseConfig(): { url: string; anonKey: string } {
   const config = supabaseConfig();
   if (!config.url || !config.anonKey) {
-    throw new Error("Supabase auth is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+    throw new Error("Sign in is not available right now. Start the app server, then try again.");
   }
   return config;
 }
@@ -412,7 +412,7 @@ function encodeBase64Url(bytes: Uint8Array): string {
 
 function randomBytes(length: number): Uint8Array {
   if (typeof crypto === "undefined" || !crypto.getRandomValues) {
-    throw new Error("Browser crypto APIs are unavailable.");
+    throw new Error("Secure sign in is not available in this browser. Try a different browser or refresh the page.");
   }
   const bytes = new Uint8Array(length);
   crypto.getRandomValues(bytes);
@@ -421,7 +421,7 @@ function randomBytes(length: number): Uint8Array {
 
 async function pkceChallenge(verifier: string): Promise<string> {
   if (typeof crypto === "undefined" || !crypto.subtle) {
-    throw new Error("Browser crypto APIs are unavailable.");
+    throw new Error("Secure sign in is not available in this browser. Try a different browser or refresh the page.");
   }
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
   return encodeBase64Url(new Uint8Array(digest));
@@ -613,7 +613,7 @@ export async function getAuthUser(): Promise<SupabaseUser | null> {
 export async function resendVerificationEmail(email: string): Promise<void> {
   const { url, anonKey } = supabaseConfig();
   if (!url || !anonKey) {
-    throw new Error("Supabase auth is not configured.");
+    throw new Error("Sign in is not available right now. Start the app server, then try again.");
   }
 
   const res = await fetch(`${url}/auth/v1/resend`, {
@@ -634,7 +634,7 @@ export async function resendVerificationEmail(email: string): Promise<void> {
 export async function resetPasswordForEmail(email: string, redirectTo?: string): Promise<void> {
   const { url, anonKey } = supabaseConfig();
   if (!url || !anonKey) {
-    throw new Error("Supabase auth is not configured.");
+    throw new Error("Sign in is not available right now. Start the app server, then try again.");
   }
 
   const payload: Record<string, string> = { email };
@@ -663,7 +663,7 @@ export async function updatePassword(password: string): Promise<void> {
 
   const { url, anonKey } = supabaseConfig();
   if (!url || !anonKey) {
-    throw new Error("Supabase auth is not configured.");
+    throw new Error("Sign in is not available right now. Start the app server, then try again.");
   }
 
   const res = await fetch(`${url}/auth/v1/user`, {

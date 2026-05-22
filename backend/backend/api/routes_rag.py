@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from backend.catalog_ai import generate_catalog_chat_reply
 from backend import config
 from backend.rate_limit import RATE_LIMITER, RateLimitSpec
 from backend.rag.prompts import RAG_SYSTEM, RERANK_SYSTEM, REPORT_SYSTEM
@@ -207,7 +208,7 @@ def _profile_to_query(profile: Dict[str, Any]) -> str:
 def _call_groq(messages: List[Dict[str, Any]], model: Optional[str] = None, temperature: float = 0.3,
                response_format: Optional[Dict[str, Any]] = None) -> str:
     if not config.GROQ_API_KEY:
-        raise HTTPException(status_code=500, detail="Missing GROQ_API_KEY on server")
+        raise HTTPException(status_code=500, detail="MouseFit AI is not configured yet. Add the AI key on the server, then restart it.")
 
     payload: Dict[str, Any] = {
         "model": model or config.GROQ_DEFAULT_MODEL,
@@ -485,10 +486,17 @@ def rag_chat(payload: Dict[str, Any], request: Request, _: None = Depends(_limit
     if not isinstance(messages, list) or not messages:
         raise HTTPException(status_code=400, detail={"code": "invalid_request", "message": "messages[] is required"})
 
-    reply = _call_groq(
+    def _llm(messages_in: List[Dict[str, Any]], temperature: float, response_format: Optional[Dict[str, Any]]) -> str:
+        return _call_groq(
+            messages_in,
+            model=payload.get("model"),
+            temperature=temperature,
+            response_format=response_format,
+        )
+
+    reply = generate_catalog_chat_reply(
         messages,
-        model=payload.get("model"),
-        temperature=float(payload.get("temperature", 0.6)),
+        llm_call=_llm if config.GROQ_API_KEY else None,
     )
     return {
         "reply": reply,

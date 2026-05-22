@@ -44,6 +44,18 @@ function shouldForceSignOut(code: string | undefined): boolean {
   );
 }
 
+function customerFacingApiError(status: number, message: string): string {
+  if (status === 400) return message && message !== "(empty response body)" ? message : "Check the information and try again.";
+  if (status === 401) return "Please sign in again to continue.";
+  if (status === 403) return "You do not have access to this action.";
+  if (status === 404) return "We could not find that item. Refresh the page and try again.";
+  if (status === 409) return "This was already updated. Refresh the page and try again.";
+  if (status === 422) return message && message !== "(empty response body)" ? message : "Check the information and try again.";
+  if (status === 429) return "Too many tries at once. Wait a moment, then try again.";
+  if (status >= 500) return "MouseFit could not reach the server correctly. Start or restart the backend server, then try again.";
+  return "Something went wrong. Try again.";
+}
+
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const apiBase = getApiBase();
   const url = /^https?:\/\//.test(path) ? path : joinUrl(apiBase, path);
@@ -60,13 +72,11 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   let res: Response;
   try {
     res = await fetch(url, { ...options, headers });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new Error(`API request failed (network error) for ${url}: ${message}`);
+  } catch {
+    throw new Error("MouseFit cannot reach the app server. Start the backend server first, then try again.");
   }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    const statusText = res.statusText ? ` ${res.statusText}` : "";
     let errorCode: string | undefined;
     let message = text || "(empty response body)";
     try {
@@ -79,7 +89,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     if (res.status === 401 && shouldForceSignOut(errorCode)) {
       handleUnauthorizedSession();
     }
-    throw new Error(`API request failed (${res.status}${statusText}): ${message}`);
+    throw new Error(customerFacingApiError(res.status, message));
   }
 
   return res;

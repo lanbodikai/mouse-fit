@@ -17,7 +17,7 @@ export function ApiStatus() {
     apiJson<{ ok: boolean }>("/api/health")
       .then((data) => {
         if (cancelled) return;
-        setState(data?.ok ? { status: "connected" } : { status: "disconnected", error: "Health check returned ok=false" });
+        setState(data?.ok ? { status: "connected" } : { status: "disconnected", error: "Start the backend server, then refresh." });
       })
       .catch((err) => {
         if (cancelled) return;
@@ -31,16 +31,16 @@ export function ApiStatus() {
   }, []);
 
   if (state.status === "checking") {
-    return <span className="text-xs text-white/50">API: Checking</span>;
+    return <span className="text-xs text-white/50">Server: Checking</span>;
   }
 
   if (state.status === "connected") {
-    return <span className="text-xs text-fuchsia-400">API: Connected</span>;
+    return <span className="text-xs text-fuchsia-400">Server: Ready</span>;
   }
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-red-400">API: Disconnected</span>
+      <span className="text-xs text-red-400">Server: Offline</span>
       <details className="group">
         <summary className="cursor-pointer select-none text-xs text-white/50 hover:text-white/70">
           Details

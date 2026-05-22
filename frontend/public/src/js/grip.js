@@ -165,6 +165,7 @@ let zoomMin = 1;
 let zoomMax = 3;
 let zoomStep = 0.05;
 let zoomMode = "digital";
+let cameraBlocked = false;
 
 let currentView = 0; // 0=Top, 1=Bottom, 2=Side
 let shots = { top:null, bottom:null, side:null };
@@ -371,13 +372,14 @@ async function populateCams(force=false) {
 }
 async function startCam(deviceId) {
   stopCam();
+  cameraBlocked = false;
   // Keep first request lightweight for faster camera warm-up.
   const constraints = deviceId
     ? { video: { deviceId: { exact: deviceId } }, audio: false }
     : { video: { facingMode: { ideal: "user" } }, audio: false };
   try { stream = await navigator.mediaDevices.getUserMedia(constraints); }
   catch { try { stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false }); }
-          catch (e3) { return handleGUMError(e3); } }
+          catch (e3) { cameraBlocked = true; return handleGUMError(e3); } }
   video.srcObject = stream;
   try { await video.play(); if (startCamBtn) startCamBtn.style.display="none"; }
   catch {
@@ -410,6 +412,37 @@ function stopCam(){
     video.srcObject = null;
     video.pause();
   }
+}
+
+function hasUsableCameraFrame() {
+  const track = stream?.getVideoTracks?.()[0];
+  return Boolean(
+    stream &&
+    stream.active &&
+    track &&
+    track.readyState === "live" &&
+    video &&
+    video.readyState >= 2 &&
+    canvas
+  );
+}
+
+function requireCameraForCapture() {
+  if (hasUsableCameraFrame()) return true;
+  if (countdownTimer) {
+    clearTimeout(countdownTimer);
+    countdownTimer = null;
+  }
+  if (countdownEl) countdownEl.style.display = "none";
+  if (statusBadge) statusBadge.textContent = cameraBlocked ? "Blocked" : "Camera needed";
+  showToast(
+    cameraBlocked
+      ? "Camera permission is blocked. Allow camera access, then press Refresh."
+      : "Start the camera before capturing.",
+    3200
+  );
+  if (startCamBtn) startCamBtn.style.display = "block";
+  return false;
 }
 
 // Expose stopCam globally for cleanup
@@ -559,10 +592,6 @@ setupCoachPanel();
 if (typeof window !== 'undefined') {
   window.addEventListener('grip-page-ready', () => {
     setupCoachPanel();
-    const coach = document.getElementById('coach');
-    if (coach) {
-      coach.classList.remove('hidden');
-    }
   });
 }
 
@@ -579,14 +608,23 @@ function setupCoachPanel(){
     setTimeout(setupCoachPanel, 100);
     return;
   }
-  // Ensure coach is visible
-  coach.classList.remove('hidden');
+  const isMobile = window.matchMedia('(max-width: 700px)').matches;
+  let dismissed = false;
+  try {
+    dismissed = window.sessionStorage?.getItem('mf:coach:grip:dismissed') === '1';
+  } catch {}
+  if (isMobile && dismissed) {
+    coach.classList.add('hidden');
+  } else {
+    coach.classList.remove('hidden');
+  }
   const handle = coach.querySelector('.coach-bar') || coach;
   const closeBtn = coach.querySelector('.coach-close');
-  makeFloatingDraggable(coach, handle, 'mf:grip:coach-pos');
+  if (!isMobile) {
+    makeFloatingDraggable(coach, handle, 'mf:grip:coach-pos');
+  }
   if (closeBtn) {
     closeBtn.type = 'button';
-    closeBtn.addEventListener('click', () => coach.remove());
   }
 }
 
@@ -682,6 +720,7 @@ function writeStoredPosition(key, pos){
 /* ================== countdown / capture ================== */
 function startCountdown(seconds=5){
   if (!countdownEl) return;
+  if (!requireCameraForCapture()) return;
   countdownEl.style.display="flex"; countdownEl.textContent=seconds;
   const tick=()=>{ seconds--; if (seconds<=0){ countdownEl.style.display="none"; countdownTimer=null; capture(); }
                    else { countdownEl.textContent=seconds; countdownTimer=setTimeout(tick,1000); } };
@@ -706,6 +745,7 @@ function offscreenCopyToDataURL() {
 }
 
 async function capture(){
+  if (!requireCameraForCapture()) return;
   isFrozen = true;
 
   await waitForFrame();
@@ -808,7 +848,7 @@ async function mp(mode){
   } catch (err) {
     mpFailed = true;
     console.error("[MediaPipe] init failed", err);
-    showToast("Hand model failed to load. Check network for vision_bundle.mjs / wasm / hand_landmarker.task.");
+    showToast("Camera tracking could not start. Check your connection and refresh.");
     return null;
   }
 }

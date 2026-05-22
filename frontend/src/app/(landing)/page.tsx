@@ -396,7 +396,7 @@ function HeroSection({ onTryNow }: { onTryNow: () => void }) {
 
             <div className="space-y-2">
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-light text-white leading-[1.1]">
-                Mousefit
+                MouseFit
               </h1>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-light text-white leading-[1.1]">
                 <span className="bg-gradient-to-r from-[#00a8e8] via-[#8b5cf6] to-[#34d399] bg-clip-text text-transparent">

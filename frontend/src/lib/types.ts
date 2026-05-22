@@ -28,6 +28,8 @@ export type Mouse = {
   price_usd?: number | null;
   price_status?: string | null;
   source_payload?: Record<string, unknown> | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export type Measurement = {

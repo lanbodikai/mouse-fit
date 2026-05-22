@@ -301,17 +301,12 @@ function SignInContent() {
 
           {authReady && !authEnabled && (
             <div className="mb-4 rounded-xl border border-amber-400/60 bg-amber-100 px-3.5 py-3 text-sm text-amber-900">
-              Authentication is disabled. Set{" "}
-              <code className="font-mono text-xs">NEXT_PUBLIC_ENABLE_AUTH=1</code>{" "}
-              to continue.
+              Sign in is not available right now. Start the app server, then try again.
             </div>
           )}
           {authReady && authEnabled && !authConfigured && (
             <div className="mb-4 rounded-xl border border-amber-400/60 bg-amber-100 px-3.5 py-3 text-sm text-amber-900">
-              Supabase auth is not configured. Set{" "}
-              <code className="font-mono text-xs">NEXT_PUBLIC_SUPABASE_URL</code>{" "}
-              and{" "}
-              <code className="font-mono text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
+              Sign in setup is not ready yet. Start the backend server, then try again.
             </div>
           )}
 
@@ -463,7 +458,7 @@ function SignInContent() {
 
           {socialProvidersKnown && visibleOAuthProviders.length === 0 && (
             <p className="mt-5 rounded-xl border border-amber-400/60 bg-amber-100 px-3.5 py-3 text-sm text-amber-900">
-              Social auth is not enabled for this Supabase project yet. Use email and password for now, or enable Google, GitHub, or Discord in Supabase Auth.
+              Social sign-in is not available right now. Use email and password.
             </p>
           )}
         </div>

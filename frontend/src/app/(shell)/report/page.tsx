@@ -1,353 +1,309 @@
 "use client";
 
-import Script from "next/script";
-import ReportStoreSync from "@/components/shell/ReportStoreSync";
-import { ShellNav } from "@/components/shell/ShellNav";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Hand,
+  Loader2,
+  MousePointer2,
+  RefreshCw,
+  Ruler,
+  Sparkles,
+  Target,
+} from "lucide-react";
+import { generateReport, getLatestReport } from "@/lib/api";
+import { ShellPage, ShellPanel } from "@/components/layout/ShellPage";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { buildBestMouseFromStorage, reportStore } from "@/lib/reportStore";
+import { getOrCreateSessionId } from "@/lib/session";
+import type { Grip, Measurement, Report } from "@/lib/types";
 
-const styles = `
-:root {
-  --bg: var(--bg0);
-  --fg: var(--text-primary);
-  --sub: var(--text-secondary);
-  --border: var(--border-color);
-  --surface: var(--surface-soft);
-  --surface-elevated: var(--surface-strong);
-  --card: var(--surface);
-  --card-strong: var(--surface-elevated);
-  --on-surface: var(--overlay-text);
-  --accent: var(--accent-gamer);
-  --accent-strong: var(--accent-gamer-strong);
-  --accent-soft: var(--accent-gamer-fill);
-  --accent-soft-strong: var(--accent-gamer-fill-strong);
-  --highlight: var(--accent-highlight);
-  --highlight-soft: var(--accent-highlight-fill);
-  --glow: var(--accent-gamer-glow);
+const REPORT_STORAGE_KEY = "mousefit:latest_report";
+const MEASURE_KEYS = ["mousefit:measure", "mf:measure"] as const;
+const GRIP_KEYS = ["mousefit:grip_result", "mf:grip_result"] as const;
+
+type LocalMeasure = {
+  len_mm?: number;
+  wid_mm?: number;
+};
+
+type LocalGrip = {
+  grip?: string;
+  confidence?: number;
+};
+
+function readLocalJson<T>(keys: readonly string[]): T | null {
+  if (typeof window === "undefined") return null;
+
+  for (const key of keys) {
+    try {
+      const raw = window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key);
+      if (raw) {
+        return JSON.parse(raw) as T;
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
-.tool-shell, .tool-shell * { box-sizing: border-box; }
-
-.tool-shell {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  font-family: "Sora", "Lexend", system-ui, Arial;
-  color: var(--fg);
-  padding: clamp(10px, 1.4vw, 16px);
+function writeLatestReport(report: Report) {
+  if (typeof window === "undefined") return;
+  const payload = JSON.stringify(report);
+  window.localStorage.setItem(REPORT_STORAGE_KEY, payload);
+  window.sessionStorage.setItem(REPORT_STORAGE_KEY, payload);
+  reportStore.setBestMouse(buildBestMouseFromStorage());
 }
 
-.main-content {
-  flex: 1 0 auto;
-  width: 100%;
-  padding: 4px clamp(18px, 2.2vw, 26px) 100px;
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof Error && error.message.toLowerCase().includes("could not find");
 }
 
-.btn {
-  background: var(--panel2);
-  color: var(--on-surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 11px 18px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  font-size: 13px;
+function formatGripLabel(grip: string | null | undefined): string {
+  if (!grip) return "Not recorded";
+  if (grip.toLowerCase() === "fingertip") return "Fingertip";
+  return grip.charAt(0).toUpperCase() + grip.slice(1);
 }
 
-.btn:hover {
-  border-color: var(--accent-gamer-line);
-  transform: translateY(-1px);
+function formatScore(score: number): string {
+  if (!Number.isFinite(score)) return "---";
+  return `${score <= 1 ? Math.round(score * 100) : Math.round(score)}%`;
 }
 
-.btn.neon {
-  background: var(--accent-gamer-fill);
-  border-color: var(--accent-gamer-line);
-  color: var(--on-surface);
+function measurementSummary(measurement: Measurement | null, localMeasurement: LocalMeasure | null): string {
+  if (measurement) {
+    return `${measurement.length_mm} x ${measurement.width_mm} mm`;
+  }
+  if (localMeasurement?.len_mm && localMeasurement?.wid_mm) {
+    return `${localMeasurement.len_mm} x ${localMeasurement.wid_mm} mm`;
+  }
+  return "Not recorded";
 }
 
-.btn.neon:hover {
-  background: var(--accent-soft-strong);
-  border-color: var(--accent-gamer-line-strong);
+function gripSummary(grip: Grip | null | undefined, localGrip: LocalGrip | null): string {
+  if (grip?.grip) return formatGripLabel(grip.grip);
+  if (localGrip?.grip) return formatGripLabel(localGrip.grip);
+  return "Not recorded";
 }
 
-.status {
-  font-size: 13px;
-  color: var(--sub);
-  min-height: 20px;
-  white-space: pre-wrap;
-}
-
-.report-wrap {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: grid;
-  gap: 28px;
-}
-
-.top-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 30px;
-  border: 1px solid var(--border);
-  background:
-    radial-gradient(120% 100% at 8% -16%, var(--accent-soft) 0%, rgba(0, 0, 0, 0) 65%),
-    radial-gradient(110% 90% at 90% -20%, var(--highlight-soft) 0%, rgba(0, 0, 0, 0) 66%),
-    var(--card-strong);
-  padding: 36px;
-}
-
-.kicker {
-  letter-spacing: 0.22em;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--accent-strong);
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.kicker::before {
-  content: '';
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
-}
-
-.h1 {
-  margin: 10px 0 10px;
-  font-size: clamp(28px, 3.5vw, 44px);
-  line-height: 1.1;
-  color: var(--on-surface);
-  font-weight: 600;
-}
-
-.lead {
-  margin: 0;
-  color: var(--sub);
-  font-size: 14px;
-  max-width: 720px;
-  line-height: 1.55;
-}
-
-.top-meta {
-  margin-top: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.stats {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(4, minmax(150px, 1fr));
-}
-
-.stat {
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: var(--panel);
-  padding: 18px 20px;
-  min-height: 94px;
-  display: grid;
-  gap: 6px;
-  border-top: 2px solid var(--border);
-}
-
-.stat:nth-child(1) { border-top-color: var(--accent); }
-.stat:nth-child(2) { border-top-color: var(--accent-violet, #8b5cf6); }
-.stat:nth-child(3) { border-top-color: var(--accent-amber, #f59e0b); }
-.stat:nth-child(4) { border-top-color: var(--accent-emerald, #34d399); }
-
-.stat-label {
-  font-size: 11px;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-
-.stat-value {
-  font-size: clamp(18px, 2.2vw, 25px);
-  line-height: 1.15;
-  font-weight: 600;
-  color: var(--on-surface);
-}
-
-.results-card {
-  border-radius: 26px;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  background: var(--card);
-  padding: 30px;
-  backdrop-filter: blur(10px);
-}
-
-.results-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-
-.results-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--on-surface);
-}
-
-.chosen-grip {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--sub);
-}
-
-.chosen-grip b {
-  color: var(--accent);
-  text-transform: capitalize;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.chip {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 18px 18px 16px;
-  font-weight: 600;
-  color: var(--on-surface);
-  min-height: 80px;
-  background: var(--surface-elevated);
-}
-
-.chip > * { position: relative; z-index: 1; }
-.chip .meta { font-weight: 500; color: var(--text-secondary); margin-top: 8px; font-size: 12px; line-height: 1.5; }
-.chip .pct {
-  position: absolute;
-  right: 11px;
-  top: 11px;
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--accent);
-  padding: 2px 8px;
-  border-radius: 8px;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-soft-strong);
-}
-.chip .reason {
-  margin-top: 6px;
-  font-size: 11px;
-  line-height: 1.45;
-  color: var(--text-tertiary);
-}
-
-.bg-palm::before, .bg-claw::before, .bg-tip::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0.3;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.bg-palm::before { background: linear-gradient(135deg, var(--accent-soft), rgba(255, 255, 255, 0.06)); }
-.bg-claw::before { background: linear-gradient(135deg, var(--accent-soft), var(--highlight-soft)); }
-.bg-tip::before { background: linear-gradient(135deg, var(--highlight-soft), rgba(255, 255, 255, 0.08)); }
-
-.foot {
-  flex-shrink: 0;
-  padding: 24px 16px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--sub);
-}
-
-@media (max-width: 720px) {
-  .main-content { padding: 0 14px 80px; }
-  .top-card { padding: 20px; border-radius: 24px; }
-  .results-card { padding: 18px; border-radius: 22px; }
-  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .top-meta { justify-content: stretch; }
-  .top-meta .btn { width: 100%; }
-  .results-title { font-size: 20px; }
-  .grid { grid-template-columns: 1fr; }
-}
-`;
-
-const bodyHtml = `
-  <div class="main-content">
-    <div class="report-wrap">
-      <section class="top-card">
-        <div class="kicker">Survey Report</div>
-        <h1 class="h1">Your Mouse Fit Analysis</h1>
-        <p class="lead">Generated automatically from your latest survey + measurement data, using fit-aware filtering, scoring, and optional chat rerank.</p>
-
-        <div class="stats">
-          <div class="stat">
-            <div class="stat-label">Hand Length</div>
-            <div class="stat-value" id="handLength">—</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Palm Width</div>
-            <div class="stat-value" id="handWidth">—</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Hand Size</div>
-            <div class="stat-value" id="handSize">—</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Chosen Grip</div>
-            <div class="stat-value" id="chosenGrip">—</div>
-          </div>
-        </div>
-
-        <div class="top-meta">
-          <a id="redoBtn" class="btn neon" href="/survey">Redo Test</a>
-        </div>
-      </section>
-
-      <section class="results-card">
-        <div class="results-head">
-          <div>
-            <h2 class="results-title" id="chosenGripTitle">Chosen Grip Recommendations</h2>
-            <div class="chosen-grip">Selected in survey: <b id="chosenGripInline">—</b></div>
-          </div>
-          <div class="status" id="status"></div>
-        </div>
-        <div id="grid-grip" class="grid"></div>
-      </section>
+function LoadingPage() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="mf-glass-pill inline-flex items-center gap-3 rounded-2xl px-5 py-4 text-sm text-[var(--shell-text-secondary)]">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Loading report...
+      </div>
     </div>
-  </div>
-
-  <footer class="foot">
-    <span>© <span id="y"></span> MouseFit</span>
-  </footer>
-`;
+  );
+}
 
 export default function ReportPage() {
-  const reportScriptVersion = "20260226-survey-matcher-v2";
+  const authReady = useRequireAuth();
+  const [report, setReport] = useState<Report | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [localMeasurement, setLocalMeasurement] = useState<LocalMeasure | null>(null);
+  const [localGrip, setLocalGrip] = useState<LocalGrip | null>(null);
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    const storedReport = readLocalJson<Report>([REPORT_STORAGE_KEY]);
+    const storedMeasurement = readLocalJson<LocalMeasure>(MEASURE_KEYS);
+    const storedGrip = readLocalJson<LocalGrip>(GRIP_KEYS);
+
+    setLocalMeasurement(storedMeasurement);
+    setLocalGrip(storedGrip);
+    if (storedReport) {
+      setReport(storedReport);
+      reportStore.setBestMouse(buildBestMouseFromStorage());
+    }
+
+    let cancelled = false;
+
+    async function loadLatest() {
+      try {
+        const latest = await getLatestReport(getOrCreateSessionId());
+        if (cancelled) return;
+        writeLatestReport(latest);
+        setReport(latest);
+      } catch (loadError) {
+        if (!cancelled && !storedReport && !isNotFoundError(loadError)) {
+          setError(loadError instanceof Error ? loadError.message : "Could not load the latest report.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadLatest();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady]);
+
+  const primaryRecommendation = report?.recommendations[0] ?? null;
+  const latestFitLabel = primaryRecommendation
+    ? `${primaryRecommendation.brand} ${primaryRecommendation.model}`.trim()
+    : "No report yet";
+
+  const statCards = useMemo(
+    () => [
+      {
+        label: "Measurement",
+        value: measurementSummary(report?.measurement ?? null, localMeasurement),
+        icon: Ruler,
+      },
+      {
+        label: "Grip",
+        value: gripSummary(report?.grip, localGrip),
+        icon: Hand,
+      },
+      {
+        label: "Top Match",
+        value: latestFitLabel,
+        icon: MousePointer2,
+      },
+      {
+        label: "Fit Score",
+        value: primaryRecommendation ? formatScore(primaryRecommendation.score) : "---",
+        icon: Target,
+      },
+    ],
+    [latestFitLabel, localGrip, localMeasurement, primaryRecommendation, report],
+  );
+
+  async function handleGenerateReport() {
+    setRunning(true);
+    setError(null);
+
+    try {
+      const nextReport = await generateReport(getOrCreateSessionId());
+      writeLatestReport(nextReport);
+      setReport(nextReport);
+      setLocalMeasurement({
+        len_mm: nextReport.measurement.length_mm,
+        wid_mm: nextReport.measurement.width_mm,
+      });
+      setLocalGrip(
+        nextReport.grip
+          ? {
+              grip: nextReport.grip.grip,
+              confidence: nextReport.grip.confidence,
+            }
+          : null,
+      );
+    } catch (generateError) {
+      setError(generateError instanceof Error ? generateError.message : "Could not generate the report.");
+    } finally {
+      setRunning(false);
+      setLoading(false);
+    }
+  }
+
+  if (!authReady) {
+    return <LoadingPage />;
+  }
+
   return (
-    <>
-      <ShellNav currentPage="report" />
-      <div className="h-full">
-        <style dangerouslySetInnerHTML={{ __html: styles }} />
-        <ReportStoreSync />
-        <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-        <Script type="module" src={`/src/js/report-module.js?v=${reportScriptVersion}`} strategy="afterInteractive" />
+    <ShellPage
+      title="Fit Report"
+      description=""
+      actions={
+        <button
+          type="button"
+          onClick={() => void handleGenerateReport()}
+          disabled={running}
+          className="mf-glass-button mf-glass-button-primary inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {report ? "Refresh report" : "Generate report"}
+        </button>
+      }
+    >
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        {statCards.map((card) => (
+          <div key={card.label} className="shell-surface-raised rounded-[26px] p-5">
+            <div className="shell-surface-soft flex h-11 w-11 items-center justify-center rounded-full">
+              <card.icon className="h-5 w-5 text-[var(--shell-text-secondary)]" />
+            </div>
+            <p className="mt-4 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--shell-text-tertiary)]">{card.label}</p>
+            <p className="mt-2 text-base font-semibold leading-7 text-[var(--shell-text-primary)]">{card.value}</p>
+          </div>
+        ))}
       </div>
-    </>
+
+      {error ? (
+        <ShellPanel title="Report issue" description={error} />
+      ) : null}
+
+      {loading && !report ? (
+        <ShellPanel title="Loading report" description="">
+          <div className="mf-glass-pill inline-flex items-center gap-3 rounded-full px-4 py-3 text-sm text-[var(--shell-text-secondary)]">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Looking for the latest report...
+          </div>
+        </ShellPanel>
+      ) : null}
+
+      {report ? (
+        <>
+          <ShellPanel
+            title="Summary"
+            description={report.summary || "Your latest MouseFit recommendation is ready below."}
+          >
+            <div className="shell-surface-soft rounded-[24px] px-5 py-4">
+              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">Session</p>
+              <p className="mt-2 text-sm leading-7 text-[var(--shell-text-secondary)]">
+                Created {new Date(report.created_at).toLocaleString()}
+              </p>
+            </div>
+          </ShellPanel>
+
+          <ShellPanel
+            title="Recommendations"
+            description=""
+          >
+            <div className="grid gap-4 lg:grid-cols-2">
+              {report.recommendations.map((recommendation, index) => (
+                <div key={recommendation.id} className="shell-surface-soft rounded-[24px] p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">
+                        Option {index + 1}
+                      </p>
+                      <h3 className="mt-2 text-lg font-semibold tracking-tight text-[var(--shell-text-primary)]">
+                        {[recommendation.brand, recommendation.model].filter(Boolean).join(" ")}
+                      </h3>
+                    </div>
+                    <div className="mf-glass-pill rounded-full px-3 py-2 text-sm font-semibold text-[var(--shell-text-primary)]">
+                      {formatScore(recommendation.score)}
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm leading-7 text-[var(--shell-text-secondary)]">{recommendation.reason}</p>
+                </div>
+              ))}
+            </div>
+          </ShellPanel>
+        </>
+      ) : !loading ? (
+        <ShellPanel
+          title="No report yet"
+          description="Measure your hand and capture your grip first, then generate the shortlist here."
+        >
+          <div className="flex flex-wrap gap-3">
+            <div className="mf-glass-pill inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm text-[var(--shell-text-secondary)]">
+              <Sparkles className="h-4 w-4" />
+              Complete the fit steps first.
+            </div>
+          </div>
+        </ShellPanel>
+      ) : null}
+    </ShellPage>
   );
 }

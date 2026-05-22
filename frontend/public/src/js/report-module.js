@@ -1300,7 +1300,7 @@ async function generateReport() {
     const useServerPipeline = useServerPipelineFlag && !hasSurveyDraftData();
     if (useServerPipeline) {
       try {
-        setStatus("Generating report from server...");
+        setStatus("Generating report...");
         const ok = await tryServerReport(profile.grip);
         if (ok) return;
       } catch (error) {
@@ -1309,7 +1309,7 @@ async function generateReport() {
     }
 
     if (!Number.isFinite(measurement.length_mm) || !Number.isFinite(measurement.width_mm)) {
-      setStatus("Missing measurement data. Run the survey again from Redo Test.");
+      setStatus("Measurement is missing. Complete the measure step again.");
       renderGrid($grid, [], profile.grip);
       return;
     }
@@ -1320,7 +1320,7 @@ async function generateReport() {
     const cleaned = deterministic.cleaned;
 
     if (!cleaned.length) {
-      setStatus("No eligible mice found after data-quality filtering.");
+      setStatus("No matching mice found for the current inputs.");
       renderGrid($grid, [], profile.grip);
       return;
     }
@@ -1338,10 +1338,10 @@ async function generateReport() {
       return;
     }
 
-    setStatus("Retrieving candidates...");
+    setStatus("Finding matches...");
     const retrieval = deterministic.retrieval;
     if (!retrieval.list.length) {
-      setStatus("No candidates were retrieved for your hand-size profile.");
+      setStatus("No matches were found for your hand-size profile.");
       renderGrid($grid, [], profile.grip);
       return;
     }
@@ -1352,38 +1352,38 @@ async function generateReport() {
 
     if (!candidatePool.length) {
       const selectedBits = profile.featureRequest.labels.length ? profile.featureRequest.labels.join(", ") : "current selections";
-      setStatus(`No candidates found after fallback for ${selectedBits}.`);
+      setStatus(`No matches found for ${selectedBits}.`);
       renderGrid($grid, [], profile.grip);
       return;
     }
 
-    setStatus("Scoring locally...");
+    setStatus("Scoring matches...");
     const localRanked = deterministic.localRanked;
     let topMatches = localRanked.slice(0, TOP_MATCH_LIMIT);
     let rerankStatus = "Local ranking used.";
 
     if (localRanked.length > TOP_MATCH_LIMIT) {
       try {
-        setStatus("Running chat rerank...");
+        setStatus("Refining matches...");
         const reranked = await rerankWithChat(profile, localRanked.slice(0, RERANK_CANDIDATE_LIMIT));
         if (reranked?.length) {
           topMatches = reranked.slice(0, TOP_MATCH_LIMIT);
-          rerankStatus = "Chat rerank applied.";
+          rerankStatus = "Matches refined.";
         } else {
-          rerankStatus = "Chat rerank unavailable; local ranking used.";
+          rerankStatus = "Showing the best available local matches.";
         }
       } catch (error) {
         console.warn("Chat rerank failed, using local ranking", error);
-        rerankStatus = "Chat rerank failed; local ranking used.";
+        rerankStatus = "Showing the best available local matches.";
       }
     }
 
     renderGrid($grid, topMatches, profile.grip);
-    const modeStatus = `Candidate mode: ${describeMode(mode, relaxedLabels)}.`;
+    const modeStatus = `Match mode: ${describeMode(mode, relaxedLabels)}.`;
     setStatus([budgetStatusNote, modeStatus, rerankStatus].filter(Boolean).join(" "));
   } catch (error) {
     console.error(error);
-    setStatus(String(error?.message || error || "Error"));
+    setStatus(String(error?.message || error || "Could not generate your report. Try again."));
   }
 }
 

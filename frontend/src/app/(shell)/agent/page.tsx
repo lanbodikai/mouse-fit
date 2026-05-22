@@ -1,1 +1,1 @@
-export { default } from "../ai/page";
+export { default } from "@/components/LegacyAiRouteRedirect";

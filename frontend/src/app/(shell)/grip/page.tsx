@@ -5,9 +5,10 @@ import { useEffect } from "react";
 import { ShellNav } from "@/components/shell/ShellNav";
 
 const styles = `
-:root {
+.tool-shell {
   --bg: var(--bg0);
   --fg: var(--text-primary);
+  --fg-strong: var(--shell-text-primary);
   --sub: var(--text-secondary);
   --border: var(--border-color);
   --accent: var(--accent-gamer);
@@ -21,6 +22,9 @@ const styles = `
   --surface-focus: var(--surface-veil);
   --on-surface: var(--overlay-text);
   --glow: var(--accent-gamer-glow);
+  --shadow-raised: var(--shell-shadow-raised);
+  --shadow-soft: var(--shell-shadow-soft);
+  --shadow-inset: var(--shell-shadow-inset);
 }
 
 .tool-shell, .tool-shell * { box-sizing: border-box; }
@@ -69,7 +73,7 @@ const styles = `
   overflow: hidden;
   border: 1px solid var(--border);
   background: var(--surface);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-raised);
   flex-shrink: 0;
 }
 
@@ -129,8 +133,8 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent-emerald, #34d399);
-  box-shadow: 0 0 6px var(--accent-emerald, #34d399);
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-soft-strong);
 }
 
 .stage .toast {
@@ -185,9 +189,9 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   max-height: none;
   border: 1px solid var(--border);
   background: var(--surface);
-  backdrop-filter: blur(10px);
   border-radius: 20px;
   padding: 20px;
+  box-shadow: var(--shadow-soft);
   scrollbar-width: none;
 }
 
@@ -199,16 +203,16 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   border-radius: 20px;
   border: 1px solid var(--border);
   background: var(--surface);
-  backdrop-filter: blur(10px);
   color: var(--fg);
   z-index: 60;
+  box-shadow: var(--shadow-soft);
 }
 
 .coach.hidden { display: none; }
 .coach-bar { display: flex; align-items: center; padding: 0; margin: 0 0 12px 0; border: none; background: none; }
 .coach-bar strong { font-size: 14px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; }
-.coach-bar strong::before { content: ''; width: 3px; height: 18px; border-radius: 2px; background: linear-gradient(to bottom, var(--accent), var(--accent-violet, #8b5cf6)); }
-.coach-close { display: none; }
+.coach-bar strong::before { content: ''; width: 3px; height: 18px; border-radius: 2px; background: var(--accent); }
+.coach-close { display: none; margin-left: auto; min-height: 34px; padding: 7px 10px; }
 .coach-content p { margin: 6px 0; color: var(--sub); line-height: 1.5; font-size: 13px; }
 .coach-content b { color: var(--accent); }
 
@@ -228,7 +232,8 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   min-height: 122px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: var(--accent-soft);
+  background: var(--surface-elevated);
+  box-shadow: var(--shadow-soft);
 }
 
 .capture-bar { min-height: 138px; }
@@ -242,19 +247,20 @@ canvas#overlay { z-index: 3; pointer-events: none; }
 .pill {
   padding: 6px 10px;
   border-radius: 12px;
-  background: var(--accent-soft);
+  background: var(--surface-elevated);
   border: 1px solid var(--border);
   font-size: 11px;
-  color: var(--fg);
+  color: var(--fg-strong);
   font-weight: 600;
+  box-shadow: var(--shadow-soft);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 button, .btn-link {
-  background: var(--accent-soft);
-  color: var(--fg);
+  background: var(--surface-elevated);
+  color: var(--fg-strong);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 14px;
@@ -264,18 +270,20 @@ button, .btn-link {
   text-align: center;
   transition: all 0.2s;
   font-size: 13px;
+  box-shadow: var(--shadow-soft);
 }
 
-button:hover, .btn-link:hover { background: var(--accent-soft-strong); border-color: var(--accent); }
-button.primary { background: var(--accent-soft-strong); border-color: var(--accent); border-bottom: 2px solid var(--accent); }
+button:hover, .btn-link:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-raised); }
+button.primary { background: var(--accent-soft-strong); border-color: rgba(255,255,255,.42); color: var(--on-surface); box-shadow: var(--shadow-soft), 0 0 0 1px var(--accent-soft); }
 
 select {
-  background: var(--surface-elevated);
-  color: var(--fg);
+  background: var(--surface-focus);
+  color: var(--fg-strong);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 8px 12px;
   font-size: 13px;
+  box-shadow: var(--shadow-inset);
 }
 
 .thumbs {
@@ -293,12 +301,13 @@ select {
   max-width: 90px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-focus);
   overflow: hidden;
   display: grid;
   place-items: center;
   font-size: 11px;
   color: var(--sub);
+  box-shadow: var(--shadow-inset);
 }
 
 .thumb span { position: absolute; left: 6px; right: 6px; bottom: 4px; text-align: center; font-size: 10px; }
@@ -331,6 +340,7 @@ label { font-size: 13px; color: var(--sub); }
   max-width: 380px;
   width: 90%;
   text-align: center;
+  box-shadow: var(--shadow-raised);
 }
 
 .result-popup .result-label {
@@ -383,6 +393,185 @@ label { font-size: 13px; color: var(--sub); }
   .panel { max-height: none; }
 }
 
+@media (min-width: 900px) and (min-aspect-ratio: 159/100) and (max-aspect-ratio: 161/100) {
+  .wrap {
+    --capture-shell-height: clamp(550px, 83.6vh, 946px);
+    max-width: 1018px;
+    transform: scale(1.1);
+    transform-origin: center top;
+  }
+}
+
+@media (max-width: 700px) {
+  .tool-shell {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    display: block;
+  }
+
+  .wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 60%) minmax(0, 40%);
+    height: 100%;
+    min-height: 0;
+    max-width: none;
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .stage {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: auto;
+    border-radius: 22px 22px 12px 12px;
+  }
+
+  .stage .badge {
+    right: 8px;
+    top: 8px;
+    font-size: 10px;
+    padding: 5px 10px 5px 19px;
+  }
+
+  .stage .toast {
+    top: 44px;
+    width: min(86%, 300px);
+    padding: 8px 12px;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .control-dock {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .panel {
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 9px;
+    border-radius: 12px 12px 22px 22px;
+  }
+
+  .panel .row {
+    gap: 6px !important;
+    margin-bottom: 3px !important;
+    flex-wrap: nowrap;
+  }
+
+  .row select,
+  .row input[type="range"] {
+    flex-basis: 0;
+  }
+
+  .pill {
+    padding: 5px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+
+  label,
+  select,
+  button,
+  .btn-link {
+    font-size: 12px;
+  }
+
+  button,
+  .btn-link {
+    min-height: 36px;
+    padding: 8px 10px;
+    border-radius: 11px;
+  }
+
+  .hint {
+    margin: 2px 0 4px;
+    max-height: 32px;
+    overflow: hidden;
+    font-size: 10.5px;
+    line-height: 1.35;
+  }
+
+  .thumbs {
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .thumb {
+    height: 34px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+
+  .thumb span {
+    bottom: 3px;
+    font-size: 9px;
+  }
+
+  .toolbar {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: 2px;
+    padding: 8px;
+    gap: 6px;
+    justify-content: end;
+  }
+
+  .capture-bar {
+    min-height: 0;
+  }
+
+  .btn-group {
+    gap: 6px;
+  }
+
+  .btn-group button,
+  .btn-group .btn-link {
+    min-height: 38px;
+  }
+
+  .coach {
+    position: fixed;
+    left: clamp(88px, 24vw, 104px);
+    right: 16px;
+    width: auto;
+    top: 18px;
+    max-height: calc(100dvh - 36px);
+    overflow: auto;
+    padding: 16px;
+    border-radius: 20px;
+    z-index: 150;
+  }
+
+  .coach-bar {
+    margin-bottom: 8px;
+  }
+
+  .coach-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .coach-content p {
+    margin: 5px 0;
+    font-size: 12px;
+  }
+}
+
 `;
 
 const bodyHtml = `
@@ -399,7 +588,7 @@ const bodyHtml = `
 
     <div class="control-dock">
       <div class="coach" id="coach" data-key="mf:coach:grip" role="dialog">
-        <div class="coach-bar"><strong>Quick Guide</strong></div>
+        <div class="coach-bar"><strong>Quick Guide</strong><button type="button" class="coach-close" aria-label="Close instructions" onclick="try{window.sessionStorage?.setItem('mf:coach:grip:dismissed','1')}catch(e){};this.closest('.coach').classList.add('hidden')">Close</button></div>
         <div class="coach-content">
           <p>1. Position hand (holding mouse) inside box</p>
           <p>2. Capture <b>Top</b>, <b>Bottom</b>, then <b>Side</b> views</p>
@@ -469,7 +658,27 @@ export default function GripPage() {
     const ensureCoachVisible = () => {
       const coach = document.getElementById('coach');
       if (coach) {
-        coach.classList.remove('hidden');
+        const dismissKey = `${coach.dataset.key || 'mf:coach:grip'}:dismissed`;
+        const isMobile = window.matchMedia('(max-width: 700px)').matches;
+        let dismissed = false;
+        try {
+          dismissed = window.sessionStorage?.getItem(dismissKey) === '1';
+        } catch {}
+        const closeButton = coach.querySelector<HTMLButtonElement>('.coach-close');
+        if (closeButton && !closeButton.dataset.bound) {
+          closeButton.dataset.bound = '1';
+          closeButton.addEventListener('click', () => {
+            try {
+              window.sessionStorage?.setItem(dismissKey, '1');
+            } catch {}
+            coach.classList.add('hidden');
+          });
+        }
+        if (isMobile && dismissed) {
+          coach.classList.add('hidden');
+        } else {
+          coach.classList.remove('hidden');
+        }
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('grip-page-ready'));
         }
@@ -495,7 +704,7 @@ export default function GripPage() {
   return (
     <>
       <ShellNav currentPage="grip" />
-      <div className="h-full min-h-0">
+      <div className="studio-tool-page h-full min-h-0">
         <style dangerouslySetInnerHTML={{ __html: styles }} />
         <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
         <Script
@@ -505,7 +714,7 @@ export default function GripPage() {
             __html: `['thumbTop','thumbBottom','thumbSide'].forEach(id => {\n  const img = document.getElementById(id);\n  const box = img?.closest('.thumb');\n  if (!img || !box) return;\n  const showIfLoaded = () => { if (img.currentSrc && img.naturalWidth > 0) box.classList.add('has-img'); };\n  img.addEventListener('load', showIfLoaded);\n  if (img.complete) showIfLoaded();\n});`,
           }}
         />
-        <Script type="module" src="/src/js/grip.js" strategy="afterInteractive" key="grip-js" />
+        <Script type="module" src="/src/js/grip.js?v=2" strategy="afterInteractive" key="grip-js" />
         <Script
           id="grip-finish"
           strategy="afterInteractive"

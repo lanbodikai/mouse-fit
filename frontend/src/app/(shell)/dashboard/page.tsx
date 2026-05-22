@@ -1,5 +1,5 @@
-import MouseFitDashboard from "@/components/mousefit";
+import MouseCatalogHome from "@/components/MouseCatalogHome";
 
 export default function DashboardPage() {
-  return <MouseFitDashboard />;
+  return <MouseCatalogHome />;
 }

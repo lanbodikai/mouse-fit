@@ -38,7 +38,7 @@ function resetChat() {
   if (messagesEl) messagesEl.innerHTML = "";
   appendMessage(
     "assistant",
-    "Tell me your hand size, grip style, and budget, and I will recommend the best mouse options from the backend model."
+    "Tell me your hand size, grip style, and budget, and I will recommend options from the MouseFit database."
   );
 }
 
@@ -73,7 +73,7 @@ async function sendMessage(rawText) {
     chatHistory.push({ role: "assistant", content: reply });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    appendMessage("assistant", `Request failed: ${msg}`);
+    appendMessage("assistant", `MouseFit AI could not answer. ${msg}`);
   } finally {
     if (sendBtn) sendBtn.removeAttribute("disabled");
   }
@@ -94,7 +94,7 @@ function onKeydown(event) {
 }
 
 function boot() {
-  if (badgeEl) badgeEl.textContent = "Backend chat endpoint: /api/chat";
+  if (badgeEl) badgeEl.textContent = "MouseFit AI";
   resetChat();
 }
 

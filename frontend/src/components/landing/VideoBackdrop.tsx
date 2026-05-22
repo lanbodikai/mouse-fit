@@ -164,38 +164,6 @@ export function VideoBackdrop({ src, className = "" }: VideoBackdropProps) {
           background: "radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%)",
         }}
       />
-
-      <style jsx>{`
-        @keyframes mf-video-crossfade {
-          0%,
-          18% {
-            opacity: 0;
-          }
-          42%,
-          62% {
-            opacity: 1;
-          }
-          86%,
-          100% {
-            opacity: 0;
-          }
-        }
-
-        @keyframes mf-fallback-crossfade {
-          0%,
-          18% {
-            opacity: 1;
-          }
-          42%,
-          62% {
-            opacity: 0;
-          }
-          86%,
-          100% {
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }

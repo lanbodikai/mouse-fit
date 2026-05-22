@@ -555,7 +555,7 @@ export default function MousefitSurveyPage() {
         router.push("/dashboard");
       } catch (e) {
         setSubmitting(false);
-        setError(e instanceof Error ? e.message : "Failed to save survey.");
+        setError(e instanceof Error ? e.message : "Could not save your survey. Start the backend server, then try again.");
       }
     })();
   };

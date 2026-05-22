@@ -48,7 +48,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className="light" suppressHydrationWarning>
       <body className={`${sora.variable} ${lexend.variable} ${jetbrainsMono.variable} antialiased`}>
         <script
           dangerouslySetInnerHTML={{
@@ -68,7 +68,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  const theme = localStorage.getItem('theme') || 'dark';
+                  const theme = localStorage.getItem('theme') || 'light';
                   document.documentElement.classList.remove('light', 'dark');
                   document.documentElement.classList.add(theme);
                 } catch (e) {}

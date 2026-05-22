@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function DatabasePage() {
+export default function DeskHeightTunePage() {
   redirect("/dashboard");
 }

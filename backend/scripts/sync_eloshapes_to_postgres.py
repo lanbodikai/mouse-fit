@@ -6,6 +6,7 @@ import os
 import re
 import sys
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote, urljoin
 
 import requests
 
@@ -19,6 +20,10 @@ except Exception:  # pragma: no cover - optional for --dry-run environments
 DEFAULT_ELOSHAPES_BASE_URL = os.getenv("ELOSHAPES_BASE_URL", "https://www.eloshapes.com").strip().rstrip("/")
 DEFAULT_TIMEOUT_SEC = float(os.getenv("ELOSHAPES_TIMEOUT_SEC", "45"))
 DEFAULT_PAGE_SIZE = int(os.getenv("ELOSHAPES_PAGE_SIZE", "500"))
+SOURCE_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; MouseFitSync/1.0; +https://mouse-fit.local)",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
 
 
 def slugify(value: str) -> str:
@@ -172,11 +177,38 @@ def _pick_first_url(links: Any) -> Optional[str]:
     return None
 
 
-def _pick_image_url(row: Dict[str, Any]) -> Optional[str]:
-    for key in ("mouse__top_view", "mouse__side_view", "mouse__back_view"):
-        maybe = _clean_text(row.get(key))
-        if maybe and maybe.startswith(("http://", "https://")):
-            return maybe
+def _svg_to_data_url(svg_markup: str) -> str:
+    return "data:image/svg+xml;utf8," + quote(svg_markup, safe="/:;,+?=&()#[]@!$'*-_.~")
+
+
+def _normalize_image_reference(candidate: Any, supabase_url: str) -> Optional[str]:
+    maybe = _clean_text(candidate)
+    if not maybe:
+        return None
+    if maybe.startswith(("http://", "https://", "data:")):
+        return maybe
+    if maybe.startswith("<svg"):
+        return _svg_to_data_url(maybe)
+
+    path = maybe.lstrip("/")
+    if "/" not in path:
+        path = f"products/{path}"
+    return f"{supabase_url}/storage/v1/object/public/images/{path}"
+
+
+def _pick_image_urls(row: Dict[str, Any], supabase_url: str) -> List[str]:
+    seen: set[str] = set()
+    out: List[str] = []
+
+    def add(candidate: Any) -> None:
+        normalized = _normalize_image_reference(candidate, supabase_url)
+        if not normalized:
+            return
+        if normalized in seen:
+            return
+        seen.add(normalized)
+        out.append(normalized)
+
     images = row.get("general__images")
     if isinstance(images, list):
         for image in images:
@@ -185,20 +217,41 @@ def _pick_image_url(row: Dict[str, Any]) -> Optional[str]:
             urls = image.get("urls")
             if isinstance(urls, list):
                 for raw in urls:
-                    maybe = _clean_text(raw)
-                    if maybe and maybe.startswith(("http://", "https://")):
-                        return maybe
-    return None
+                    add(raw)
+    for key in ("mouse__top_view", "mouse__side_view", "mouse__back_view"):
+        add(row.get(key))
+    return out
 
 
-def discover_supabase_credentials(base_url: str, timeout_sec: float) -> tuple[str, str]:
+def _discover_browse_bundle_url(base_url: str, html: str) -> str:
+    match = re.search(r'"#entry"\s*:\s*"([^"]*/_nuxt/[^"]+\.js[^"]*)"', html)
+    if not match:
+        match = re.search(r'src="([^"]*/_nuxt/[^"]+\.js[^"]*)"', html)
+    if not match:
+        raise RuntimeError("Could not discover EloShapes Nuxt bundle URL from /mouse/browse.")
+    return urljoin(f"{base_url}/mouse/browse", match.group(1).strip())
+
+
+def _discover_mouse_browse_chunk_url(base_url: str, main_bundle_url: str, bundle_js: str) -> str:
+    match = re.search(r'path:"/mouse/browse",component:\(\)=>.*?import\("\./([^"]+\.js)"\)', bundle_js)
+    if not match:
+        raise RuntimeError("Could not discover EloShapes mouse browse chunk from Nuxt bundle.")
+    return urljoin(main_bundle_url, match.group(1).strip())
+
+
+def _discover_products_table_name(browse_chunk_js: str) -> str:
+    matches = re.findall(r'from\("([^"]+)"\)', browse_chunk_js)
+    for table_name in matches:
+        if table_name.startswith("products_available_"):
+            return table_name
+    raise RuntimeError("Could not discover EloShapes products table name from mouse browse chunk.")
+
+
+def discover_source_config(base_url: str, timeout_sec: float) -> tuple[str, str, str]:
     url = f"{base_url}/mouse/browse"
     resp = requests.get(
         url,
-        headers={
-            "User-Agent": "Mozilla/5.0 (compatible; MouseFitSync/1.0; +https://mouse-fit.local)",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        },
+        headers=SOURCE_HEADERS,
         timeout=timeout_sec,
     )
     resp.raise_for_status()
@@ -207,7 +260,19 @@ def discover_supabase_credentials(base_url: str, timeout_sec: float) -> tuple[st
     match = re.search(r'supabase:\s*\{\s*url:"([^"]+)"\s*,\s*key:"([^"]+)"', html)
     if not match:
         raise RuntimeError("Could not discover EloShapes Supabase credentials from runtime config.")
-    return match.group(1).strip().rstrip("/"), match.group(2).strip()
+    supabase_url = match.group(1).strip().rstrip("/")
+    apikey = match.group(2).strip()
+
+    main_bundle_url = _discover_browse_bundle_url(base_url, html)
+    bundle_resp = requests.get(main_bundle_url, headers=SOURCE_HEADERS, timeout=timeout_sec)
+    bundle_resp.raise_for_status()
+
+    browse_chunk_url = _discover_mouse_browse_chunk_url(base_url, main_bundle_url, bundle_resp.text)
+    browse_chunk_resp = requests.get(browse_chunk_url, headers=SOURCE_HEADERS, timeout=timeout_sec)
+    browse_chunk_resp.raise_for_status()
+
+    products_table = _discover_products_table_name(browse_chunk_resp.text)
+    return supabase_url, apikey, products_table
 
 
 def fetch_table_rows(
@@ -271,6 +336,7 @@ def transform_product(
     row: Dict[str, Any],
     availability_status: str,
     affiliate_lookup: Dict[str, Dict[str, Any]],
+    supabase_url: str,
 ) -> Dict[str, Any]:
     source_handle = _clean_text(row.get("general__handle"))
     brand = _join_brand_names(row.get("general__brand_names"), _clean_text(row.get("general__brands_separator")))
@@ -309,6 +375,7 @@ def transform_product(
     if not product_url and affiliate_row:
         product_url = _pick_first_url(affiliate_row.get("links"))
 
+    image_urls = _pick_image_urls(row, supabase_url)
     source_id = (source_handle or "").strip() or slugify(f"{brand}-{model}-{variant or ''}")
     return {
         "id": source_id,
@@ -326,7 +393,8 @@ def transform_product(
         "grips": grips,
         "hands": hands,
         "product_url": product_url,
-        "image_url": _pick_image_url(row),
+        "image_url": image_urls[0] if image_urls else None,
+        "image_urls": image_urls,
         "source": "eloshapes",
         "source_handle": source_handle,
         "availability_status": availability_status,
@@ -367,6 +435,7 @@ def ensure_mice_schema(conn) -> None:
                 hands JSONB NOT NULL DEFAULT '[]'::jsonb,
                 product_url TEXT,
                 image_url TEXT,
+                image_urls JSONB NOT NULL DEFAULT '[]'::jsonb,
                 source TEXT,
                 source_handle TEXT,
                 availability_status TEXT,
@@ -388,6 +457,7 @@ def ensure_mice_schema(conn) -> None:
             )
             """
         )
+        cur.execute("ALTER TABLE mice ADD COLUMN IF NOT EXISTS image_urls JSONB NOT NULL DEFAULT '[]'::jsonb")
         cur.execute(
             """
             SELECT indexdef
@@ -428,6 +498,7 @@ INSERT INTO mice (
     hands,
     product_url,
     image_url,
+    image_urls,
     source,
     source_handle,
     availability_status,
@@ -447,7 +518,7 @@ INSERT INTO mice (
     updated_at
 ) VALUES (
     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-    %s::jsonb, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+    %s::jsonb, %s::jsonb, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
     %s::jsonb, %s, %s, %s, %s, %s::jsonb, NOW()
 )
 ON CONFLICT (id) DO UPDATE SET
@@ -467,6 +538,7 @@ ON CONFLICT (id) DO UPDATE SET
     hands = EXCLUDED.hands,
     product_url = EXCLUDED.product_url,
     image_url = EXCLUDED.image_url,
+    image_urls = EXCLUDED.image_urls,
     source = EXCLUDED.source,
     availability_status = EXCLUDED.availability_status,
     shape_raw = EXCLUDED.shape_raw,
@@ -513,6 +585,7 @@ def upsert_mice(conn, mice_rows: List[Dict[str, Any]]) -> int:
                     json.dumps(row["hands"]),
                     row["product_url"],
                     row["image_url"],
+                    json.dumps(row["image_urls"]),
                     row["source"],
                     row["source_handle"],
                     row["availability_status"],
@@ -582,38 +655,23 @@ def main(argv: List[str]) -> int:
 
     base_url = args.base_url.strip().rstrip("/")
     print(f"[sync] Discovering source config from {base_url}/mouse/browse")
-    supabase_url, supabase_key = discover_supabase_credentials(base_url, args.timeout_sec)
+    supabase_url, supabase_key, products_table = discover_source_config(base_url, args.timeout_sec)
     rest_base = f"{supabase_url}/rest/v1"
     print(f"[sync] Supabase project detected: {supabase_url}")
+    print(f"[sync] Products table detected: {products_table}")
 
     with requests.Session() as session:
         available = fetch_table_rows(
             session=session,
             supabase_rest_base=rest_base,
             apikey=supabase_key,
-            table_name="products_available_v8",
+            table_name=products_table,
             timeout_sec=args.timeout_sec,
             page_size=args.page_size,
             category="mouse",
         )
-        coming_soon = fetch_table_rows(
-            session=session,
-            supabase_rest_base=rest_base,
-            apikey=supabase_key,
-            table_name="products_coming_soon_v8",
-            timeout_sec=args.timeout_sec,
-            page_size=args.page_size,
-            category="mouse",
-        )
-        affiliates = fetch_table_rows(
-            session=session,
-            supabase_rest_base=rest_base,
-            apikey=supabase_key,
-            table_name="affiliates_available_v2",
-            timeout_sec=args.timeout_sec,
-            page_size=args.page_size,
-            category=None,
-        )
+        coming_soon: List[Dict[str, Any]] = []
+        affiliates: List[Dict[str, Any]] = []
 
     print(f"[sync] Fetched available mice: {len(available)}")
     print(f"[sync] Fetched coming-soon mice: {len(coming_soon)}")
@@ -623,12 +681,12 @@ def main(argv: List[str]) -> int:
     transformed_map: Dict[str, Dict[str, Any]] = {}
 
     for row in coming_soon:
-        transformed = transform_product(row, "coming_soon", affiliate_lookup)
+        transformed = transform_product(row, "coming_soon", affiliate_lookup, supabase_url)
         if transformed["source_handle"]:
             transformed_map[transformed["source_handle"]] = transformed
 
     for row in available:
-        transformed = transform_product(row, "available", affiliate_lookup)
+        transformed = transform_product(row, "available", affiliate_lookup, supabase_url)
         if transformed["source_handle"]:
             transformed_map[transformed["source_handle"]] = transformed
 

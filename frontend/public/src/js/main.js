@@ -97,6 +97,7 @@ let zoomMin = 1;
 let zoomMax = 3;
 let zoomStep = 0.05;
 let zoomMode = "digital";
+let cameraBlocked = false;
 
 try {
   const savedZoom = parseFloat(localStorage.getItem(PREF_CAM_ZOOM) || "1");
@@ -221,6 +222,7 @@ async function populateCams(force=false) {
 
 async function startCam(deviceId) {
   stopCam();
+  cameraBlocked = false;
 
   // Keep first request lightweight for faster camera warm-up.
   const constraints = deviceId
@@ -234,6 +236,7 @@ async function startCam(deviceId) {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     } catch (e2) {
+      cameraBlocked = true;
       return handleGUMError(e2);
     }
   }
@@ -292,6 +295,37 @@ function stopCam() {
     video.srcObject = null;
     video.pause();
   }
+}
+
+function hasUsableCameraFrame() {
+  const track = stream?.getVideoTracks?.()[0];
+  return Boolean(
+    stream &&
+    stream.active &&
+    track &&
+    track.readyState === "live" &&
+    video &&
+    video.readyState >= 2 &&
+    canvas
+  );
+}
+
+function requireCameraForCapture() {
+  if (hasUsableCameraFrame()) return true;
+  if (countdownTimer) {
+    clearTimeout(countdownTimer);
+    countdownTimer = null;
+  }
+  if (countdownEl) countdownEl.style.display = "none";
+  if (statusBadge) statusBadge.textContent = cameraBlocked ? "Blocked" : "Camera needed";
+  showToast(
+    cameraBlocked
+      ? "Camera permission is blocked. Allow camera access, then press Refresh."
+      : "Start the camera before capturing.",
+    3200
+  );
+  if (startCamBtn) startCamBtn.style.display = "block";
+  return false;
 }
 
 // Expose stopCam globally for cleanup
@@ -546,7 +580,7 @@ async function mp(mode) {
   } catch (err) {
     mpFailed = true;
     console.error("[MediaPipe] init failed", err);
-    showToast("Hand model failed to load. Check network for vision_bundle.mjs / wasm / hand_landmarker.task.");
+    showToast("Camera tracking could not start. Check your connection and refresh.");
     return null;
   }
 }
@@ -615,6 +649,7 @@ function drawSkeletonLive() {
 
 /* ================== Capture flow ================== */
 function startCountdown(seconds = 5) {
+  if (!requireCameraForCapture()) return;
   countdownEl.style.display = "flex";
   countdownEl.textContent = seconds;
   const tick = () => {
@@ -632,6 +667,7 @@ function startCountdown(seconds = 5) {
 }
 
 function capture() {
+  if (!requireCameraForCapture()) return;
   resize();
   drawVideoFrame();
   frameData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -1336,8 +1372,17 @@ function setupCoachBox(){
     return;
   }
   coachSetupAttempts = 0; // Reset counter on success
-  // Ensure coach is visible - remove hidden class and ensure display
-  coach.classList.remove('hidden');
+  const isMobile = window.matchMedia('(max-width: 700px)').matches;
+  let dismissed = false;
+  try {
+    dismissed = window.sessionStorage?.getItem('mf:coach:measure:dismissed') === '1';
+  } catch {}
+  // Ensure coach is visible unless the mobile coach was dismissed for this session.
+  if (isMobile && dismissed) {
+    coach.classList.add('hidden');
+  } else {
+    coach.classList.remove('hidden');
+  }
   coach.style.display = '';
   coach.style.visibility = 'visible';
   coach.style.opacity = '1';
@@ -1359,11 +1404,7 @@ function setupCoachBox(){
   
   // Remove any floating/draggable functionality - just keep it as static UI
   const closeBtn = coach.querySelector('.coach-close');
-  if (closeBtn) {
-    closeBtn.type = 'button';
-    // Don't allow closing - coach stays visible
-    closeBtn.style.display = 'none';
-  }
+  if (closeBtn) closeBtn.type = 'button';
 }
 
 // Call setup functions after they're defined

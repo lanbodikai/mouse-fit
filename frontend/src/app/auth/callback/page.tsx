@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
-import { getLastOAuthProvider, getSupabaseCallbackUrl, handleAuthCallback, isAuthEnabled, signOut } from "@/lib/auth";
+import { getLastOAuthProvider, handleAuthCallback, isAuthEnabled, signOut } from "@/lib/auth";
 import { buildLoginUrl, DEFAULT_POST_LOGIN_PATH, resolvePostAuthDestination, sanitizeRedirectPath } from "@/lib/auth-intent";
 
 function readErrorMessage(error: unknown, provider: "github" | "google" | "discord" | null): string {
@@ -12,22 +12,15 @@ function readErrorMessage(error: unknown, provider: "github" | "google" | "disco
     const message = error.message.trim();
     const lower = message.toLowerCase();
     if (lower.includes("redirect_uri_mismatch")) {
-      const callbackUrl = getSupabaseCallbackUrl();
-      return callbackUrl
-        ? `OAuth redirect URI mismatch. In Google/GitHub/Discord set the provider callback URL to ${callbackUrl}.`
-        : "OAuth redirect URI mismatch. In Google/GitHub/Discord set the provider callback URL to your Supabase /auth/v1/callback URL.";
+      return "Sign in could not finish. Start sign-in again, or contact support if it keeps happening.";
     }
     if (lower.includes("invalid flow state")) {
-      return "OAuth flow state is invalid or expired. Start sign-in again from the same domain, and ensure Supabase redirect URLs include this exact origin.";
+      return "This sign-in link expired. Start sign-in again.";
     }
     if (lower.includes("error getting user profile from external provider")) {
-      const callbackUrl = getSupabaseCallbackUrl();
-      if (provider === "github") {
-        return callbackUrl
-          ? `GitHub profile fetch failed. In Supabase Auth -> Providers -> GitHub, verify Client ID/Secret, set callback URL to ${callbackUrl}, and ensure scopes include read:user and user:email.`
-          : "GitHub profile fetch failed. In Supabase Auth -> Providers -> GitHub, verify Client ID/Secret and ensure scopes include read:user and user:email.";
-      }
-      return "Provider profile fetch failed. Verify provider Client ID/Secret and required scopes in Supabase Auth Providers.";
+      return provider
+        ? `Could not read your ${provider} profile. Try signing in again.`
+        : "Could not read your profile. Try signing in again.";
     }
     return message;
   }
@@ -49,7 +42,7 @@ function AuthCallbackContent() {
     async function run() {
       if (!isAuthEnabled()) {
         if (!active) return;
-        setError("Auth is disabled. Set NEXT_PUBLIC_ENABLE_AUTH=1 and retry.");
+        setError("Sign in is not available right now. Start the app server, then try again.");
         return;
       }
 

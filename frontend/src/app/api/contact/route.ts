@@ -82,8 +82,7 @@ export async function POST(req: Request) {
   if (!smtpConfig) {
     return json(500, {
       code: "email_not_configured",
-      message:
-        "Email is not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS (and optionally CONTACT_TO).",
+      message: "Messages are not available right now. Please try again later.",
       request_id: rid,
     });
   }
@@ -101,7 +100,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("Contact email send failed:", err);
-    return json(500, { code: "email_send_failed", message: "Failed to send email", request_id: rid });
+    return json(500, { code: "email_send_failed", message: "Could not send your message. Please try again later.", request_id: rid });
   }
 
   return json(200, { ok: true, request_id: rid });
