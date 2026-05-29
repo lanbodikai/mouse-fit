@@ -29,6 +29,16 @@ from backend.rag.schemas import (
 router = APIRouter()
 _SESSION = requests.Session()
 CHAT_LIMIT = RateLimitSpec(max_requests=20, window_seconds=60)
+DEPRECATED_RAG_MESSAGE = (
+    "This RAG endpoint is deprecated. Use the survey matcher + /api/chat rerank flow instead."
+)
+
+
+def _raise_deprecated_rag_endpoint() -> None:
+    raise HTTPException(
+        status_code=410,
+        detail={"code": "endpoint_deprecated", "message": DEPRECATED_RAG_MESSAGE},
+    )
 
 
 def _client_key(request: Request) -> str:
@@ -240,6 +250,7 @@ def _build_context(sources: List[RagSource], max_lines: int = 24) -> str:
 
 @router.post("/api/rag/query", response_model=RagAnswer)
 def rag_query(payload: RagQuery) -> RagAnswer:
+    _raise_deprecated_rag_endpoint()
     prefs = payload.prefs or RagPreferences()
     k = max(3, int(payload.top_k or 3))
     pool = retrieve(payload.query, prefs, k=min(max(k * 6, 18), 128))
@@ -361,6 +372,7 @@ def _normalize_doc(source: RagSource) -> Candidate:
 
 @router.post("/api/candidates", response_model=CandidateResponse)
 def rag_candidates(payload: CandidateRequest) -> CandidateResponse:
+    _raise_deprecated_rag_endpoint()
     profile = payload.profile.model_dump() if payload.profile else {}
     prefs = RagPreferences(
         grip=payload.profile.grip,
@@ -396,6 +408,7 @@ def rag_candidates(payload: CandidateRequest) -> CandidateResponse:
 
 @router.post("/api/rerank", response_model=RerankResponse)
 def rag_rerank(payload: RerankRequest) -> RerankResponse:
+    _raise_deprecated_rag_endpoint()
     if not payload.candidates:
         raise HTTPException(status_code=400, detail="No candidates")
 
@@ -447,6 +460,7 @@ def rag_rerank(payload: RerankRequest) -> RerankResponse:
 
 @router.post("/api/report", response_model=ReportResponse)
 def rag_report(payload: ReportRequest) -> ReportResponse:
+    _raise_deprecated_rag_endpoint()
     query = _profile_to_query(payload.profile.model_dump())
     prefs = RagPreferences(
         grip=payload.profile.grip,
