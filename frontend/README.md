@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MouseFit Frontend
 
-## Getting Started
+The MouseFit frontend is a Next.js app that provides the public site, auth flows, dashboard shell, mouse fitting tools, and recommendation report experience. It connects to the FastAPI backend for mouse catalog data, measurements, grip results, generated reports, user profile state, and AI-assisted matching.
 
-First, run the development server:
+## Stack
+
+- Next.js App Router
+- React and TypeScript
+- Tailwind CSS
+- Framer Motion
+- Lucide React icons
+- Sentry browser/server instrumentation
+- Supabase-compatible auth configuration
+
+## Main Areas
+
+- `src/app/(landing)` - landing, services, and about pages
+- `src/app/(shell)` - authenticated dashboard and tool workspaces
+- `src/app/auth` - sign in, sign up, callback, verification, and password reset
+- `src/components/dashboard` - service workspace and dashboard modules
+- `src/components/layout` and `src/components/shell` - navigation and app shell components
+- `src/lib/api.ts` - backend API base URL handling
+- `public/src/js` - legacy measurement, report, and catalog scripts used by some tool pages
+
+## Local Setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Common frontend variables:
 
-## Learn More
+- `NEXT_PUBLIC_API_BASE_URL` - backend API URL, usually `http://127.0.0.1:8000`
+- `NEXT_PUBLIC_ENABLE_AUTH` - auth flow toggle
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase public anon key
+- `NEXT_PUBLIC_USE_SERVER_REPORT_PIPELINE` - toggles server report generation path
+- `NEXT_PUBLIC_SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` - optional telemetry
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` - contact/welcome email support for Next.js API routes
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run dev          # start the Next.js dev server
+npm run dev:clean    # clear .next and start dev
+npm run dev:webpack  # force webpack dev mode
+npm run build        # create a production build
+npm run start        # serve the production build
+npm run lint         # run ESLint
+npm run typecheck    # run TypeScript without emitting files
+npm test             # run Node test suite
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Docker
 
-## Deploy on Vercel
+From the repository root:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+docker compose up --build frontend
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The Docker image builds the app with `npm run build` and serves the standalone Next.js output on port `3000`.
