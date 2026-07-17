@@ -1,585 +1,585 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { VideoBackdrop } from "@/components/landing/VideoBackdrop";
-import { ContactModal } from "@/components/landing/ContactModal";
-import { getSession } from "@/lib/auth";
-import { buildAuthIntent, buildLoginUrl, persistAuthIntent, TRY_NOW_DESTINATION } from "@/lib/auth-intent";
-import { 
-  HERO_BG_MP4
-} from "@/config/media";
-import { ArrowUpRight, Circle, Pencil, ChevronDown, User } from "lucide-react";
+import Image from "next/image";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+  type Variants,
+} from "framer-motion";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BadgeCheck,
+  Database,
+  Fingerprint,
+  MousePointer2,
+  Ruler,
+  ScanLine,
+  Target,
+} from "lucide-react";
+import styles from "./page.module.css";
 
-type SectionId = "hero" | "services" | "contact";
+const navSections = [
+  { id: "scan", label: "Scan" },
+  { id: "matching", label: "Matching" },
+  { id: "database", label: "Database" },
+] as const;
 
-const sections: SectionId[] = ["hero", "services", "contact"];
-
-const sectionVideos: Record<SectionId, string> = {
-  hero: HERO_BG_MP4,
-  services: "",
-  contact: "",
-};
-
-const SECTION_TRANSITION_MS = 520;
-const NAV_LOCK_MS = 460;
-const WHEEL_MIN_DELTA = 20;
-
-// Zoom transition variants
-const zoomVariants = {
-  enter: {
-    scale: 0.985,
-    opacity: 0,
+const scanSteps = [
+  {
+    title: "Measure the hand",
+    body: "Capture length, width, finger reach, and joint position so the fit starts with your actual proportions.",
+    icon: Ruler,
   },
-  center: {
-    scale: 1,
+  {
+    title: "Read the grip",
+    body: "Classify palm contact, arch height, and finger curl instead of treating every hand like a flat outline.",
+    icon: Fingerprint,
+  },
+  {
+    title: "Rank the shape",
+    body: "Compare your profile against mouse width, hump placement, side flare, and support zones.",
+    icon: Target,
+  },
+] as const;
+
+const matchRows = [
+  {
+    rank: "01",
+    model: "Logitech G Pro X Superlight 2",
+    fit: "92",
+    reason: "Neutral shell, safe rear support, low side flare",
+  },
+  {
+    rank: "02",
+    model: "Pulsar X2V2",
+    fit: "89",
+    reason: "Compact grip span with strong claw control",
+  },
+  {
+    rank: "03",
+    model: "Razer DeathAdder V3 Pro",
+    fit: "83",
+    reason: "Better for relaxed palm with wider right-side support",
+  },
+] as const;
+
+const fitFacts = [
+  { label: "Hand length", value: "18.7 cm" },
+  { label: "Grip style", value: "Relaxed claw" },
+  { label: "Support bias", value: "Rear palm" },
+  { label: "Shape risk", value: "Wide front flare" },
+] as const;
+
+const geometryGroups = [
+  {
+    label: "Mouse geometry",
+    value: "Width, length, height, hump, flare",
+  },
+  {
+    label: "Grip behavior",
+    value: "Palm contact, curl, lift, stability",
+  },
+  {
+    label: "Decision output",
+    value: "Best fit, safe swaps, avoid notes",
+  },
+] as const;
+
+const easeOutExpo = [0.16, 1, 0.3, 1] as const;
+
+const reveal: Variants = {
+  hidden: {
+    y: 34,
+    opacity: 0.3,
+    filter: "blur(8px)",
+  },
+  show: {
+    y: 0,
     opacity: 1,
-  },
-  exit: {
-    scale: 1.015,
-    opacity: 0,
+    filter: "blur(0px)",
+    transition: {
+      duration: 0.9,
+      ease: easeOutExpo,
+    },
   },
 };
 
-export default function LandingPage() {
-  const router = useRouter();
-  const [currentSection, setCurrentSection] = useState<SectionId>("hero");
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const navLockRef = useRef(false);
-  const navLockTimeoutRef = useRef<number | null>(null);
-  const transitionTimeoutRef = useRef<number | null>(null);
-  const wheelAccumRef = useRef(0);
-  const wheelRafRef = useRef<number | null>(null);
+const stagger: Variants = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.11,
+      delayChildren: 0.08,
+    },
+  },
+};
 
-  const openContactModal = useCallback(() => setIsContactModalOpen(true), []);
-  const closeContactModal = useCallback(() => setIsContactModalOpen(false), []);
-  useEffect(() => {
-    return () => {
-      if (navLockTimeoutRef.current !== null) {
-        window.clearTimeout(navLockTimeoutRef.current);
-      }
-      if (transitionTimeoutRef.current !== null) {
-        window.clearTimeout(transitionTimeoutRef.current);
-      }
-      if (wheelRafRef.current !== null) {
-        window.cancelAnimationFrame(wheelRafRef.current);
-      }
-    };
-  }, []);
+const staggerItem: Variants = {
+  hidden: {
+    y: 24,
+    opacity: 0.35,
+  },
+  show: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.72,
+      ease: easeOutExpo,
+    },
+  },
+};
 
-  // Navigate to a specific section with zoom animation
-  const navigateToSection = useCallback((sectionId: SectionId) => {
-    if (isTransitioning || sectionId === currentSection) return;
-    
-    setIsTransitioning(true);
-    setCurrentSection(sectionId);
+type MediaAssetProps = {
+  src: string;
+  alt: string;
+  className?: string;
+  showScan?: boolean;
+};
 
-    // Reset transitioning state after animation
-    if (transitionTimeoutRef.current !== null) {
-      window.clearTimeout(transitionTimeoutRef.current);
-    }
-    transitionTimeoutRef.current = window.setTimeout(() => {
-      setIsTransitioning(false);
-      transitionTimeoutRef.current = null;
-    }, SECTION_TRANSITION_MS);
-  }, [isTransitioning, currentSection]);
-
-  // Navigate to next sectionG
-  const goToNextSection = useCallback(() => {
-    const currentIndex = sections.indexOf(currentSection);
-    if (currentIndex < sections.length - 1) {
-      navigateToSection(sections[currentIndex + 1]);
-    }
-  }, [currentSection, navigateToSection]);
-
-  // Navigate to previous section
-  const goToPrevSection = useCallback(() => {
-    const currentIndex = sections.indexOf(currentSection);
-    if (currentIndex > 0) {
-      navigateToSection(sections[currentIndex - 1]);
-    }
-  }, [currentSection, navigateToSection]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const navRoutes = ["/", "/services", "/about-us"] as const;
-
-    const isTypingTarget = (t: EventTarget | null) => {
-      const el = t as HTMLElement | null;
-      if (!el) return false;
-      const tag = (el.tagName || "").toLowerCase();
-      return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
-    };
-
-    const lock = () => {
-      navLockRef.current = true;
-      if (navLockTimeoutRef.current !== null) {
-        window.clearTimeout(navLockTimeoutRef.current);
-      }
-      navLockTimeoutRef.current = window.setTimeout(() => {
-        navLockRef.current = false;
-        navLockTimeoutRef.current = null;
-      }, NAV_LOCK_MS);
-    };
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (isContactModalOpen) return;
-      if (isTypingTarget(e.target)) return;
-      if (isTransitioning || navLockRef.current) return;
-
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        lock();
-        goToNextSection();
-        return;
-      }
-
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        lock();
-        goToPrevSection();
-        return;
-      }
-
-      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
-        e.preventDefault();
-        const dir = e.key === "ArrowRight" ? 1 : -1;
-        const idx = 0;
-        const next = (idx + dir + navRoutes.length) % navRoutes.length;
-        router.push(navRoutes[next]);
-      }
-    };
-
-    const onWheel = (e: WheelEvent) => {
-      if (isTypingTarget(e.target)) return;
-      if (isContactModalOpen || isTransitioning || navLockRef.current) {
-        e.preventDefault();
-        return;
-      }
-
-      e.preventDefault();
-      wheelAccumRef.current += e.deltaY;
-
-      if (wheelRafRef.current !== null) return;
-      wheelRafRef.current = window.requestAnimationFrame(() => {
-        wheelRafRef.current = null;
-
-        const wheelDelta = wheelAccumRef.current;
-        wheelAccumRef.current = 0;
-        if (Math.abs(wheelDelta) < WHEEL_MIN_DELTA) return;
-
-        const toNext = wheelDelta > 0;
-        lock();
-        if (toNext) goToNextSection();
-        else goToPrevSection();
-      });
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("wheel", onWheel, { passive: false });
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("wheel", onWheel);
-    };
-  }, [
-    router,
-    currentSection,
-    goToNextSection,
-    goToPrevSection,
-    isContactModalOpen,
-    isTransitioning,
-  ]);
-
-  const handleTryNow = useCallback(() => {
-    const session = getSession();
-    if (session?.access_token) {
-      router.push("/dashboard");
-      return;
-    }
-
-    persistAuthIntent(buildAuthIntent(TRY_NOW_DESTINATION, "try_now"));
-    router.push(buildLoginUrl(TRY_NOW_DESTINATION));
-  }, [router]);
-
+function MediaAsset({
+  src,
+  alt,
+  className = "",
+  showScan = false,
+}: MediaAssetProps) {
   return (
-    <div className="relative h-screen w-screen overflow-hidden overscroll-none">
-      {/* Video Backdrop - Changes based on current section */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentSection}
-          initial={{ opacity: 0, scale: 1.02 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.985 }}
-          transition={{ duration: 0.42, ease: "easeInOut" }}
-          className="fixed inset-0 z-0 pointer-events-none will-change-transform"
-        >
-          <VideoBackdrop src={sectionVideos[currentSection]} />
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Navigation */}
-      <LandingNavigation isTransitioning={isTransitioning} />
-
-      {/* Section Content with Zoom Transitions */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentSection}
-          variants={zoomVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ 
-            duration: 0.42, 
-            ease: [0.22, 1, 0.36, 1]
-          }}
-          className="relative z-10 h-screen w-screen will-change-transform"
-        >
-          {currentSection === "hero" && (
-            <HeroSection onTryNow={handleTryNow} />
-          )}
-          {currentSection === "services" && (
-            <ServicesSection onNavigate={navigateToSection} />
-          )}
-          {currentSection === "contact" && (
-            <ContactSection onContactClick={openContactModal} />
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Section Indicator Dots */}
-      <div className="fixed right-8 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3">
-        {sections.map((section, index) => (
-          <button
-            key={section}
-            onClick={() => navigateToSection(section)}
-            disabled={isTransitioning}
-            className={`w-2 h-2 rounded-full transition-all duration-300 disabled:cursor-not-allowed ${
-              currentSection === section 
-                ? "bg-[color:var(--accent-violet)] scale-125" 
-                : "bg-white/30 hover:bg-white/50"
-            }`}
-            aria-label={`Go to section ${index + 1}`}
-          />
-        ))}
-      </div>
-
-      {/* Next Section Arrow (except on last section) */}
-      {currentSection !== "contact" && (
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          onClick={goToNextSection}
-          disabled={isTransitioning}
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 p-3 text-white/50 hover:text-white transition-colors disabled:opacity-50"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <ChevronDown className="w-6 h-6" />
-          </motion.div>
-        </motion.button>
-      )}
-
-      <ContactModal isOpen={isContactModalOpen} onClose={closeContactModal} />
+    <div className={`${styles.mediaPlaceholder} ${styles.mediaAsset} ${className}`}>
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes="(max-width: 820px) 100vw, (max-width: 1080px) 78vw, 52vw"
+        className={styles.mediaImage}
+      />
+      {showScan ? <span className={styles.scanSweep} aria-hidden /> : null}
     </div>
   );
 }
 
-// Navigation Component - Home active, links to other pages
-function LandingNavigation({
-  isTransitioning,
-}: {
-  isTransitioning: boolean;
-}) {
+export default function LandingPage() {
+  const prefersReducedMotion = useReducedMotion();
+  const heroRef = useRef<HTMLElement>(null);
+  const [activeSection, setActiveSection] =
+    useState<(typeof navSections)[number]["id"]>("scan");
+
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const mediaY = useTransform(scrollYProgress, [0, 1], [0, 96]);
+  const panelY = useTransform(scrollYProgress, [0, 1], [0, -42]);
+
+  useEffect(() => {
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-landing-section]"),
+    );
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntry = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (left, right) =>
+              right.intersectionRatio - left.intersectionRatio,
+          )[0];
+
+        if (!visibleEntry) {
+          return;
+        }
+
+        startTransition(() => {
+          setActiveSection(
+            visibleEntry.target.id as (typeof navSections)[number]["id"],
+          );
+        });
+      },
+      {
+        threshold: [0.24, 0.45, 0.68],
+        rootMargin: "-14% 0px -46% 0px",
+      },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
+  const initialState = prefersReducedMotion ? false : "hidden";
+
   return (
-    <>
-      {/* Top Navigation Bar */}
-      <motion.nav
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="fixed top-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between"
-      >
-        {/* Left spacer */}
-        <div className="w-24" aria-hidden />
+    <div className={styles.page}>
+      <a className={styles.skipLink} href="#main-content">
+        Skip to content
+      </a>
 
-        {/* Profile Button - Top Right */}
-        <Link
-          href="/user"
-          onClick={(e) => {
-            if (isTransitioning) e.preventDefault();
-          }}
-          aria-disabled={isTransitioning}
-          className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all ${
-            isTransitioning
-              ? "opacity-50 pointer-events-none text-white/60"
-              : "text-white/60 hover:text-white hover:bg-white/5"
-          }`}
-        >
-          <User className="w-4 h-4" />
-          <span className="text-sm hidden md:inline">Profile</span>
-        </Link>
-      </motion.nav>
-
-      {/* Bottom Navigation Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="fixed bottom-0 left-0 right-0 z-50 px-8 py-6 flex items-center justify-between"
-      >
-        {/* Scroll indicator */}
-        <div className="flex items-center gap-2 text-white/60 text-sm">
-          <span className="text-[color:var(--accent-violet)]">+</span>
-          <span>Scroll to explore</span>
-        </div>
-
-        {/* Center Navigation - Home active, others link to pages */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-sm text-white"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--accent-violet)]" />
-            Home
+      <header className={styles.header}>
+        <nav className={styles.nav} aria-label="Primary navigation">
+          <Link href="/" className={styles.brand} aria-label="MouseFit home">
+            <span className={styles.brandMark}>
+              <MousePointer2 size={17} strokeWidth={2} />
+            </span>
+            <span>MouseFit</span>
           </Link>
-          <Link
-            href="/services"
-            className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
-          >
-            Services
-            <span className="text-[color:var(--accent-violet)]">+</span>
-          </Link>
-          <Link
-            href="/about-us"
-            className="text-sm text-white/60 hover:text-white transition-colors"
-          >
-            About us
-          </Link>
-        </div>
 
-        {/* Empty right side for balance */}
-        <div className="w-32" />
-      </motion.div>
-    </>
-  );
-}
-
-// Hero Section
-function HeroSection({ onTryNow }: { onTryNow: () => void }) {
-  return (
-    <main className="relative h-full flex items-center px-8 md:px-16 lg:px-24">
-      <div className="w-full max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          {/* Left Column */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="space-y-8"
-          >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-            >
-              <span className="text-white text-xs tracking-[0.3em] uppercase">
-              [ AI-POWERED ANALYSIS FOR GAMERS ]
-              </span>
-            </motion.div>
-
-            <div className="space-y-2">
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-light text-white leading-[1.1]">
-                MouseFit
-              </h1>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-light text-white leading-[1.1]">
-                <span className="bg-gradient-to-r from-[#00a8e8] via-[#8b5cf6] to-[#34d399] bg-clip-text text-transparent">
-                  Studio
-                </span>{" "}
-                <span className="text-white">v2</span>
-              </h1>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="pt-4"
-            >
-              <button
-                type="button"
-                onClick={onTryNow}
-                className="group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-white transition-all duration-200 mf-neon-btn"
+          <div className={styles.navLinks}>
+            {navSections.map((section) => (
+              <Link
+                key={section.id}
+                href={`#${section.id}`}
+                className={`${styles.navLink} ${
+                  activeSection === section.id ? styles.navLinkActive : ""
+                }`}
               >
-                <span className="text-white text-sm">Try now</span>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
-                  <ArrowUpRight className="w-4 h-4 text-[color:var(--accent-gamer)]" />
-                </div>
-              </button>
-            </motion.div>
-          </motion.div>
-
-          {/* Right Column */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="hidden lg:flex flex-col items-end justify-center"
-          >
-            <div className="text-right space-y-2">
-              <p className="text-4xl md:text-5xl lg:text-6xl font-extralight text-white/90">
-                Built for people
-              </p>
-              <p className="text-4xl md:text-5xl lg:text-6xl font-extralight text-white/90">
-                who care.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-// Services Section (second part of home)
-function ServicesSection({ 
-  onNavigate,
-}: { 
-  onNavigate: (section: SectionId) => void;
-}) {
-  return (
-    <main className="relative h-full flex items-center px-8 md:px-16 lg:px-24">
-      <div className="w-full max-w-7xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-16 items-start">
-          {/* Left Column */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="space-y-8"
-          >
-            <div className="space-y-1">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2]">
-                Know your
-              </h1>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2]">
-                <span className="font-normal">fit</span>, confort,
-              </h1>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2] flex items-center gap-3">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-[color:var(--accent-violet-line)] bg-black/45">
-                  <Circle className="w-3 h-3 text-[color:var(--accent-violet)]" strokeWidth={3} />
-                </span>{" "}
-                control.
-              </h1>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white/60 leading-[1.2]">
-                All in one place.
-              </h1>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="pt-4"
-            >
-              <button
-                onClick={() => onNavigate("contact")}
-                className="group flex items-center gap-3 rounded-full px-6 py-3 text-sm text-white transition-all duration-200 mf-neon-btn"
-              >
-                <span className="text-white text-sm">Contact us</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
-                  <ArrowUpRight className="w-4 h-4 text-[color:var(--accent-gamer)]" />
-                </div>
-              </button>
-            </motion.div>
-          </motion.div>
-
-          {/* Right Column */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="hidden lg:block pt-16"
-          >
-            <div className="space-y-6">
-              <span className="text-white text-xs tracking-[0.3em] uppercase">
-                [ MOUSEFIT STUDIO ]
-              </span>
-              <p className="text-white/60 text-sm leading-relaxed max-w-md">
-                · helps users find the best fitting peripherals.<br/>
-                · focuses on top-tier products and user-first service.<br/>
-                · streamlines recommendations from gaming mice to full PC builds.<br/>
-                · helps uncover the perfect gear for your setup.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-// Contact Section (third part of home)
-function ContactSection({
-  onContactClick,
-}: {
-  onContactClick: () => void;
-}) {
-
-  return (
-    <main className="relative h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24">
-      <div className="w-full max-w-3xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="space-y-8"
-        >
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2]">
-              Contact us
-            </h1>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-white leading-[1.2] flex items-center justify-center gap-3">
-              Today{" "}
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[color:var(--accent-violet-line)] bg-black/45">
-                <Pencil className="w-4 h-4 text-[color:var(--accent-violet)]" />
-              </span>
-            </h1>
+                {section.label}
+              </Link>
+            ))}
           </div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="text-white/50 text-sm md:text-base max-w-md mx-auto leading-relaxed"
+          <div className={styles.navActions}>
+            <Link href="/database" className={styles.textAction}>
+              Explore mice
+            </Link>
+            <Link href="/measure" className={styles.primaryAction}>
+              Scan my hand
+              <ArrowUpRight size={16} strokeWidth={2} />
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      <main id="main-content">
+        <section
+          ref={heroRef}
+          id="scan"
+          data-landing-section
+          className={styles.hero}
+        >
+          <motion.div
+            className={styles.heroCopy}
+            variants={stagger}
+            initial={initialState}
+            animate="show"
           >
-            Need help finding your fit or understanding your results? We’re one click away.
-          </motion.p>
+            <motion.p variants={staggerItem} className={styles.heroLabel}>
+              Hand scan to mouse shortlist
+            </motion.p>
+            <motion.h1 variants={staggerItem} className={styles.headline}>
+              Find the mouse that fits your hand and grip.
+            </motion.h1>
+            <motion.p variants={staggerItem} className={styles.heroText}>
+              MouseFit turns hand measurements and grip behavior into a ranked
+              shortlist, with clear reasons behind every recommendation.
+            </motion.p>
+            <motion.div variants={staggerItem} className={styles.ctaRow}>
+              <Link href="/measure" className={styles.primaryActionLarge}>
+                Start the scan
+                <ArrowRight size={18} strokeWidth={2} />
+              </Link>
+              <Link href="/database" className={styles.secondaryAction}>
+                Explore mice
+              </Link>
+            </motion.div>
+
+            <motion.dl variants={staggerItem} className={styles.heroFacts}>
+              {fitFacts.slice(0, 2).map((fact) => (
+                <div key={fact.label}>
+                  <dt>{fact.label}</dt>
+                  <dd>{fact.value}</dd>
+                </div>
+              ))}
+            </motion.dl>
+          </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-            className="pt-4 flex justify-center"
+            className={styles.heroMedia}
+            initial={
+              prefersReducedMotion
+                ? false
+                : { clipPath: "inset(0 0 100% 0)", scale: 1.035 }
+            }
+            animate={{ clipPath: "inset(0 0 0% 0)", scale: 1 }}
+            transition={{ duration: 1.25, delay: 0.12, ease: easeOutExpo }}
+            style={prefersReducedMotion ? undefined : { y: mediaY }}
           >
-            <button
-              onClick={onContactClick}
-              className="group flex items-center gap-3 rounded-full px-6 py-3 text-sm text-white transition-all duration-200 mf-neon-btn"
-            >
-              <span className="text-white text-sm">Contact us</span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/45 transition-colors group-hover:bg-black/65">
-                <ArrowUpRight className="w-4 h-4 text-[color:var(--accent-gamer)]" />
-              </div>
-            </button>
+            <MediaAsset
+              src="/images/landing/hero-mousefit.png"
+              alt="Hand on a mousepad with a green measurement scan and a mouse beside it"
+              className={styles.heroPlaceholder}
+              showScan
+            />
           </motion.div>
-        </motion.div>
-      </div>
-    </main>
+
+          <motion.aside
+            className={styles.fitPanel}
+            initial={
+              prefersReducedMotion
+                ? false
+                : { opacity: 0.25, x: 44, y: 28, scale: 0.96 }
+            }
+            animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.72, ease: easeOutExpo }}
+            style={prefersReducedMotion ? undefined : { translateY: panelY }}
+            aria-label="Example fit profile"
+          >
+            <div className={styles.panelHeading}>
+              <span>Live fit profile</span>
+              <BadgeCheck size={17} strokeWidth={1.8} />
+            </div>
+            <div className={styles.fitScore}>
+              <span>Top fit</span>
+              <strong>92</strong>
+            </div>
+            <dl className={styles.fitFacts}>
+              {fitFacts.slice(2).map((fact) => (
+                <div key={fact.label}>
+                  <dt>{fact.label}</dt>
+                  <dd>{fact.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </motion.aside>
+        </section>
+
+        <motion.section
+          className={styles.processSection}
+          aria-label="How MouseFit works"
+          variants={stagger}
+          initial={initialState}
+          whileInView="show"
+          viewport={{ once: true, amount: 0.22 }}
+        >
+          <div className={styles.processLead}>
+            <span>How it works</span>
+            <strong>One fit profile, three decisions.</strong>
+          </div>
+          <div className={styles.processList}>
+            {scanSteps.map((step, index) => {
+              const Icon = step.icon;
+
+              return (
+                <motion.article
+                  key={step.title}
+                  variants={staggerItem}
+                  className={styles.processItem}
+                  whileHover={
+                    prefersReducedMotion ? undefined : { y: -6, x: 3 }
+                  }
+                >
+                  <span className={styles.processNumber}>
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <Icon size={20} strokeWidth={1.8} />
+                  <h2>{step.title}</h2>
+                  <p>{step.body}</p>
+                </motion.article>
+              );
+            })}
+          </div>
+        </motion.section>
+
+        <section
+          id="matching"
+          data-landing-section
+          className={styles.matching}
+        >
+          <motion.div
+            variants={reveal}
+            initial={initialState}
+            whileInView="show"
+            viewport={{ once: true, amount: 0.3 }}
+            className={styles.sectionHeading}
+          >
+            <span>Recommendation logic</span>
+            <h2>
+              Every score
+              <br />
+              needs a reason.
+            </h2>
+          </motion.div>
+
+          <div className={styles.matchingGrid}>
+            <motion.div
+              variants={reveal}
+              initial={initialState}
+              whileInView="show"
+              viewport={{ once: true, amount: 0.2 }}
+              className={styles.matchingMedia}
+            >
+              <MediaAsset
+                src="/images/landing/recommendation-mousefit.png"
+                alt="Hand holding a mouse in a natural grip position"
+                className={styles.portraitPlaceholder}
+              />
+            </motion.div>
+
+            <div className={styles.matchingContent}>
+              <motion.div
+                variants={reveal}
+                initial={initialState}
+                whileInView="show"
+                viewport={{ once: true, amount: 0.3 }}
+                className={styles.matchingIntro}
+              >
+                <p>
+                  MouseFit explains what matches your hand and what could feel
+                  wrong before you buy. The result stays inspectable instead of
+                  hiding behind one unexplained number.
+                </p>
+              </motion.div>
+
+              <motion.div
+                className={styles.matchRows}
+                variants={stagger}
+                initial={initialState}
+                whileInView="show"
+                viewport={{ once: true, amount: 0.2 }}
+              >
+                <div className={styles.matchRowsHeading}>
+                  <div className={styles.matchingMeta}>
+                    <span>
+                      <ScanLine size={17} strokeWidth={1.8} />
+                      Ranked shortlist
+                    </span>
+                    <strong>3 matches</strong>
+                  </div>
+                </div>
+                {matchRows.map((row) => (
+                  <motion.article
+                    key={row.model}
+                    variants={staggerItem}
+                    className={styles.matchRow}
+                    whileHover={
+                      prefersReducedMotion ? undefined : { x: 8, scale: 1.008 }
+                    }
+                  >
+                    <span className={styles.matchRank}>{row.rank}</span>
+                    <div className={styles.matchName}>
+                      <strong>{row.model}</strong>
+                      <span>{row.reason}</span>
+                    </div>
+                    <b>{row.fit}</b>
+                  </motion.article>
+                ))}
+              </motion.div>
+
+              <motion.div
+                variants={reveal}
+                initial={initialState}
+                whileInView="show"
+                viewport={{ once: true, amount: 0.4 }}
+                className={styles.signalBlock}
+              >
+                <h3>Built around fit signals, not hype.</h3>
+                <p>
+                  The model balances comfort, control, and risk by weighing
+                  geometry against your measured grip.
+                </p>
+                <div className={styles.signalList}>
+                  <span>Hump height</span>
+                  <span>Front width</span>
+                  <span>Side curve</span>
+                  <span>Grip span</span>
+                  <span>Weight class</span>
+                  <span>Support zone</span>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="database"
+          data-landing-section
+          className={styles.databaseSection}
+        >
+          <motion.div
+            variants={reveal}
+            initial={initialState}
+            whileInView="show"
+            viewport={{ once: true, amount: 0.35 }}
+            className={styles.databaseHeading}
+          >
+            <span>Shape database</span>
+            <h2>Compare mice by the details your hand can feel.</h2>
+            <p>
+              After the scan, inspect dimensions, filter by grip needs, and
+              compare alternatives that solve the same fit problem.
+            </p>
+          </motion.div>
+
+          <div className={styles.databaseShowcase}>
+            <motion.div
+              variants={reveal}
+              initial={initialState}
+              whileInView="show"
+              viewport={{ once: true, amount: 0.2 }}
+              className={styles.databaseMedia}
+            >
+              <MediaAsset
+                src="/images/landing/database-mousefit.png"
+                alt="Mouse comparison board with dimensional guides and calipers"
+                className={styles.databasePlaceholder}
+              />
+              <Link href="/database" className={styles.mediaCta}>
+                Open database
+                <Database size={17} strokeWidth={1.8} />
+              </Link>
+            </motion.div>
+
+            <motion.div
+              className={styles.geometryList}
+              variants={stagger}
+              initial={initialState}
+              whileInView="show"
+              viewport={{ once: true, amount: 0.28 }}
+            >
+              {geometryGroups.map((group, index) => (
+                <motion.article
+                  key={group.label}
+                  variants={staggerItem}
+                  className={styles.geometryItem}
+                >
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <h3>{group.label}</h3>
+                    <p>{group.value}</p>
+                  </div>
+                </motion.article>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        <motion.section
+          className={styles.finalCta}
+          variants={reveal}
+          initial={initialState}
+          whileInView="show"
+          viewport={{ once: true, amount: 0.5 }}
+        >
+          <div>
+            <span>Ready to find your fit?</span>
+            <h2>Stop guessing from spec sheets.</h2>
+            <p>
+              Start with your hand, validate the shortlist, and choose with
+              context.
+            </p>
+          </div>
+          <Link href="/measure" className={styles.primaryActionLarge}>
+            Scan my hand
+            <ArrowUpRight size={18} strokeWidth={2} />
+          </Link>
+        </motion.section>
+      </main>
+    </div>
   );
 }

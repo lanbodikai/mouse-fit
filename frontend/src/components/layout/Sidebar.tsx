@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
+  Database,
   FileText,
   Hand,
   Home,
@@ -15,6 +16,8 @@ import {
   User,
   type LucideIcon,
 } from "lucide-react";
+import { useAuthGate } from "@/components/auth/AuthGateProvider";
+import { useAuthState } from "@/hooks/useAuthState";
 import { useTheme } from "@/lib/theme";
 
 type NavItem = {
@@ -24,8 +27,9 @@ type NavItem = {
   activeMatch?: string[];
 };
 
-const mouseFitNav: NavItem[] = [
-  { href: "/dashboard", label: "Home", icon: Home, activeMatch: ["/dashboard", "/mouse-fit", "/database"] },
+const primaryNav: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: Home },
+  { href: "/database", label: "Database", icon: Database },
   { href: "/survey", label: "Survey", icon: Sparkles },
   { href: "/measure", label: "Measure", icon: Ruler },
   { href: "/grip", label: "Grip", icon: Hand },
@@ -37,36 +41,58 @@ const secondaryNav: NavItem[] = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
+const AUTH_GATED_PATHS = new Set([
+  "/survey",
+  "/measure",
+  "/grip",
+  "/report",
+  "/user",
+  "/settings",
+]);
+
 function isActive(pathname: string, item: NavItem): boolean {
   if (item.activeMatch) {
-    return item.activeMatch.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+    return item.activeMatch.some(
+      (path) => pathname === path || pathname.startsWith(`${path}/`),
+    );
   }
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-function RailButton({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthState();
+  const { requireAuth } = useAuthGate();
   const Icon = item.icon;
+  const authGated = AUTH_GATED_PATHS.has(item.href);
 
   return (
     <Link
       href={item.href}
+      onClick={(event) => {
+        if (!authGated || isAuthenticated) return;
+        event.preventDefault();
+        requireAuth(
+          () => router.push(item.href),
+          {
+            next: item.href,
+            title: `Create an account to open ${item.label}`,
+            description:
+              "Continue with Google, Discord, or GitHub to unlock the full MouseFit workflow.",
+          },
+        );
+      }}
+      aria-current={active ? "page" : undefined}
       aria-label={item.label}
       title={item.label}
-      className="group relative z-10 flex items-center justify-center"
+      className={`group relative flex h-12 min-w-12 items-center justify-center gap-3 rounded-md px-3 transition md:w-12 md:px-0 xl:w-full xl:justify-start xl:px-3 ${
+        active
+          ? "bg-[var(--shell-accent)] text-[var(--shell-text-inverse)]"
+          : "text-[var(--shell-text-secondary)] hover:bg-[var(--shell-surface-soft)] hover:text-[var(--shell-text-primary)]"
+      }`}
     >
-      <div
-        className={`relative flex h-12 w-12 items-center justify-center rounded-[20px] transition-all ${
-          active
-            ? "shell-accent-surface"
-            : "mf-glass-rail-button hover:-translate-y-0.5 hover:text-[var(--shell-text-primary)]"
-        }`}
-      >
-        <Icon className="relative z-10 h-[18px] w-[18px]" />
-      </div>
-
-      <span
-        className="shell-surface-soft pointer-events-none absolute left-full z-30 ml-3 rounded-full px-3 py-1 text-[11px] font-medium text-[var(--shell-text-primary)] opacity-0 transition-opacity group-hover:opacity-100"
-      >
+      <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} />
+      <span className="hidden min-w-0 truncate text-sm font-medium xl:block">
         {item.label}
       </span>
     </Link>
@@ -78,59 +104,49 @@ export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <aside
-      className="mf-glass-sidebar relative z-20 flex h-full w-[76px] shrink-0 flex-col items-center justify-between overflow-visible px-2 py-5 sm:w-[92px] sm:px-3"
-    >
-      <div className="flex flex-col items-center gap-4">
-        <Link
-          href="/dashboard"
-          className="shell-surface-raised flex h-12 w-12 items-center justify-center overflow-hidden rounded-[22px]"
-          aria-label="Go to MouseFit home"
-          title="MouseFit Home"
-        >
-          <Image
-            src="/9.png"
-            alt="MouseFit"
-            width={48}
-            height={48}
-            className="h-full w-full object-cover"
-            priority
-          />
-        </Link>
+    <aside className="fixed inset-x-0 bottom-0 z-40 flex h-[72px] items-center border-t border-[var(--shell-border-strong)] bg-[var(--shell-bg-deep)] px-2 md:relative md:inset-auto md:h-full md:w-[76px] md:shrink-0 md:flex-col md:border-r md:border-t-0 md:px-3 md:py-4 xl:w-[216px] xl:items-stretch">
+      <Link
+        href="/dashboard"
+        className="mb-5 hidden h-12 items-center gap-3 rounded-md px-2 text-[var(--shell-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--shell-accent)] md:flex"
+        aria-label="Go to MouseFit dashboard"
+      >
+        <Image
+          src="/9.png"
+          alt=""
+          width={36}
+          height={36}
+          className="h-9 w-9 rounded-md object-cover"
+          priority
+        />
+        <span className="hidden font-semibold xl:block">MouseFit</span>
+      </Link>
 
-        <nav className="flex flex-col gap-3">
-          {mouseFitNav.map((item) => (
-            <RailButton
-              key={item.href}
-              item={item}
-              active={isActive(pathname, item)}
-            />
-          ))}
-        </nav>
-      </div>
+      <nav className="flex min-w-0 flex-1 items-center justify-around gap-1 md:flex-col md:justify-start xl:items-stretch">
+        {primaryNav.map((item) => (
+          <NavLink key={item.href} item={item} active={isActive(pathname, item)} />
+        ))}
+      </nav>
 
-      <div className="flex flex-col items-center gap-3">
+      <div className="hidden gap-1 md:flex md:flex-col xl:items-stretch">
         <button
           type="button"
           onClick={toggleTheme}
           aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          className="group relative z-10 flex items-center justify-center"
+          className="flex h-12 w-12 items-center justify-center gap-3 rounded-md text-[var(--shell-text-secondary)] transition hover:bg-[var(--shell-surface-soft)] hover:text-[var(--shell-text-primary)] xl:w-full xl:justify-start xl:px-3"
         >
-          <div className="mf-glass-rail-button relative flex h-12 w-12 items-center justify-center rounded-[20px] transition-all hover:-translate-y-0.5 hover:text-[var(--shell-text-primary)]">
-            {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
-          </div>
-          <span className="shell-surface-soft pointer-events-none absolute left-full z-30 ml-3 rounded-full px-3 py-1 text-[11px] font-medium text-[var(--shell-text-primary)] opacity-0 transition-opacity group-hover:opacity-100">
+          {theme === "dark" ? (
+            <Sun className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} />
+          ) : (
+            <Moon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.8} />
+          )}
+          <span className="hidden text-sm font-medium xl:block">
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </span>
         </button>
 
         {secondaryNav.map((item) => (
-          <RailButton
-            key={item.href}
-            item={item}
-            active={isActive(pathname, item)}
-          />
+          <NavLink key={item.href} item={item} active={isActive(pathname, item)} />
         ))}
       </div>
     </aside>

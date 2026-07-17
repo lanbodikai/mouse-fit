@@ -1,5 +1,8 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import ServiceWorkspace from "@/components/dashboard/ServiceWorkspace";
+import { mousepadMatchWorkspaceConfig } from "@/data/service-workspaces";
 
 export default function MousepadMatchPage() {
-  redirect("/dashboard");
+  return <ServiceWorkspace config={mousepadMatchWorkspaceConfig} />;
 }

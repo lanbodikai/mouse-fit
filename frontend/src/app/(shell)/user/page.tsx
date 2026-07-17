@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BadgeCheck,
-  KeyRound,
   Loader2,
   LogOut,
   Mail,
@@ -16,13 +15,12 @@ import {
   getAuthUser,
   getSession,
   isAuthEnabled,
-  resetPasswordForEmail,
   signOut,
   subscribeAuthChanges,
   type SupabaseUser,
 } from "@/lib/auth";
+import { useAuthState } from "@/hooks/useAuthState";
 import { buildBestMouseFromStorage } from "@/lib/reportStore";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { ShellPage, ShellPanel } from "@/components/layout/ShellPage";
 import { useTheme } from "@/lib/theme";
 import type { ThemeMode, UserProfile } from "@/lib/types";
@@ -137,7 +135,7 @@ function LoadingPage() {
 }
 
 export default function UserPage() {
-  const authReady = useRequireAuth();
+  const { ready: authReady } = useAuthState();
   const router = useRouter();
   const { theme } = useTheme();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -145,7 +143,6 @@ export default function UserPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     if (!authReady) return;
@@ -243,24 +240,6 @@ export default function UserPage() {
     }
   }
 
-  async function handleResetPassword() {
-    if (!profile?.email) return;
-
-    setResetting(true);
-    setStatus(null);
-
-    try {
-      await resetPasswordForEmail(profile.email, `${window.location.origin}/auth/reset-password`);
-      setStatus("Password reset email sent.");
-    } catch (resetError) {
-      setStatus(
-        resetError instanceof Error ? resetError.message : "Could not send a password reset email.",
-      );
-    } finally {
-      setResetting(false);
-    }
-  }
-
   if (!authReady || loading) {
     return <LoadingPage />;
   }
@@ -268,13 +247,13 @@ export default function UserPage() {
   return (
     <ShellPage
       title="Account"
-      description=""
+      description="Edit your profile, review account status, and see the latest fit saved to this device."
       actions={
         <button
           type="button"
           onClick={() => void handleSave()}
           disabled={saving}
-          className="mf-glass-button mf-glass-button-primary inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="mf-glass-button mf-glass-button-primary inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save profile
@@ -310,25 +289,25 @@ export default function UserPage() {
             </div>
 
             <label className="block">
-              <span className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">
-                Display Name
+              <span className="text-xs font-medium text-[var(--shell-text-tertiary)]">
+                Display name
               </span>
               <input
                 type="text"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
-                className="mf-glass-input mt-3 w-full rounded-[22px] px-4 py-3 text-sm outline-none placeholder:text-[var(--shell-text-tertiary)]"
+                className="mf-glass-input mt-2 w-full rounded-md px-4 py-3 text-sm outline-none placeholder:text-[var(--shell-text-tertiary)]"
                 placeholder="MouseFit User"
               />
             </label>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="shell-surface-soft rounded-[22px] px-4 py-4">
+              <div className="shell-surface-soft rounded-md px-4 py-4">
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">Theme</p>
                 <p className="mt-2 text-sm text-[var(--shell-text-primary)]">{theme === "dark" ? "Dark" : "Light"}</p>
               </div>
 
-              <div className="shell-surface-soft rounded-[22px] px-4 py-4">
+              <div className="shell-surface-soft rounded-md px-4 py-4">
                 <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">Member Since</p>
                 <p className="mt-2 text-sm text-[var(--shell-text-primary)]">{formatDate(profile?.created_at)}</p>
               </div>
@@ -339,7 +318,7 @@ export default function UserPage() {
         <div className="space-y-5">
           <ShellPanel title="Account Snapshot" description="">
             <div className="space-y-3">
-              <div className="shell-surface-soft rounded-[22px] px-4 py-4">
+              <div className="shell-surface-soft rounded-md px-4 py-4">
                 <div className="inline-flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">
                   <Mail className="h-3.5 w-3.5" />
                   Email
@@ -347,7 +326,7 @@ export default function UserPage() {
                 <p className="mt-2 text-sm text-[var(--shell-text-primary)]">{profile?.email || "Not set"}</p>
               </div>
 
-              <div className="shell-surface-soft rounded-[22px] px-4 py-4">
+              <div className="shell-surface-soft rounded-md px-4 py-4">
                 <div className="inline-flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">
                   <BadgeCheck className="h-3.5 w-3.5" />
                   Latest Fit
@@ -357,7 +336,7 @@ export default function UserPage() {
                 </p>
               </div>
 
-              <div className="shell-surface-soft rounded-[22px] px-4 py-4">
+              <div className="shell-surface-soft rounded-md px-4 py-4">
                 <div className="inline-flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">
                   <Shield className="h-3.5 w-3.5" />
                   Mode
@@ -371,30 +350,24 @@ export default function UserPage() {
 
           <ShellPanel title="Security" description="">
             <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => void handleResetPassword()}
-                disabled={resetting || !profile?.email}
-                className="shell-surface-soft flex w-full items-center justify-between rounded-[22px] px-4 py-4 text-left transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-[var(--shell-text-primary)]">Send password reset email</p>
-                  <p className="mt-1 text-sm text-[var(--shell-text-secondary)]">Get a secure reset link by email.</p>
-                </div>
-                {resetting ? <Loader2 className="h-4 w-4 animate-spin text-[var(--shell-text-secondary)]" /> : <KeyRound className="h-4 w-4 text-[var(--shell-text-secondary)]" />}
-              </button>
+              <div className="shell-surface-soft rounded-md px-4 py-4">
+                <p className="text-sm font-semibold text-[var(--shell-text-primary)]">OAuth-only account</p>
+                <p className="mt-1 text-sm text-[var(--shell-text-secondary)]">
+                  MouseFit now uses Google, Discord, and GitHub sign-in only. Username and password are not used in this account flow.
+                </p>
+              </div>
 
               <button
                 type="button"
                 onClick={() => {
                   signOut();
-                  router.push("/auth/sign-in");
+                  router.push("/dashboard");
                 }}
-                className="flex w-full items-center justify-between rounded-[22px] border border-[rgba(187,88,104,0.24)] bg-[rgba(187,88,104,0.08)] px-4 py-4 text-left transition hover:bg-[rgba(187,88,104,0.12)]"
+                className="flex w-full items-center justify-between rounded-md border border-[rgba(187,88,104,0.24)] bg-[rgba(187,88,104,0.08)] px-4 py-4 text-left transition hover:bg-[rgba(187,88,104,0.12)]"
               >
                 <div>
                   <p className="text-sm font-semibold text-[var(--tone-danger-text)]">Sign out</p>
-                  <p className="mt-1 text-sm text-[var(--tone-danger-text)] opacity-80">End the current session and go back to sign in.</p>
+                  <p className="mt-1 text-sm text-[var(--tone-danger-text)] opacity-80">End the current session and return to the shell.</p>
                 </div>
                 <LogOut className="h-4 w-4 text-[var(--tone-danger-text)]" />
               </button>

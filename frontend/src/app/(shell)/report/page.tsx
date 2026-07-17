@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Hand,
   Loader2,
@@ -11,8 +12,8 @@ import {
   Target,
 } from "lucide-react";
 import { generateReport, getLatestReport } from "@/lib/api";
+import { useAuthState } from "@/hooks/useAuthState";
 import { ShellPage, ShellPanel } from "@/components/layout/ShellPage";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { buildBestMouseFromStorage, reportStore } from "@/lib/reportStore";
 import { getOrCreateSessionId } from "@/lib/session";
 import type { Grip, Measurement, Report } from "@/lib/types";
@@ -99,7 +100,7 @@ function LoadingPage() {
 }
 
 export default function ReportPage() {
-  const authReady = useRequireAuth();
+  const { ready: authReady } = useAuthState();
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -212,28 +213,28 @@ export default function ReportPage() {
 
   return (
     <ShellPage
-      title="Fit Report"
-      description=""
+      title="Fit report"
+      description="Review your recorded profile and the ranked mice selected for your hand and grip."
       actions={
         <button
           type="button"
           onClick={() => void handleGenerateReport()}
           disabled={running}
-          className="mf-glass-button mf-glass-button-primary inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="mf-glass-button mf-glass-button-primary inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           {report ? "Refresh report" : "Generate report"}
         </button>
       }
     >
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-px overflow-hidden rounded-lg border border-[var(--shell-border-strong)] bg-[var(--shell-border-strong)] sm:grid-cols-2 xl:grid-cols-4">
         {statCards.map((card) => (
-          <div key={card.label} className="shell-surface-raised rounded-[26px] p-5">
-            <div className="shell-surface-soft flex h-11 w-11 items-center justify-center rounded-full">
-              <card.icon className="h-5 w-5 text-[var(--shell-text-secondary)]" />
+          <div key={card.label} className="bg-[var(--shell-surface-raised)] p-4">
+            <div className="flex items-center gap-2 text-xs text-[var(--shell-text-tertiary)]">
+              <card.icon className="h-4 w-4" />
+              {card.label}
             </div>
-            <p className="mt-4 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-[var(--shell-text-tertiary)]">{card.label}</p>
-            <p className="mt-2 text-base font-semibold leading-7 text-[var(--shell-text-primary)]">{card.value}</p>
+            <p className="mt-2 truncate text-sm font-semibold leading-6 text-[var(--shell-text-primary)]">{card.value}</p>
           </div>
         ))}
       </div>
@@ -257,8 +258,8 @@ export default function ReportPage() {
             title="Summary"
             description={report.summary || "Your latest MouseFit recommendation is ready below."}
           >
-            <div className="shell-surface-soft rounded-[24px] px-5 py-4">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">Session</p>
+            <div className="shell-surface-soft rounded-md px-4 py-3">
+              <p className="text-xs font-medium text-[var(--shell-text-tertiary)]">Session</p>
               <p className="mt-2 text-sm leading-7 text-[var(--shell-text-secondary)]">
                 Created {new Date(report.created_at).toLocaleString()}
               </p>
@@ -269,23 +270,23 @@ export default function ReportPage() {
             title="Recommendations"
             description=""
           >
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="divide-y divide-[var(--shell-border-strong)]">
               {report.recommendations.map((recommendation, index) => (
-                <div key={recommendation.id} className="shell-surface-soft rounded-[24px] p-5">
-                  <div className="flex items-start justify-between gap-4">
+                <div key={recommendation.id} className="grid gap-3 py-4 first:pt-0 last:pb-0 sm:grid-cols-[40px_minmax(0,1fr)_auto] sm:items-start">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--shell-surface-soft)] text-sm font-semibold text-[var(--shell-accent-strong)]">
+                    {index + 1}
+                  </div>
+                  <div className="min-w-0">
                     <div className="min-w-0">
-                      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">
-                        Option {index + 1}
-                      </p>
-                      <h3 className="mt-2 text-lg font-semibold tracking-tight text-[var(--shell-text-primary)]">
+                      <h3 className="text-base font-semibold text-[var(--shell-text-primary)]">
                         {[recommendation.brand, recommendation.model].filter(Boolean).join(" ")}
                       </h3>
                     </div>
-                    <div className="mf-glass-pill rounded-full px-3 py-2 text-sm font-semibold text-[var(--shell-text-primary)]">
-                      {formatScore(recommendation.score)}
-                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[var(--shell-text-secondary)]">{recommendation.reason}</p>
                   </div>
-                  <p className="mt-4 text-sm leading-7 text-[var(--shell-text-secondary)]">{recommendation.reason}</p>
+                  <div className="rounded-md bg-[var(--shell-accent-soft)] px-3 py-2 text-sm font-semibold text-[var(--shell-accent-strong)]">
+                    {formatScore(recommendation.score)}
+                  </div>
                 </div>
               ))}
             </div>
@@ -296,11 +297,15 @@ export default function ReportPage() {
           title="No report yet"
           description="Measure your hand and capture your grip first, then generate the shortlist here."
         >
-          <div className="flex flex-wrap gap-3">
-            <div className="mf-glass-pill inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm text-[var(--shell-text-secondary)]">
+          <div className="flex flex-wrap gap-2">
+            <Link href="/measure" className="inline-flex h-10 items-center gap-2 rounded-md border border-[var(--shell-border-strong)] px-4 text-sm font-semibold text-[var(--shell-text-primary)]">
+              <Ruler className="h-4 w-4" />
+              Measure hand
+            </Link>
+            <Link href="/survey" className="inline-flex h-10 items-center gap-2 rounded-md bg-[var(--shell-accent)] px-4 text-sm font-semibold text-[var(--shell-text-inverse)]">
               <Sparkles className="h-4 w-4" />
-              Complete the fit steps first.
-            </div>
+              Start survey
+            </Link>
           </div>
         </ShellPanel>
       ) : null}

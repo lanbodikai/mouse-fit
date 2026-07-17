@@ -20,8 +20,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useAuthGate } from "@/components/auth/AuthGateProvider";
 import { getMe } from "@/lib/api";
 import { getSession, signOut } from "@/lib/auth";
+import { useAuthState } from "@/hooks/useAuthState";
 import { useTheme } from "@/lib/theme";
 import type { CurrentUser } from "@/lib/types";
 
@@ -54,11 +56,15 @@ function isActive(pathname: string, item: SliderItem): boolean {
 
 function UserMenu() {
   const router = useRouter();
+  const { isAuthenticated } = useAuthState();
+  const { openAuthModal, requireAuth } = useAuthGate();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const session = getSession();
     if (!session) return;
 
@@ -72,7 +78,7 @@ function UserMenu() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -85,18 +91,30 @@ function UserMenu() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const displayName = user?.display_name || user?.email?.split("@")[0] || "Account";
+  const activeUser = isAuthenticated ? user : null;
+  const displayName = activeUser?.display_name || activeUser?.email?.split("@")[0] || "Guest";
 
   return (
     <div ref={dropdownRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          if (!isAuthenticated) {
+            openAuthModal({
+              next: "/dashboard",
+              reason: "try_now",
+              title: "Create your MouseFit account",
+              description: "Continue with Google, Discord, or GitHub to unlock the AI assistant, survey flows, and profile settings.",
+            });
+            return;
+          }
+          setOpen((value) => !value);
+        }}
         className="flex items-center gap-2 rounded-full bg-white px-2 py-2 text-[#111111] shadow-[0_12px_20px_rgba(0,0,0,0.08)] transition hover:-translate-y-0.5"
       >
-        {user?.avatar_url ? (
+        {activeUser?.avatar_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+          <img src={activeUser.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
         ) : (
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#111111] text-white">
             <User className="h-4 w-4" />
@@ -109,7 +127,7 @@ function UserMenu() {
       </button>
 
       <AnimatePresence>
-        {open ? (
+        {open && isAuthenticated ? (
           <motion.div
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -119,7 +137,7 @@ function UserMenu() {
           >
             <div className="border-b border-black/6 px-4 py-3">
               <p className="text-sm font-semibold text-[#111111]">{displayName}</p>
-              <p className="mt-1 text-xs text-black/45">{user?.email || ""}</p>
+              <p className="mt-1 text-xs text-black/45">{activeUser?.email || ""}</p>
             </div>
 
             <div className="py-2">
@@ -132,7 +150,13 @@ function UserMenu() {
                   type="button"
                   onClick={() => {
                     setOpen(false);
-                    router.push(item.href);
+                    requireAuth(() => {
+                      router.push(item.href);
+                    }, {
+                      next: item.href,
+                      title: `Create an account to open ${item.label}`,
+                      description: "Continue with Google, Discord, or GitHub to keep your account and workspace in sync.",
+                    });
                   }}
                   className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-black/65 transition hover:bg-black/5 hover:text-[#111111]"
                 >
@@ -148,7 +172,7 @@ function UserMenu() {
                 onClick={() => {
                   setOpen(false);
                   signOut();
-                  router.push("/auth/sign-in");
+                  router.push("/dashboard");
                 }}
                 className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-500/80 transition hover:bg-black/5 hover:text-red-500"
               >
@@ -164,8 +188,11 @@ function UserMenu() {
 }
 
 export default function ServiceSliderBar() {
+  const router = useRouter();
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const { isAuthenticated } = useAuthState();
+  const { requireAuth } = useAuthGate();
   const itemRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
   const aiActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 
@@ -270,6 +297,20 @@ export default function ServiceSliderBar() {
           <div className="flex flex-wrap items-center justify-end gap-2 px-1">
             <Link
               href="/dashboard?assistant=open"
+              onClick={(event) => {
+                if (isAuthenticated) return;
+                event.preventDefault();
+                requireAuth(
+                  () => {
+                    router.push("/dashboard?assistant=open");
+                  },
+                  {
+                    next: "/dashboard?assistant=open",
+                    title: "Create an account to use MouseFit AI",
+                    description: "Continue with Google, Discord, or GitHub to ask questions, compare mice, and save your workflow.",
+                  },
+                );
+              }}
               className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition ${
                 aiActive
                   ? "shell-accent-surface"

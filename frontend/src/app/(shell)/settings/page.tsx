@@ -12,7 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { ShellPage, ShellPanel } from "@/components/layout/ShellPage";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useAuthState } from "@/hooks/useAuthState";
 import { useTheme } from "@/lib/theme";
 
 type CameraMode = "auto" | "front" | "rear";
@@ -68,7 +68,7 @@ function ToggleRow({
   onToggle: () => void;
 }) {
   return (
-    <div className="shell-surface-soft flex items-center justify-between gap-4 rounded-[22px] px-4 py-4">
+    <div className="shell-surface-soft flex items-center justify-between gap-4 rounded-md px-4 py-4">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-[var(--shell-text-primary)]">{title}</p>
         <p className="mt-1 text-sm leading-6 text-[var(--shell-text-secondary)]">{description}</p>
@@ -78,6 +78,7 @@ function ToggleRow({
         type="button"
         onClick={onToggle}
         aria-pressed={enabled}
+        aria-label={title}
         className={`relative h-7 w-12 shrink-0 rounded-full border transition ${
           enabled
             ? "shell-accent-surface"
@@ -107,7 +108,7 @@ function ChoiceButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+      className={`rounded-md border px-4 py-2 text-sm font-medium transition ${
         active
           ? "shell-accent-surface"
           : "shell-surface-soft text-[var(--shell-text-secondary)] hover:text-[var(--shell-text-primary)]"
@@ -130,7 +131,7 @@ function LoadingPage() {
 }
 
 export default function SettingsPage() {
-  const authReady = useRequireAuth();
+  const { ready: authReady } = useAuthState();
   const { theme, setTheme } = useTheme();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
@@ -176,6 +177,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!hydrated || typeof window === "undefined") return;
     window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    document.documentElement.classList.toggle("shell-reduce-motion", settings.reduceMotion);
   }, [hydrated, settings]);
 
   const summary = useMemo(() => {
@@ -231,9 +233,9 @@ export default function SettingsPage() {
   return (
     <ShellPage
       title="Settings"
-      description=""
+      description="Manage display, capture defaults, experience preferences, and browser-side data."
       actions={
-        <div className="mf-glass-pill inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium text-[var(--shell-text-secondary)]">
+        <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--shell-text-secondary)]">
           <SlidersHorizontal className="h-4 w-4" />
           {summary}
         </div>
@@ -261,8 +263,8 @@ export default function SettingsPage() {
 
         <ShellPanel title="Capture" description="">
           <div className="space-y-4">
-            <div className="shell-surface-soft rounded-[22px] px-4 py-4">
-              <div className="inline-flex items-center gap-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">
+            <div className="shell-surface-soft rounded-md px-4 py-4">
+              <div className="inline-flex items-center gap-2 text-xs font-medium text-[var(--shell-text-tertiary)]">
                 <Camera className="h-3.5 w-3.5" />
                 Camera Mode
               </div>
@@ -279,8 +281,8 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="shell-surface-soft rounded-[22px] px-4 py-4">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[var(--shell-text-tertiary)]">Capture Countdown</p>
+            <div className="shell-surface-soft rounded-md px-4 py-4">
+              <p className="text-xs font-medium text-[var(--shell-text-tertiary)]">Capture countdown</p>
               <div className="mt-3 flex flex-wrap gap-3">
                 {(["2", "3", "5"] as CountdownMode[]).map((countdown) => (
                   <ChoiceButton
@@ -340,7 +342,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={exportLocalData}
-              className="shell-surface-soft flex w-full items-center justify-between rounded-[22px] px-4 py-4 text-left transition hover:-translate-y-0.5"
+              className="shell-surface-soft flex w-full items-center justify-between rounded-md px-4 py-4 text-left transition hover:border-[var(--shell-accent-outline)]"
             >
               <div>
                 <p className="text-sm font-semibold text-[var(--shell-text-primary)]">Export settings and fit data</p>
@@ -352,7 +354,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={clearFitData}
-              className="flex w-full items-center justify-between rounded-[22px] border border-[rgba(187,88,104,0.24)] bg-[rgba(187,88,104,0.08)] px-4 py-4 text-left transition hover:bg-[rgba(187,88,104,0.12)]"
+              className="flex w-full items-center justify-between rounded-md border border-[rgba(187,88,104,0.24)] bg-[rgba(187,88,104,0.08)] px-4 py-4 text-left transition hover:bg-[rgba(187,88,104,0.12)]"
             >
               <div>
                 <p className="text-sm font-semibold text-[var(--tone-danger-text)]">Clear fit history</p>
@@ -361,7 +363,7 @@ export default function SettingsPage() {
               <Trash2 className="h-4 w-4 text-[var(--tone-danger-text)]" />
             </button>
 
-            <div className="mf-glass-pill inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm text-[var(--shell-text-secondary)]">
+            <div className="inline-flex items-center gap-2 text-sm text-[var(--shell-text-secondary)]">
               <Bell className="h-4 w-4" />
               Changes save automatically while you edit this page.
             </div>

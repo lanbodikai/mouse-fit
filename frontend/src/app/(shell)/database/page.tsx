@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import MouseCatalogHome from "@/components/MouseCatalogHome";
 
 export default function DatabasePage() {
-  redirect("/dashboard");
+  return <MouseCatalogHome />;
 }

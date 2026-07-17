@@ -1,5 +1,8 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import ServiceWorkspace from "@/components/dashboard/ServiceWorkspace";
+import { deskHeightTuneWorkspaceConfig } from "@/data/service-workspaces";
 
 export default function DeskHeightTunePage() {
-  redirect("/dashboard");
+  return <ServiceWorkspace config={deskHeightTuneWorkspaceConfig} />;
 }

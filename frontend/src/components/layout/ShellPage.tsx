@@ -1,7 +1,12 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 export type ShellCorners = "rounded" | "square";
 export type ShellVariant = "default" | "glass";
+export type ShellLayout = "standard" | "wide" | "tool";
+export type ShellTone = "default" | "accent" | "warning" | "danger";
 
 type ShellPageProps = {
   eyebrow?: string;
@@ -9,9 +14,9 @@ type ShellPageProps = {
   description: string;
   actions?: ReactNode;
   children: ReactNode;
-  /** `square` removes large radii for a flat, grid-like shell (e.g. dashboard). */
   corners?: ShellCorners;
   variant?: ShellVariant;
+  layout?: ShellLayout;
 };
 
 type ShellPanelProps = {
@@ -21,67 +26,66 @@ type ShellPanelProps = {
   children?: ReactNode;
   corners?: ShellCorners;
   variant?: ShellVariant;
+  tone?: ShellTone;
 };
 
-function heroSectionClass(corners: ShellCorners, variant: ShellVariant): string {
-  if (variant === "glass") {
-    return corners === "square"
-      ? "mf-glass-panel rounded-[26px] p-3 sm:p-4"
-      : "mf-glass-panel rounded-[34px] p-3 sm:p-4";
-  }
+const widthByLayout: Record<ShellLayout, string> = {
+  standard: "max-w-6xl",
+  wide: "max-w-[1480px]",
+  tool: "max-w-[1560px]",
+};
 
-  if (corners === "square") {
-    return "shell-surface-raised rounded-[24px] p-5 sm:p-6";
-  }
-  return "shell-surface-raised rounded-[34px] p-5 sm:p-6";
-}
-
-function panelSectionClass(corners: ShellCorners, variant: ShellVariant): string {
-  if (variant === "glass") {
-    return corners === "square"
-      ? "mf-glass-panel-soft rounded-[24px] p-5 sm:p-6"
-      : "mf-glass-panel-soft rounded-[28px] p-5 sm:p-6";
-  }
-
-  if (corners === "square") {
-    return "shell-surface-soft rounded-[22px] p-5 sm:p-6";
-  }
-  return "shell-surface-soft rounded-[30px] p-5 sm:p-6";
-}
+const toneClass: Record<ShellTone, string> = {
+  default:
+    "border-[var(--shell-border-strong)] bg-[var(--shell-surface-raised)]",
+  accent:
+    "border-[var(--shell-accent-outline)] bg-[var(--shell-accent-soft)]",
+  warning:
+    "border-[var(--tone-warning-line)] bg-[var(--tone-warning-fill)]",
+  danger:
+    "border-[var(--tone-danger-line)] bg-[var(--tone-danger-fill)]",
+};
 
 export function ShellPage({
-  eyebrow = "Mouse Fit",
+  eyebrow,
   title,
   description,
   actions,
   children,
-  corners = "rounded",
-  variant = "default",
+  layout = "standard",
 }: ShellPageProps) {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 text-[var(--shell-text-primary)]">
-      <section className={heroSectionClass(corners, variant)}>
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[var(--shell-text-tertiary)]">
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0.45, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+      className={`mx-auto flex w-full ${widthByLayout[layout]} flex-col gap-5 text-[var(--shell-text-primary)]`}
+    >
+      <header className="shell-content-header shell-page-header flex flex-col gap-4 border-b border-[var(--shell-border-strong)] pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          {eyebrow ? (
+            <p className="mb-2 text-xs font-medium text-[var(--shell-accent-strong)]">
               {eyebrow}
             </p>
-            <h1 className="mt-2 text-[1.65rem] font-semibold leading-none tracking-tight text-[var(--shell-text-primary)] sm:text-[2.15rem]">
-              {title}
-            </h1>
-            {description ? (
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--shell-text-secondary)] sm:text-[0.98rem]">
-                {description}
-              </p>
-            ) : null}
-          </div>
-
-          {actions ? <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div> : null}
+          ) : null}
+          <h1 className="text-[2rem] font-semibold leading-tight text-[var(--shell-text-primary)] sm:text-[2.55rem]">
+            {title}
+          </h1>
+          {description ? (
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--shell-text-secondary)] sm:text-[0.96rem]">
+              {description}
+            </p>
+          ) : null}
         </div>
-      </section>
+        {actions ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+        ) : null}
+      </header>
 
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -90,22 +94,24 @@ export function ShellPanel({
   description,
   className,
   children,
-  corners = "rounded",
-  variant = "default",
+  tone = "default",
 }: ShellPanelProps) {
   return (
-    <section className={`${panelSectionClass(corners, variant)} ${className || ""}`}>
+    <section className={`rounded-lg border p-4 sm:p-5 ${toneClass[tone]} ${className || ""}`}>
       {title || description ? (
-        <div className="mb-5">
-          {title ? <h2 className="text-lg font-semibold tracking-tight text-[var(--shell-text-primary)]">{title}</h2> : null}
+        <div className={children ? "mb-4" : ""}>
+          {title ? (
+            <h2 className="text-base font-semibold text-[var(--shell-text-primary)]">
+              {title}
+            </h2>
+          ) : null}
           {description ? (
-            <p className="mt-2 text-sm leading-6 text-[var(--shell-text-secondary)]">
+            <p className="mt-1.5 text-sm leading-6 text-[var(--shell-text-secondary)]">
               {description}
             </p>
           ) : null}
         </div>
       ) : null}
-
       {children}
     </section>
   );

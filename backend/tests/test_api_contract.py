@@ -20,6 +20,11 @@ api_main = util.module_from_spec(spec)
 sys.modules[spec.name] = api_main
 spec.loader.exec_module(api_main)
 from backend.auth import AuthError
+from backend.controllers import report_controller as report_controller_module
+from backend.middleware import request_context as request_context_module
+from backend.repositories import measurements_repository as measurements_repository_module
+from backend.repositories import profiles_repository as profiles_repository_module
+from backend.services import measurement_service as measurement_service_module
 
 
 class _DummyConn:
@@ -64,6 +69,12 @@ class _LatestCursor:
 
 
 class _LatestConn:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
     def cursor(self):
         return _LatestCursor()
 
@@ -182,8 +193,8 @@ def test_invalid_token_does_not_break_public_routes(monkeypatch):
     def _always_fail(_: str):
         raise AuthError("auth_invalid_token", "Invalid token", status_code=401)
 
-    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
-    monkeypatch.setattr(api_main, "verify_bearer_token", _always_fail, raising=True)
+    monkeypatch.setattr(request_context_module.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(request_context_module, "verify_bearer_token", _always_fail, raising=True)
 
     client = TestClient(api_main.app)
     response = client.get("/api/health", headers={"Authorization": "Bearer bad-token"})
@@ -197,8 +208,8 @@ def test_invalid_token_still_fails_protected_routes(monkeypatch):
     def _always_fail(_: str):
         raise AuthError("auth_invalid_token", "Invalid token", status_code=401)
 
-    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
-    monkeypatch.setattr(api_main, "verify_bearer_token", _always_fail, raising=True)
+    monkeypatch.setattr(request_context_module.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(request_context_module, "verify_bearer_token", _always_fail, raising=True)
 
     client = TestClient(api_main.app)
     response = client.get("/api/profile/me", headers={"Authorization": "Bearer bad-token"})
@@ -209,8 +220,7 @@ def test_invalid_token_still_fails_protected_routes(monkeypatch):
 
 
 def test_report_generate_no_measurement_returns_not_found_envelope(monkeypatch):
-    monkeypatch.setattr(api_main, "get_conn", lambda: _DummyConn(), raising=True)
-    monkeypatch.setattr(api_main, "latest_measurement", lambda *_: None, raising=True)
+    monkeypatch.setattr(report_controller_module.measurement_service, "latest_measurement", lambda *_: None, raising=True)
 
     client = TestClient(api_main.app)
     response = client.post("/api/report/generate", params={"session_id": "s1"})
@@ -219,8 +229,9 @@ def test_report_generate_no_measurement_returns_not_found_envelope(monkeypatch):
     assert data["code"] == "not_found"
 
 
-def test_latest_measurement_falls_back_to_guest_row():
-    row = api_main.latest_measurement(_LatestConn(), "session-1", "user-1")
+def test_latest_measurement_falls_back_to_guest_row(monkeypatch):
+    monkeypatch.setattr(measurements_repository_module, "get_conn", lambda: _LatestConn(), raising=True)
+    row = measurement_service_module.latest_measurement("session-1", "user-1")
     assert row is not None
     assert row.session_id == "session-1"
     assert row.user_id is None
@@ -238,14 +249,15 @@ def test_profile_me_requires_auth():
 def test_profile_me_upserts_and_returns_profile(monkeypatch):
     from backend.auth import AuthContext
 
-    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(request_context_module.config, "ENABLE_AUTH", True, raising=False)
     monkeypatch.setattr(
-        api_main,
+        request_context_module,
         "verify_bearer_token",
         lambda _token: AuthContext(user_id="user-1", claims={"email": "user@example.com"}),
         raising=True,
     )
-    monkeypatch.setattr(api_main, "get_conn", lambda: _ProfileConn(), raising=True)
+    conn = _ProfileConn()
+    monkeypatch.setattr(profiles_repository_module, "get_conn", lambda: conn, raising=True)
 
     client = TestClient(api_main.app)
     response = client.get("/api/profile/me", headers={"Authorization": "Bearer valid-token"})
@@ -260,9 +272,9 @@ def test_profile_me_upserts_and_returns_profile(monkeypatch):
 def test_me_returns_survey_status(monkeypatch):
     from backend.auth import AuthContext
 
-    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(request_context_module.config, "ENABLE_AUTH", True, raising=False)
     monkeypatch.setattr(
-        api_main,
+        request_context_module,
         "verify_bearer_token",
         lambda _token: AuthContext(user_id="user-1", claims={"email": "user@example.com"}),
         raising=True,
@@ -273,7 +285,7 @@ def test_me_returns_survey_status(monkeypatch):
         "has_completed_survey": True,
         "survey_dismissed_until": "2026-03-06T12:00:00+00:00",
     }
-    monkeypatch.setattr(api_main, "get_conn", lambda: conn, raising=True)
+    monkeypatch.setattr(profiles_repository_module, "get_conn", lambda: conn, raising=True)
 
     client = TestClient(api_main.app)
     response = client.get("/api/me", headers={"Authorization": "Bearer valid-token"})
@@ -288,15 +300,15 @@ def test_me_returns_survey_status(monkeypatch):
 def test_complete_survey_sets_completion_flag(monkeypatch):
     from backend.auth import AuthContext
 
-    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(request_context_module.config, "ENABLE_AUTH", True, raising=False)
     monkeypatch.setattr(
-        api_main,
+        request_context_module,
         "verify_bearer_token",
         lambda _token: AuthContext(user_id="user-1", claims={"email": "user@example.com"}),
         raising=True,
     )
     conn = _ProfileConn()
-    monkeypatch.setattr(api_main, "get_conn", lambda: conn, raising=True)
+    monkeypatch.setattr(profiles_repository_module, "get_conn", lambda: conn, raising=True)
 
     client = TestClient(api_main.app)
     response = client.post("/api/survey/complete", headers={"Authorization": "Bearer valid-token"})
@@ -311,15 +323,15 @@ def test_complete_survey_sets_completion_flag(monkeypatch):
 def test_dismiss_survey_sets_24h_snooze(monkeypatch):
     from backend.auth import AuthContext
 
-    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(request_context_module.config, "ENABLE_AUTH", True, raising=False)
     monkeypatch.setattr(
-        api_main,
+        request_context_module,
         "verify_bearer_token",
         lambda _token: AuthContext(user_id="user-1", claims={"email": "user@example.com"}),
         raising=True,
     )
     conn = _ProfileConn()
-    monkeypatch.setattr(api_main, "get_conn", lambda: conn, raising=True)
+    monkeypatch.setattr(profiles_repository_module, "get_conn", lambda: conn, raising=True)
 
     client = TestClient(api_main.app)
     response = client.post("/api/survey/dismiss", headers={"Authorization": "Bearer valid-token"})
@@ -333,14 +345,15 @@ def test_dismiss_survey_sets_24h_snooze(monkeypatch):
 def test_profile_me_update_saves_display_name_and_theme(monkeypatch):
     from backend.auth import AuthContext
 
-    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(request_context_module.config, "ENABLE_AUTH", True, raising=False)
     monkeypatch.setattr(
-        api_main,
+        request_context_module,
         "verify_bearer_token",
         lambda _token: AuthContext(user_id="user-1", claims={"email": "user@example.com"}),
         raising=True,
     )
-    monkeypatch.setattr(api_main, "get_conn", lambda: _ProfileConn(), raising=True)
+    conn = _ProfileConn()
+    monkeypatch.setattr(profiles_repository_module, "get_conn", lambda: conn, raising=True)
 
     client = TestClient(api_main.app)
     response = client.post(
@@ -357,9 +370,9 @@ def test_profile_me_update_saves_display_name_and_theme(monkeypatch):
 def test_profile_me_update_invalid_theme_uses_validation_envelope(monkeypatch):
     from backend.auth import AuthContext
 
-    monkeypatch.setattr(api_main.config, "ENABLE_AUTH", True, raising=False)
+    monkeypatch.setattr(request_context_module.config, "ENABLE_AUTH", True, raising=False)
     monkeypatch.setattr(
-        api_main,
+        request_context_module,
         "verify_bearer_token",
         lambda _token: AuthContext(user_id="user-1", claims={"email": "user@example.com"}),
         raising=True,

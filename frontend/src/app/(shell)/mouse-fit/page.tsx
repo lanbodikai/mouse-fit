@@ -1,5 +1,8 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import ServiceWorkspace from "@/components/dashboard/ServiceWorkspace";
+import { mouseFitWorkspaceConfig } from "@/data/service-workspaces";
 
 export default function MouseFitPage() {
-  redirect("/dashboard");
+  return <ServiceWorkspace config={mouseFitWorkspaceConfig} />;
 }

@@ -11,18 +11,12 @@ export default function SignUpPage() {
 
   useEffect(() => {
     const nextPath = sanitizeRedirectPath(searchParams.get("next"), DEFAULT_POST_LOGIN_PATH);
-    const email = searchParams.get("email")?.trim();
-
     const params = new URLSearchParams();
-    params.set("mode", "signup");
     if (nextPath !== DEFAULT_POST_LOGIN_PATH) {
       params.set("next", nextPath);
     }
-    if (email) {
-      params.set("email", email);
-    }
 
-    router.replace(`/auth/sign-in?${params.toString()}`);
+    router.replace(params.size > 0 ? `/auth/sign-in?${params.toString()}` : "/auth/sign-in");
   }, [router, searchParams]);
 
   return (
