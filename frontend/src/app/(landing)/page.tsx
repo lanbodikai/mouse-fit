@@ -172,6 +172,26 @@ export default function LandingPage() {
   const [activeSection, setActiveSection] =
     useState<(typeof navSections)[number]["id"]>("scan");
 
+  // Supabase falls back to the site's root URL when an OAuth callback URL is
+  // missing from its allow-list. Preserve the authorization response and send
+  // it through the normal callback handler instead of leaving a signed-in user
+  // on the marketing page.
+  useEffect(() => {
+    const currentUrl = new URL(window.location.href);
+    const hashParams = new URLSearchParams(currentUrl.hash.slice(1));
+    const isOAuthResponse =
+      currentUrl.searchParams.has("code") ||
+      currentUrl.searchParams.has("error") ||
+      currentUrl.searchParams.has("error_description") ||
+      hashParams.has("access_token") ||
+      hashParams.has("error") ||
+      hashParams.has("error_description");
+
+    if (!isOAuthResponse) return;
+
+    window.location.replace(`/auth/callback${currentUrl.search}${currentUrl.hash}`);
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"],
