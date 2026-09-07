@@ -55,7 +55,7 @@ def create_app() -> FastAPI:
         allow_origin_regex=os.getenv("CORS_ALLOW_ORIGIN_REGEX", default_origin_regex) or None,
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+        allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Request-ID"],
     )
     app.middleware("http")(request_context_middleware)
     register_error_handlers(app)

@@ -153,6 +153,21 @@ def test_health_has_request_id_header_and_body():
     assert response.headers.get("x-request-id")
 
 
+def test_cors_allows_idempotency_key_for_survey_saves():
+    client = TestClient(api_main.app)
+    response = client.options(
+        "/api/measurements",
+        headers={
+            "Origin": "https://mousefit.pro",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization, content-type, idempotency-key",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "https://mousefit.pro"
+    assert "idempotency-key" in response.headers["access-control-allow-headers"].lower()
+
+
 def test_deprecated_agent_chat_returns_410():
     client = TestClient(api_main.app)
     response = client.post("/api/agent/chat", json={"hello": "world"})
