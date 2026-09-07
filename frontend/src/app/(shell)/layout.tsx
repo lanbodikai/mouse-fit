@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AuthGateProvider } from "@/components/auth/AuthGateProvider";
+import ShellAuthBoundary from "@/components/auth/ShellAuthBoundary";
 import DashboardShell from "@/components/layout/DashboardShell";
 
 type CameraWindow = Window & {
@@ -72,7 +73,9 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
 
   return (
     <AuthGateProvider>
-      <DashboardShell>{children}</DashboardShell>
+      <ShellAuthBoundary>
+        <DashboardShell>{children}</DashboardShell>
+      </ShellAuthBoundary>
     </AuthGateProvider>
   );
 }

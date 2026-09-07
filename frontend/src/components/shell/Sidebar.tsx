@@ -10,7 +10,7 @@ const tools = [
   { href: "/measure", label: "Mouse Measure Checker", icon: Ruler },
   { href: "/database", label: "Mouse Database", icon: Database },
   { href: "/report", label: "Report Page", icon: FileText },
-  { href: "/dashboard?assistant=open", label: "AI Assistant", icon: Bot },
+  { href: "/database?assistant=open", label: "AI Assistant", icon: Bot },
 ];
 
 function isPathActive(pathname: string, href: string) {

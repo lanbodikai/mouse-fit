@@ -1,0 +1,340 @@
+# Mice without a simulator-ready 3D model
+
+Generated 2026-07-27 from backend/data/mousefit.db.
+
+- Catalog entries: 452 (Zaunkoenig M2K excluded because it was removed from the simulator)
+- Imported simulator models: 136
+- Missing a simulator-ready local model: 316
+
+A viewer-only source is intentionally not imported unless a reusable asset and permission are recorded locally.
+
+## Candidate source found (1)
+
+A compatible source candidate is recorded, but it has not been imported into the simulator.
+
+- Logitech G604
+
+## 3D viewer exists, but no reusable asset (47)
+
+These mice are marked as viewable in an external 3D viewer, but no downloadable/re-distributable model is available locally.
+
+- ASUS ROG Harpe Ace
+- ATK Fierce X
+- Attack Shark X3
+- Corsair Sabre v2 Pro
+- Endgame Gear OP1
+- Endgame Gear OP1 8k
+- Endgame Gear XM1
+- Endgame Gear XM1 RGB
+- Fantech Helios II Pro S
+- Finalmouse Ultralight 2
+- Glorious Model O- Wireless
+- LAMZU Paro
+- Logitech G Pro 2 LIGHTSPEED
+- Logitech G502 X
+- Pulsar X2
+- Pulsar X2 CrazyLight
+- Pulsar X2 v3
+- Pulsar X2H
+- Pulsar X2H Es
+- Pulsar X2H v3
+- Pulsar X3
+- Pulsar Xlite v4
+- Pulsar Xlite V4 Es
+- Pulsar Xlite Wired
+- Razer Basilisk Ultimate
+- Razer Basilisk V3 Pro
+- Razer Cobra
+- Razer DeathAdder Chroma
+- Razer DeathAdder Elite
+- Razer DeathAdder Essential
+- Razer Deathadder V2 Pro
+- Razer Naga Pro
+- Razer Naga V2 Pro
+- Razer Naga X
+- Razer Viper V3 Hyperspeed
+- Scyrox V6
+- VAXEE XE Wireless
+- VAXEE Zygen NP-01S
+- VAXEE ZYGEN NP-01S Wireless
+- WLMouse Strider
+- WLMouse Sword X
+- WLMouse YING
+- ZOWIE EC1-B
+- ZOWIE EC1-C
+- ZOWIE EC1-CW
+- ZOWIE EC3-CW
+- ZOWIE EC3-DW
+
+## No recorded 3D model source (268)
+
+No model source is currently recorded for these catalog entries.
+
+- Alienware Pro Wireless Gaming Mouse
+- ASUS ROG Chakram X
+- ASUS ROG Gladius
+- ASUS ROG Harpe Ace Aim Lab Wireless
+- ASUS ROG Harpe Ace Mini Wireless
+- ASUS ROG Keris II Ace
+- ASUS ROG Keris II Ace Wireless
+- ASUS ROG ROG Chakram
+- ASUS ROG ROG Chakram X Origin
+- ASUS ROG ROG Gladius III Wireless
+- ASUS ROG ROG Gladius III Wireless AimPoint EVA-02 Edition
+- ASUS ROG ROG Harpe Ace Aim Lab Edition
+- ASUS ROG ROG Harpe Ace Mini
+- ASUS ROG ROG Keris II Ace
+- ASUS ROG ROG Keris II Origin
+- ASUS ROG ROG Keris Wireless AimPoint
+- ASUS ROG ROG Spatha X
+- ASUS ROG ROG Strix Impact III Wireless
+- ATK Blazing Sky Duckbill
+- ATK Blazing Sky Duckbill Wireless
+- ATK Blazing Sky F1
+- ATK Blazing Sky F1 Pro MAX
+- ATK Blazing Sky F1 Series Wireless
+- ATK Blazing Sky U2
+- ATK Blazing Sky X1
+- ATK Blazing Sky Z1
+- ATK Dragonfly A9
+- BenQ ZOWIE EC-CW
+- BenQ ZOWIE EC-DW
+- BenQ ZOWIE EC1-C
+- BenQ ZOWIE EC2-CW Wireless
+- BenQ ZOWIE EC3-C
+- BenQ ZOWIE FK1+
+- BenQ ZOWIE S1
+- BenQ ZOWIE S2-DW Wireless 4K
+- BenQ ZOWIE ZA11
+- BenQ ZOWIE ZA12
+- Cooler Master MM530
+- Corsair Darkstar Wireless
+- Corsair M55 RGB Pro
+- Corsair M65 RGB Elite
+- Corsair M75 Air
+- Corsair M75 Wireless
+- Corsair SABRE RGB Pro
+- Corsair Sabre V2 Carbon Fiber
+- Corsair Scimitar Elite Wireless SE
+- Corsair Scimitar RGB Elite
+- Ducky Feather
+- Endgame Gear OP1 RGB
+- Endgame Gear OP1w 4K Black
+- Endgame Gear OP1w 4k v2
+- Endgame Gear OP1w 4K White
+- Endgame Gear XM1 v2
+- Endgame Gear XM1 White
+- Endgame Gear XM1r Wired
+- Fantech Helios II Pro XD3V3
+- Finalmouse Air58 Ninja CBB
+- Finalmouse Air58 Ninja CBR
+- Finalmouse Classic Ergo 2
+- Finalmouse Starlight Pro
+- Finalmouse Starlight-12
+- Finalmouse Starlight-12 Hades
+- Finalmouse Starlight-12 Phantom
+- Finalmouse Starlight-12 Poseidon
+- Finalmouse Starlight-12 Zeus Small
+- Finalmouse Ultralight 2 Cape Town
+- Finalmouse Ultralight Air58
+- Finalmouse Ultralight X
+- Fnatic X Lamzu Maya 8K
+- Fnatic x Lamzu Maya X 8K
+- Fnatic x Lamzu Thorn
+- G-Wolves Hati M ACE Wireless
+- G-Wolves Hati S
+- G-Wolves Hati S ACE Wireless
+- G-Wolves Hati S+ 4K
+- G-Wolves Hati-M
+- G-Wolves HTX 4K
+- G-Wolves Skoll
+- G-Wolves Skoll Mini
+- Glorious Model D 2 PRO Series
+- Glorious Model D 2 PRO Series 4K/8K Edition
+- Glorious Model D 2 Wired
+- Glorious Model D 2 Wireless
+- Glorious Model D 2 Wireless Wireless
+- Glorious Model D Minus Wired
+- Glorious Model D Minus Wireless
+- Glorious Model D Wired
+- Glorious Model D Wireless
+- Glorious Model D- Wireless White
+- Glorious Model I 2 Wired
+- Glorious Model I 2 Wireless
+- Glorious Model I Wired
+- Glorious Model O 2 Mini Wired
+- Glorious Model O 2 Mini Wireless
+- Glorious Model O 2 PRO Series
+- Glorious Model O 2 PRO Series 4K/8K Edition
+- Glorious Model O 2 Wired
+- Glorious Model O 2 Wireless
+- Glorious Model O 2 Wireless Wireless
+- Glorious Model O Eternal
+- Glorious Model O Minus Wireless
+- Glorious Model O White
+- Glorious Model O Wireless White
+- HyperX Pulsefire Haste 2
+- LAMZU Atlantis Mini 4K
+- LAMZU Atlantis Mini [Champion Edition]
+- LAMZU Atlantis Mini Champions Edition
+- LAMZU Atlantis Mini Pro
+- LAMZU Inca Black
+- LAMZU Inca White
+- LAMZU Lamzu x Fnatic Thorn 4K
+- Lamzu Paro Wireless
+- LAMZU Paro Aurora
+- LAMZU Paro Aurora SE
+- LAMZU REJECT Paro 8K
+- LAMZU Tachi
+- LAMZU Thorn (4K Compatible)
+- LAMZU Thorn 4K
+- Lamzu Thorn 4K Wireless
+- Logitech G Pro Gaming Mouse
+- Logitech G100S Custom
+- Logitech G102
+- Logitech G203
+- Logitech G300S
+- Logitech G400S
+- Logitech G402
+- Logitech G502 HERO
+- Logitech G502 Lightspeed
+- Logitech G502 Wireless
+- Logitech G900
+- Logitech MX518 HERO
+- Ninjutso Katana Superlight
+- Ninjutso Sora V2
+- Ninjutso Sora V2 Black
+- Ninjutso Sora V2 White
+- Ninjutso X VAXEE Sora Gray
+- PMM NEO 8K Solid (Viper Mini-Based Custom)
+- PMM Zen 8K Mini (Viper V3 Pro Mod)
+- Pulsar Feinmann F01
+- Pulsar JV-X
+- Pulsar X2 Bruce Lee Edition
+- Pulsar X2 v1
+- Pulsar X2 v2
+- Pulsar X2 V2 Black
+- Pulsar X2 V2 Demon Slayer Nezuko
+- Pulsar X2 V2 Demon Slayer Tanjiro Kamado
+- Pulsar X2 V2 White
+- Pulsar X2 V3 Standard
+- Pulsar X2 Wired
+- Pulsar X2A eS White
+- Pulsar X2A v3
+- Pulsar X2A Wired
+- Pulsar X2H Mini
+- Pulsar X2H V3 Standard
+- Pulsar X2H v3 Mini
+- Pulsar X2H Wired
+- Pulsar X3 Standard
+- Pulsar X3 Black
+- Pulsar X3 LHD
+- Pulsar X3 Mini
+- Pulsar X3 White
+- Pulsar Xlite V2 mini Wireless
+- Pulsar Xlite V2 Wireless
+- Pulsar Xlite V2 Wireless Red
+- Pulsar Xlite V2 Wireless White
+- Pulsar Xlite v3 eS
+- Pulsar Xlite V3 Es Black
+- Pulsar Xlite V3 Es Founder&#8217;s Edition
+- Pulsar Xlite V3 Es Red
+- Pulsar Xlite V3 Es White
+- Pulsar Xlite V3 Size 2 Black
+- Pulsar Xlite V3 Size 2 White
+- Pulsar Xlite V4 Medium
+- Pulsar Xlite v4 Large
+- Pulsar Xlite v4 Mini
+- Pulsar Xlite Wireless
+- Pwnage Stormbreaker BLG
+- Pwnage Ultra Custom Symm 2 Wireless
+- Pwnage Ultra Custom Wireless Ergo
+- Razer Basilisk Quartz
+- Razer Deathadder 2013
+- Razer DeathAdder V3 HyperSpeed
+- Razer Lancehead TE
+- Razer Mamba Wireless
+- Razer Viper
+- Razer Viper 8KHz
+- Razer Viper Mini Signature Edition
+- Razer Viper Mini Signature Edition Wireless
+- Razer Viper Ultimate QE
+- Razer Viper V2 Pro
+- SONY INZONE Mouse-A
+- SteelSeries Aerox 3 Wireless
+- SteelSeries Aerox 3 Wireless Black
+- SteelSeries Aerox 3 Wireless Ghost
+- SteelSeries Aerox 5 Wireless
+- SteelSeries Aerox 9 Wireless
+- SteelSeries Prime
+- SteelSeries Prime Neo Noir
+- SteelSeries Rival 110
+- SteelSeries Rival 3
+- SteelSeries Rival 300
+- SteelSeries Rival 300 White
+- SteelSeries Rival 600
+- SteelSeries Rival 650
+- SteelSeries Sensei RAW
+- VAXEE NP-01S Ergo Blue
+- VAXEE NP-01S Ergo Malt Brown
+- VAXEE NP-01S Pink
+- VAXEE NP-01S Wireless 4K
+- VAXEE NP-01S Yellow
+- VAXEE XE V2 Wireless
+- VAXEE XE Wireless 4K
+- VAXEE XE-S L (Left-Hand) Wireless
+- VAXEE XE-S Wireless
+- VAXEE ZYGEN NP-01S Glossy
+- VAXEE ZYGEN NP-01S V2 Wireless
+- VAXEE Zygen NP-01S V2 Wireless (4K)
+- VAXEE Zygen NP-01S Wireless (4K)
+- VGN Dragonfly F1 Pro
+- VGN Dragonfly MOBA
+- VXE MAD R Red
+- WLMouse BEAST X Black
+- WLMouse BEAST X Mini Black
+- WLMouse BEAST X Mini Magnesium
+- WLMouse BEAST X Mini Silver
+- WLMouse BEAST X Mini Violet
+- WLMouse BEAST X Purple
+- WLMouse BEAST X Silver
+- Xtrfy M4 Black
+- Xtrfy M4 Miami Blue
+- Xtrfy M4 Pink
+- Xtrfy M4 White
+- Xtrfy M4 Wireless
+- Xtrfy M4 Wireless White
+- Xtrfy M42 Wireless
+- Xtrfy M68 Pro White
+- Xtrfy M8
+- Xtrfy M8 Wireless
+- Xtrfy MZ1
+- Xtrfy MZ1 White Rail
+- Xtrfy MZ1 Wireless
+- ZOWIE EC1 Tyloo
+- ZOWIE EC1-A
+- ZOWIE EC2 Black
+- ZOWIE EC2 RED V2
+- ZOWIE EC2 Tyloo
+- ZOWIE EC2 White
+- ZOWIE EC2 White V2
+- ZOWIE EC2-A White
+- ZOWIE EC2-B Divina Blue
+- ZOWIE EC2-B Divina Pink
+- ZOWIE FK1+
+- ZOWIE FK1-B
+- ZOWIE FK1-B Divina Blue
+- ZOWIE FK1-B Divina Pink
+- ZOWIE FK1-B Red
+- ZOWIE FK1-B White
+- ZOWIE FK1-C
+- ZOWIE FK2 RED V2
+- Zowie S1 Divina Pink
+- ZOWIE S1-C
+- ZOWIE S2 Divina Blue
+- ZOWIE S2 Divina Pink
+- ZOWIE S2 RED V2
+- ZOWIE ZA12
+- ZOWIE ZA12-A White
+- ZOWIE ZA12-B White
+- ZOWIE ZA12-C

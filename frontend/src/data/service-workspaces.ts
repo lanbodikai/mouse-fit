@@ -166,7 +166,7 @@ export const keyboardFinderWorkspaceConfig: ServiceWorkspaceConfig = {
     "Keyboard Finder is the next service in line. This dashboard shows the future product surface for layout, switch feel, and use-case matching before the service goes live.",
   ctaLabel: "Queued Next",
   secondaryLabel: "Ask AI",
-    secondaryHref: "/dashboard?assistant=open",
+    secondaryHref: "/database?assistant=open",
   stats: [
     { value: "3", label: "layout lanes" },
     { value: "4", label: "switch profiles", delta: "+next" },
@@ -258,7 +258,7 @@ export const keyboardFinderWorkspaceConfig: ServiceWorkspaceConfig = {
   ],
   panelPrimaryLabel: "Queued next",
   panelSecondaryLabel: "Ask AI",
-    panelSecondaryHref: "/dashboard?assistant=open",
+    panelSecondaryHref: "/database?assistant=open",
   panelIcon: Keyboard,
   summaryAssets: [
     { label: "Layouts", detail: "Board sizes", icon: Keyboard },
@@ -390,7 +390,7 @@ export const deskHeightTuneWorkspaceConfig: ServiceWorkspaceConfig = {
     "Desk Height Tune is the final layer of the studio vision. It pushes MStudio beyond peripherals into posture, arm position, and daily setup comfort.",
   ctaLabel: "Planned Later",
   secondaryLabel: "Ask AI",
-    secondaryHref: "/dashboard?assistant=open",
+    secondaryHref: "/database?assistant=open",
   stats: [
     { value: "3", label: "ergonomic lanes" },
     { value: "2", label: "posture loops" },
@@ -466,7 +466,7 @@ export const deskHeightTuneWorkspaceConfig: ServiceWorkspaceConfig = {
       title: "Connect Full Desk View",
       detail: "Merge peripherals and ergonomics into a single setup recommendation surface.",
       meta: "Studio integration",
-      href: "/dashboard",
+      href: "/database",
       status: "Planned",
       icon: Bot,
       tone: "white",
@@ -482,7 +482,7 @@ export const deskHeightTuneWorkspaceConfig: ServiceWorkspaceConfig = {
   ],
   panelPrimaryLabel: "Planned later",
   panelSecondaryLabel: "Ask AI",
-    panelSecondaryHref: "/dashboard?assistant=open",
+    panelSecondaryHref: "/database?assistant=open",
   panelIcon: Ruler,
   summaryAssets: [
     { label: "Inputs", detail: "Desk + chair data", icon: Ruler },

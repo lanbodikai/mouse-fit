@@ -22,7 +22,6 @@ type AuthGateContextValue = {
   isAuthenticated: boolean;
   openAuthModal: (options?: AuthModalOptions) => void;
   closeAuthModal: () => void;
-  requireAuth: (action: () => void, options?: AuthModalOptions) => boolean;
 };
 
 const AuthGateContext = createContext<AuthGateContextValue | null>(null);
@@ -63,28 +62,14 @@ export function AuthGateProvider({ children }: { children: ReactNode }) {
     setRequest(buildRequest(options));
   }, [enabled]);
 
-  const requireAuth = useCallback(
-    (action: () => void, options?: AuthModalOptions) => {
-      if (!enabled || isAuthenticated) {
-        action();
-        return true;
-      }
-
-      setRequest(buildRequest(options));
-      return false;
-    },
-    [enabled, isAuthenticated],
-  );
-
   const value = useMemo<AuthGateContextValue>(
     () => ({
       isAuthReady: ready,
       isAuthenticated,
       openAuthModal,
       closeAuthModal,
-      requireAuth,
     }),
-    [closeAuthModal, isAuthenticated, openAuthModal, ready, requireAuth],
+    [closeAuthModal, isAuthenticated, openAuthModal, ready],
   );
 
   return (

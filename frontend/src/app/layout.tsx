@@ -34,7 +34,7 @@ export default function RootLayout({
   // Use bracket access to avoid build-time inlining so container/runtime env changes can be reflected.
   const apiBase = (
     process.env["NEXT_PUBLIC_API_BASE_URL"] ||
-    (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "https://api.mousefit.pro")
+    (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "/backend-api")
   ).replace(/\/+$/, "");
   const featureFlags = {
     USE_SERVER_REPORT_PIPELINE: (process.env["NEXT_PUBLIC_USE_SERVER_REPORT_PIPELINE"] ?? "0")

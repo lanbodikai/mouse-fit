@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Header, Request, Response
 
 from backend.controllers import mice_controller
 from backend.schemas.api import GripIn, GripOut, MeasurementIn, MeasurementOut, Mouse
@@ -19,10 +19,18 @@ def get_mouse(mouse_id: str) -> Mouse:
 
 
 @router.post("/api/measurements", response_model=MeasurementOut)
-def save_measurement(payload: MeasurementIn, request: Request) -> MeasurementOut:
-    return mice_controller.save_measurement(payload, request)
+def save_measurement(
+    payload: MeasurementIn,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+) -> MeasurementOut:
+    return mice_controller.save_measurement(payload, request, idempotency_key)
 
 
 @router.post("/api/grip", response_model=GripOut)
-def save_grip(payload: GripIn, request: Request) -> GripOut:
-    return mice_controller.save_grip(payload, request)
+def save_grip(
+    payload: GripIn,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+) -> GripOut:
+    return mice_controller.save_grip(payload, request, idempotency_key)

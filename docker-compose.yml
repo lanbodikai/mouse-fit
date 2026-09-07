@@ -1,4 +1,15 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: mousefit-redis
+    networks:
+      - mousefit-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
   postgres:
     image: postgres:16-alpine
     container_name: mousefit-postgres
@@ -25,13 +36,16 @@ services:
       dockerfile: Dockerfile
     container_name: mousefit-backend
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
       # Defaults to local Docker Postgres. Override with DATABASE_URL to use Supabase.
       - DATABASE_URL=${DATABASE_URL:-postgresql://mousefit:mousefit@postgres:5432/mousefit}
       - WEB_CONCURRENCY=${WEB_CONCURRENCY:-1}
-      - MOUSEFIT_WARMUP_RAG=${MOUSEFIT_WARMUP_RAG:-0}
+      - MOUSEFIT_DB_POOL_MIN_SIZE=${MOUSEFIT_DB_POOL_MIN_SIZE:-1}
+      - MOUSEFIT_DB_POOL_MAX_SIZE=${MOUSEFIT_DB_POOL_MAX_SIZE:-10}
+      - MOUSEFIT_WARMUP_RAG=${MOUSEFIT_WARMUP_RAG:-1}
+      - MOUSEFIT_CHAT_USE_INTENT_LLM=${MOUSEFIT_CHAT_USE_INTENT_LLM:-0}
       - MOUSEFIT_AUTO_SCHEMA_INIT=${MOUSEFIT_AUTO_SCHEMA_INIT:-0}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - MOUSEFIT_EMBED_MODEL=${MOUSEFIT_EMBED_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
@@ -41,6 +55,8 @@ services:
       - SUPABASE_JWT_ISSUER=${SUPABASE_JWT_ISSUER:-}
       - SUPABASE_JWT_AUDIENCE=${SUPABASE_JWT_AUDIENCE:-authenticated}
       - SENTRY_DSN=${SENTRY_DSN:-}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - TRUST_PROXY_HEADERS=${TRUST_PROXY_HEADERS:-1}
     volumes:
       - ./backend/data:/app/data
       - ./backend/backend/rag/chroma:/app/backend/rag/chroma
@@ -49,8 +65,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -60,14 +78,17 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://backend:8000}
     container_name: mousefit-frontend
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      # This value is used by the browser. Prefer IPv4 on Windows because localhost
-      # may resolve to ::1 and hang behind WSL/Docker port forwarding.
-      - NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+      # Leave the public API URL empty in Docker. The browser uses the same
+      # frontend origin and Next proxies /backend-api to the backend service.
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://backend:8000}
       - NEXT_PUBLIC_ENABLE_AUTH=${NEXT_PUBLIC_ENABLE_AUTH:-1}
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}

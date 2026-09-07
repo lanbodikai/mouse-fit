@@ -66,6 +66,15 @@ declare global {
 }
 
 const AUTH_SESSION_KEY = "mousefit:auth:session";
+const SESSION_KEY = "mousefit:v2:session_id";
+const USER_LOCAL_DATA_KEYS = [
+  SESSION_KEY,
+  "mousefit:latest_report",
+  "mousefit:measure",
+  "mf:measure",
+  "mousefit:grip_result",
+  "mf:grip_result",
+] as const;
 const AUTH_CHANGED_EVENT = "mousefit:auth:changed";
 const OAUTH_PKCE_VERIFIER_KEY = "mousefit:auth:pkce:verifier";
 const OAUTH_LAST_EXCHANGED_CODE_KEY = "mousefit:auth:oauth:last_code";
@@ -142,9 +151,28 @@ function setSession(session: AuthSession | null): void {
   if (typeof window === "undefined") return;
   if (!session) {
     window.localStorage.removeItem(AUTH_SESSION_KEY);
+    USER_LOCAL_DATA_KEYS.forEach((key) => {
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    });
     syncAuthStateCookie(null);
     emitAuthChanged();
     return;
+  }
+  const previousRaw = window.localStorage.getItem(AUTH_SESSION_KEY);
+  let previousUserId = "";
+  try {
+    const previous = previousRaw ? (JSON.parse(previousRaw) as AuthSession) : null;
+    previousUserId = String(previous?.user?.id || "");
+  } catch {
+    previousUserId = "";
+  }
+  const nextUserId = String(session.user?.id || "");
+  if (previousUserId !== nextUserId) {
+    USER_LOCAL_DATA_KEYS.forEach((key) => {
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    });
   }
   window.localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
   syncAuthStateCookie(session);

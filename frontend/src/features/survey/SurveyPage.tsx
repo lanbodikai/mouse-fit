@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, DollarSign, Hand, Loader2, MousePointer2, Ruler, SkipForward, Target } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAuthGate } from "@/components/auth/AuthGateProvider";
 import { completeSurvey, generateReport, saveGrip, saveMeasurement } from "@/lib/api";
 import { useAuthState } from "@/hooks/useAuthState";
 import { getOrCreateSessionId } from "@/lib/session";
@@ -354,7 +353,7 @@ function ChoiceGrid({
   onChoose: (value: string) => void;
 }) {
   return (
-    <div className={`mx-auto grid w-full gap-3 ${maxWidthClass(step.cols)} ${colsClass(step.cols)}`}>
+    <div className={`mx-auto grid w-full gap-2.5 sm:gap-3 ${maxWidthClass(step.cols)} ${colsClass(step.cols)}`}>
       {step.options.map((opt, index) => {
         const selected = step.value === opt.value;
         const active = pulse === `${step.id}:${opt.value}`;
@@ -368,7 +367,7 @@ function ChoiceGrid({
             transition={{ duration: 0.24, delay: index * 0.04 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.985 }}
-            className={`rounded-lg border p-4 text-left transition ${
+            className={`rounded-lg border p-3.5 text-left transition sm:p-4 ${
               selected
                 ? "border-[var(--shell-accent-outline)] bg-[var(--shell-accent-soft)]"
                 : "border-[var(--shell-border-strong)] bg-[var(--shell-surface-raised)] hover:border-[var(--shell-accent-outline)]"
@@ -377,7 +376,7 @@ function ChoiceGrid({
             <motion.div
               animate={active ? { scale: [1, 0.986, 1] } : { scale: 1 }}
               transition={{ duration: 0.22 }}
-              className="relative min-h-[126px] md:min-h-[138px]"
+              className="relative min-h-[94px] sm:min-h-[118px] lg:min-h-[126px]"
             >
               {selected ? (
                 <div className="absolute right-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-[var(--shell-accent)] text-[var(--shell-text-inverse)]">
@@ -387,7 +386,7 @@ function ChoiceGrid({
               <div className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[var(--shell-surface-inset)] text-xs font-semibold text-[var(--shell-accent-strong)]">
                 {opt.badge}
               </div>
-              <p className="mt-6 text-base font-semibold text-[var(--shell-text-primary)]">{opt.title}</p>
+              <p className="mt-4 text-base font-semibold text-[var(--shell-text-primary)] sm:mt-5">{opt.title}</p>
               <p className="mt-1 text-sm leading-5 text-[var(--shell-text-secondary)]">{opt.subtitle}</p>
             </motion.div>
           </motion.button>
@@ -400,8 +399,7 @@ function ChoiceGrid({
 export default function MousefitSurveyPage() {
   const router = useRouter();
   const timerRef = useRef<number | null>(null);
-  const { ready: authReady, isAuthenticated } = useAuthState();
-  const { openAuthModal } = useAuthGate();
+  const { ready: authReady } = useAuthState();
 
   const [answers, setAnswers] = useState<Answers>(() => loadInitial());
   const [stepIndex, setStepIndex] = useState(0);
@@ -522,49 +520,6 @@ export default function MousefitSurveyPage() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="mx-auto flex min-h-[70vh] w-full max-w-3xl items-center justify-center px-4">
-        <div className="mf-glass-modal w-full rounded-lg p-7 text-center sm:p-9">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-md border border-[var(--shell-border-strong)] bg-[var(--shell-surface-raised)]">
-            <Target className="h-6 w-6 text-[var(--shell-text-primary)]" />
-          </div>
-          <p className="mt-6 text-xs font-medium text-[var(--shell-accent-strong)]">
-            Survey Access
-          </p>
-          <h1 className="mt-3 text-[2rem] font-semibold tracking-tight text-[var(--shell-text-primary)]">
-            Create an account to start the Mouse Fit survey
-          </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--shell-text-secondary)]">
-            Continue with Google, Discord, or GitHub to save your inputs, run the recommendation flow, and keep your fit profile attached to one account.
-          </p>
-          <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={() =>
-                openAuthModal({
-                  next: "/survey",
-                  title: "Create an account to start the survey",
-                  description: "Continue with Google, Discord, or GitHub to launch the Mouse Fit intake flow and save your results.",
-                })
-              }
-              className="mf-glass-button mf-glass-button-primary inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-semibold"
-            >
-              Sign up to continue
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard")}
-              className="mf-glass-button inline-flex items-center justify-center rounded-md px-5 py-3 text-sm font-medium"
-            >
-              Back to shell
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const safeStepIndex = Math.min(stepIndex, Math.max(0, steps.length - 1));
   const current = steps[safeStepIndex];
   const progress = Math.round(((safeStepIndex + 1) / steps.length) * 100);
@@ -652,7 +607,7 @@ export default function MousefitSurveyPage() {
   };
 
   return (
-    <section className="relative mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-[1480px] flex-col text-[var(--shell-text-primary)]">
+    <section className="relative mx-auto flex w-full max-w-[1200px] flex-col text-[var(--shell-text-primary)] md:min-h-[calc(100dvh-3.5rem)]">
       <header className="shell-content-header shell-survey-header sticky top-0 z-20 border-b border-[var(--shell-border-strong)] bg-[var(--shell-bg)] pb-4">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -672,11 +627,11 @@ export default function MousefitSurveyPage() {
         </div>
       </header>
 
-      <div className="flex min-h-[calc(100dvh-11rem)] flex-col justify-center py-8">
+      <div className="flex flex-col justify-start py-6 sm:min-h-[calc(100dvh-11rem)] sm:justify-center sm:py-8">
         <div className="flex flex-col items-center justify-center">
           <AnimatePresence mode="wait" custom={dir}>
             <motion.div key={current.id} custom={dir} variants={panel} initial="enter" animate="center" exit="exit" className="w-full">
-              <h1 className="mb-8 text-center text-2xl font-semibold text-[var(--shell-text-primary)] md:text-3xl">{current.title}</h1>
+              <h1 className="mb-5 text-center text-2xl font-semibold text-[var(--shell-text-primary)] sm:mb-7 md:text-3xl">{current.title}</h1>
               {current.type === "options" ? (
                 <>
                   <ChoiceGrid step={current} pulse={pulse} onChoose={(v) => choose(current, v)} />

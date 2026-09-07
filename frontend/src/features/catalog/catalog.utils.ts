@@ -6,6 +6,10 @@ export const SORT_OPTIONS: Array<{ value: "name" | "weight"; label: string }> = 
   { value: "weight", label: "Weight" },
 ];
 
+export function hasEloShapes3dModel(mouse: Mouse): boolean {
+  return mouse.source_payload?.mouse__has_3d_model === true;
+}
+
 export function toMouseCatalogItem(mouse: Mouse): MouseCatalogItem {
   const displayTitle = [mouse.brand, mouse.model, mouse.variant].filter(Boolean).join(" ").trim() || "Unnamed mouse";
   const searchText = [
@@ -17,6 +21,7 @@ export function toMouseCatalogItem(mouse: Mouse): MouseCatalogItem {
     mouse.side_profile,
     mouse.hand_compatibility,
     mouse.availability_status,
+    hasEloShapes3dModel(mouse) ? "3d available eloshapes" : null,
     ...(mouse.grips ?? []),
     ...(mouse.hands ?? []),
   ]
@@ -85,6 +90,10 @@ export function buildSpecEntries(mouse: Mouse): { core: SpecEntry[]; additional:
     { label: "Compatible Grips", value: mouse.grips?.join(", ") ?? "" },
     { label: "Hand Sizes", value: mouse.hands?.join(", ") ?? "" },
     { label: "Source", value: mouse.source_handle ?? "" },
+    {
+      label: "3D model on EloShapes",
+      value: hasEloShapes3dModel(mouse) ? "Available" : "",
+    },
     { label: "Product Link", value: mouse.product_url ?? "" },
   ].filter((entry) => entry.value);
 

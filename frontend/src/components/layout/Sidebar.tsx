@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Database,
   FileText,
   Hand,
-  Home,
+  Keyboard,
   Moon,
+  MousePointer2,
   Ruler,
   Settings,
   Sun,
@@ -16,8 +17,6 @@ import {
   User,
   type LucideIcon,
 } from "lucide-react";
-import { useAuthGate } from "@/components/auth/AuthGateProvider";
-import { useAuthState } from "@/hooks/useAuthState";
 import { useTheme } from "@/lib/theme";
 
 type NavItem = {
@@ -28,8 +27,9 @@ type NavItem = {
 };
 
 const primaryNav: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/database", label: "Database", icon: Database },
+  { href: "/keyboard-builder", label: "Keyboard Visualizer", icon: Keyboard },
+  { href: "/mouse-fit/simulator", label: "Mouse Fit Simulator", icon: MousePointer2 },
   { href: "/survey", label: "Survey", icon: Sparkles },
   { href: "/measure", label: "Measure", icon: Ruler },
   { href: "/grip", label: "Grip", icon: Hand },
@@ -41,15 +41,6 @@ const secondaryNav: NavItem[] = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-const AUTH_GATED_PATHS = new Set([
-  "/survey",
-  "/measure",
-  "/grip",
-  "/report",
-  "/user",
-  "/settings",
-]);
-
 function isActive(pathname: string, item: NavItem): boolean {
   if (item.activeMatch) {
     return item.activeMatch.some(
@@ -60,32 +51,15 @@ function isActive(pathname: string, item: NavItem): boolean {
 }
 
 function NavLink({ item, active }: { item: NavItem; active: boolean }) {
-  const router = useRouter();
-  const { isAuthenticated } = useAuthState();
-  const { requireAuth } = useAuthGate();
   const Icon = item.icon;
-  const authGated = AUTH_GATED_PATHS.has(item.href);
 
   return (
     <Link
       href={item.href}
-      onClick={(event) => {
-        if (!authGated || isAuthenticated) return;
-        event.preventDefault();
-        requireAuth(
-          () => router.push(item.href),
-          {
-            next: item.href,
-            title: `Create an account to open ${item.label}`,
-            description:
-              "Continue with Google, Discord, or GitHub to unlock the full MouseFit workflow.",
-          },
-        );
-      }}
       aria-current={active ? "page" : undefined}
       aria-label={item.label}
       title={item.label}
-      className={`group relative flex h-12 min-w-12 items-center justify-center gap-3 rounded-md px-3 transition md:w-12 md:px-0 xl:w-full xl:justify-start xl:px-3 ${
+      className={`group relative flex h-12 min-w-10 items-center justify-center gap-3 rounded-md px-2 transition sm:min-w-12 sm:px-3 md:w-12 md:px-0 xl:w-full xl:justify-start xl:px-3 ${
         active
           ? "bg-[var(--shell-accent)] text-[var(--shell-text-inverse)]"
           : "text-[var(--shell-text-secondary)] hover:bg-[var(--shell-surface-soft)] hover:text-[var(--shell-text-primary)]"
@@ -106,9 +80,9 @@ export default function Sidebar() {
   return (
     <aside className="fixed inset-x-0 bottom-0 z-40 flex h-[72px] items-center border-t border-[var(--shell-border-strong)] bg-[var(--shell-bg-deep)] px-2 md:relative md:inset-auto md:h-full md:w-[76px] md:shrink-0 md:flex-col md:border-r md:border-t-0 md:px-3 md:py-4 xl:w-[216px] xl:items-stretch">
       <Link
-        href="/dashboard"
+        href="/database"
         className="mb-5 hidden h-12 items-center gap-3 rounded-md px-2 text-[var(--shell-text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--shell-accent)] md:flex"
-        aria-label="Go to MouseFit dashboard"
+        aria-label="Go to MouseFit database"
       >
         <Image
           src="/9.png"
@@ -121,7 +95,7 @@ export default function Sidebar() {
         <span className="hidden font-semibold xl:block">MouseFit</span>
       </Link>
 
-      <nav className="flex min-w-0 flex-1 items-center justify-around gap-1 md:flex-col md:justify-start xl:items-stretch">
+      <nav className="scrollbar-hide flex min-w-0 flex-1 items-center justify-start gap-1 overflow-x-auto sm:justify-around md:flex-col md:justify-start md:overflow-visible xl:items-stretch">
         {primaryNav.map((item) => (
           <NavLink key={item.href} item={item} active={isActive(pathname, item)} />
         ))}

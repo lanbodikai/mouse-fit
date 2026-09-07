@@ -149,6 +149,9 @@ export function saveMeasurement(payload: {
 }): Promise<Measurement> {
   return apiJson("/api/measurements", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": `measurement:${payload.session_id}:${payload.length_mm}:${payload.width_mm}`,
+    },
     body: JSON.stringify(payload),
   });
 }
@@ -160,6 +163,9 @@ export function saveGrip(payload: {
 }): Promise<Grip> {
   return apiJson("/api/grip", {
     method: "POST",
+    headers: {
+      "Idempotency-Key": `grip:${payload.session_id}:${payload.grip}:${payload.confidence ?? 0}`,
+    },
     body: JSON.stringify(payload),
   });
 }

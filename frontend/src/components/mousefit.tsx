@@ -23,7 +23,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { getMe } from "@/lib/api";
 import { signOut } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
@@ -327,7 +326,6 @@ function JourneyTile({
 
 export default function MouseFitDashboard() {
   const router = useRouter();
-  const authReady = useRequireAuth();
   const { bestMouse } = useReportStore();
   const { theme, toggleTheme } = useTheme();
 
@@ -343,19 +341,18 @@ export default function MouseFitDashboard() {
   /* ── lifecycle ── */
 
   useEffect(() => {
-    if (!authReady || reportStore.getState().bestMouse) return;
+    if (reportStore.getState().bestMouse) return;
     const stored = buildBestMouseFromStorage();
     if (stored) reportStore.setBestMouse(stored);
-  }, [authReady]);
+  }, []);
 
   useEffect(() => {
-    if (!authReady) return;
     let cancelled = false;
     getMe()
       .then((me) => { if (!cancelled) setUser(me); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [authReady]);
+  }, []);
 
   useEffect(() => {
     function outside(e: MouseEvent) { if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownOpen(false); }
@@ -453,7 +450,7 @@ export default function MouseFitDashboard() {
       tone: "emerald",
     },
     {
-      href: "/dashboard?assistant=open",
+      href: "/database?assistant=open",
       title: "AI Agent",
       description: "Ask for comparisons, budget filters, or fit explanations.",
       icon: Bot,
@@ -497,7 +494,7 @@ export default function MouseFitDashboard() {
   ];
 
   const heroSecondaryHref = bestMouse
-    ? `/dashboard?assistant=open&q=${encodeURIComponent(`Why does ${bestMouse.name} fit me?`)}`
+    ? `/database?assistant=open&q=${encodeURIComponent(`Why does ${bestMouse.name} fit me?`)}`
     : handData
       ? "/grip"
       : "/database";
@@ -673,8 +670,8 @@ export default function MouseFitDashboard() {
                     const query = aiQuery.trim();
                     router.push(
                       query
-                        ? `/dashboard?assistant=open&q=${encodeURIComponent(query)}`
-                        : "/dashboard?assistant=open",
+                        ? `/database?assistant=open&q=${encodeURIComponent(query)}`
+                        : "/database?assistant=open",
                     );
                   }}
                   className="mt-4 rounded-[28px] border border-line-soft bg-fill-soft p-2 sm:flex sm:items-center sm:gap-2"
@@ -701,7 +698,7 @@ export default function MouseFitDashboard() {
                       key={prompt}
                       type="button"
                       onClick={() =>
-                        router.push(`/dashboard?assistant=open&q=${encodeURIComponent(prompt)}`)
+                        router.push(`/database?assistant=open&q=${encodeURIComponent(prompt)}`)
                       }
                       className="rounded-full border border-line-soft bg-fill-soft px-3 py-2 text-[0.72rem] font-medium text-white/55 transition hover:bg-fill-hover hover:text-white/75"
                     >

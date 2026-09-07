@@ -18,11 +18,13 @@ def generate_report(request: Request, session_id: str = Query(...)):
             seed_avatar_url,
         )
 
-    measurement = measurement_service.latest_measurement(session_id, user_id)
+    measurement = measurement_service.latest_measurement(
+        session_id, user_id, allow_guest_fallback=user_id is None
+    )
     if not measurement:
         raise HTTPException(status_code=404, detail={"code": "not_found", "message": "No measurement found for session_id"})
 
-    grip = grip_service.latest_grip(session_id, user_id)
+    grip = grip_service.latest_grip(session_id, user_id, allow_guest_fallback=user_id is None)
     correlation_id = request_id(request)
     measurement.request_id = correlation_id
     if grip is not None:
@@ -36,13 +38,20 @@ def generate_report(request: Request, session_id: str = Query(...)):
         mice=mice_service.list_scoreable_mice(),
         correlation_id=correlation_id,
     )
-    report_service.save_report(report)
+    report_key = f"{session_id}:{measurement.length_mm}:{measurement.width_mm}:{grip.grip if grip else ''}"
+    report_service.save_report(report, report_key)
     return report
 
 
 def latest_report(request: Request, session_id: str = Query(...)):
     try:
-        report = report_service.read_latest_report(session_id, request_user_id(request), request_id(request))
+        user_id = request_user_id(request)
+        report = report_service.read_latest_report(
+            session_id,
+            user_id,
+            request_id(request),
+            allow_guest_fallback=user_id is None,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=500, detail={"code": "invalid_report", "message": str(exc)}) from exc
     if report is None:

@@ -1,41 +1,40 @@
 "use client";
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
-import { Bot, Loader2, Search, Sparkles, X } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useAuthGate } from "@/components/auth/AuthGateProvider";
-import DashboardAiAssistant from "@/components/dashboard/DashboardAiAssistant";
 import { useAuthState } from "@/hooks/useAuthState";
 import { ShellPage, ShellPanel } from "@/components/layout/ShellPage";
 import { getMice } from "@/services/api";
+import { DragonCatalogAssistant } from "./components/DragonCatalogAssistant";
 import { LoadingGrid } from "./components/LoadingGrid";
 import { MouseDetailModal } from "./components/MouseDetailModal";
 import { MouseResultCard } from "./components/MouseResultCard";
 import type { MouseCatalogItem, SortKey } from "./catalog.types";
-import { compareMaybeNumber, SORT_OPTIONS, toMouseCatalogItem } from "./catalog.utils";
+import {
+  compareMaybeNumber,
+  hasEloShapes3dModel,
+  SORT_OPTIONS,
+  toMouseCatalogItem,
+} from "./catalog.utils";
 
 export default function MouseCatalogPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { ready: authReady, isAuthenticated } = useAuthState();
-  const { openAuthModal, requireAuth } = useAuthGate();
+  const { ready: authReady } = useAuthState();
   const [mice, setMice] = useState<MouseCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [showOnlyThreeD, setShowOnlyThreeD] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MouseCatalogItem | null>(null);
   const deferredQuery = useDeferredValue(query);
   const assistantPrompt = searchParams.get("q")?.trim() ?? "";
   const assistantOpen = searchParams.get("assistant") === "open";
   const selectedMouseId = searchParams.get("mouse")?.trim() ?? "";
-  const [assistantVisible, setAssistantVisible] = useState(assistantOpen);
-
-  useEffect(() => {
-    if (assistantOpen) setAssistantVisible(true);
-  }, [assistantOpen]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -67,26 +66,29 @@ export default function MouseCatalogPage() {
   }, [authReady, reloadToken]);
 
   useEffect(() => {
-    if (!selectedMouseId || !isAuthenticated || mice.length === 0) return;
+    if (!selectedMouseId || mice.length === 0) return;
     const nextSelectedItem = mice.find((mouse) => mouse.id === selectedMouseId) ?? null;
     if (nextSelectedItem) setSelectedItem(nextSelectedItem);
-  }, [isAuthenticated, mice, selectedMouseId]);
-
-  useEffect(() => {
-    if (!isAuthenticated) setSelectedItem(null);
-  }, [isAuthenticated]);
+  }, [mice, selectedMouseId]);
 
   const visibleMice = useMemo(() => {
     const normalizedQuery = deferredQuery.trim().toLowerCase();
-    const filtered = normalizedQuery
+    const searched = normalizedQuery
       ? mice.filter((mouse) => mouse.searchText.includes(normalizedQuery))
       : mice;
+    const filtered = showOnlyThreeD
+      ? searched.filter((mouse) => hasEloShapes3dModel(mouse.data))
+      : searched;
 
     return [...filtered].sort((left, right) => {
       if (sortKey === "name") return left.displayTitle.localeCompare(right.displayTitle);
       return compareMaybeNumber(left.data.weight_g, right.data.weight_g);
     });
-  }, [deferredQuery, mice, sortKey]);
+  }, [deferredQuery, mice, showOnlyThreeD, sortKey]);
+  const threeDModelCount = useMemo(
+    () => mice.filter((mouse) => hasEloShapes3dModel(mouse.data)).length,
+    [mice],
+  );
 
   const buildPathWithParam = useCallback(
     (key: string, value?: string): string => {
@@ -115,19 +117,9 @@ export default function MouseCatalogPage() {
 
   const handleMouseSelect = useCallback(
     (item: MouseCatalogItem) => {
-      requireAuth(
-        () => {
-          setSelectedItem(item);
-        },
-        {
-          next: buildPathWithParam("mouse", item.id),
-          title: "Create an account to unlock mouse details",
-          description:
-            "Continue with Google, Discord, or GitHub to open the full spec sheet, fit notes, and survey scoring.",
-        },
-      );
+      setSelectedItem(item);
     },
-    [buildPathWithParam, requireAuth],
+    [],
   );
 
   if (!authReady) {
@@ -148,46 +140,8 @@ export default function MouseCatalogPage() {
         eyebrow="Mouse catalog"
         title="Database"
         description="Search the current mouse catalog by model, dimensions, shape, grip, or hand compatibility."
-        actions={
-          <button
-            type="button"
-            onClick={() => setAssistantVisible(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-[var(--shell-border-strong)] bg-[var(--shell-surface-soft)] px-4 text-sm font-semibold text-[var(--shell-text-primary)] xl:hidden"
-          >
-            <Bot className="h-4 w-4" />
-            Catalog assistant
-          </button>
-        }
       >
-        <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="min-w-0 space-y-5">
-            {!isAuthenticated ? (
-              <ShellPanel tone="accent" className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--shell-text-primary)]">Guest browsing</p>
-                  <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--shell-text-secondary)]">
-                    Browse the catalog first. Sign up to open full mouse details, launch the survey, or use MouseFit AI.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    openAuthModal({
-                      next: pathname,
-                      reason: "try_now",
-                      title: "Create your MouseFit account",
-                      description:
-                        "Continue with Google, Discord, or GitHub to unlock survey flows, AI help, and saved fit data.",
-                    })
-                  }
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[var(--shell-accent)] px-4 text-sm font-semibold text-[var(--shell-text-inverse)]"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Sign up to continue
-                </button>
-              </ShellPanel>
-            ) : null}
-
+        <div className="min-w-0 space-y-5">
             <section className="rounded-lg border border-[var(--shell-border-strong)] bg-[var(--shell-surface-raised)] p-3">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                 <div className="relative flex-1">
@@ -216,6 +170,21 @@ export default function MouseCatalogPage() {
                     <span className="font-semibold text-[var(--shell-text-primary)]">{visibleMice.length}</span>{" "}
                     {visibleMice.length === 1 ? "mouse" : "mice"}
                   </p>
+                  <p className="hidden whitespace-nowrap text-xs text-[var(--shell-text-tertiary)] xl:block">
+                    {threeDModelCount} with 3D on EloShapes
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowOnlyThreeD((value) => !value)}
+                    aria-pressed={showOnlyThreeD}
+                    className={`h-11 whitespace-nowrap rounded-md border px-3 text-xs font-semibold transition-colors ${
+                      showOnlyThreeD
+                        ? "border-[var(--shell-text-primary)] bg-[var(--shell-text-primary)] text-[var(--shell-text-inverse)]"
+                        : "border-[var(--shell-border-strong)] bg-[var(--shell-surface-soft)] text-[var(--shell-text-secondary)]"
+                    }`}
+                  >
+                    3D on EloShapes
+                  </button>
                   <label className="inline-flex h-11 items-center gap-3 rounded-md border border-[var(--shell-border-strong)] bg-[var(--shell-surface-soft)] px-3 text-sm text-[var(--shell-text-secondary)]">
                     <span>Sort</span>
                     <select
@@ -250,7 +219,7 @@ export default function MouseCatalogPage() {
 
             {!loading && !error ? (
               visibleMice.length > 0 ? (
-                <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {visibleMice.map((mouse) => (
                     <MouseResultCard key={mouse.id} item={mouse} onSelect={handleMouseSelect} />
                   ))}
@@ -270,48 +239,13 @@ export default function MouseCatalogPage() {
                 </ShellPanel>
               )
             ) : null}
-          </div>
-
-          <aside className="hidden min-w-0 xl:block">
-            <div className="sticky top-0 flex h-[calc(100dvh-3.5rem)] min-h-[620px] max-h-[820px] flex-col">
-              <DashboardAiAssistant
-                initialPrompt={assistantPrompt}
-                autoRunInitialPrompt={assistantOpen && Boolean(assistantPrompt)}
-                className="h-full min-h-0 max-h-full"
-              />
-            </div>
-          </aside>
         </div>
       </ShellPage>
 
-      {assistantVisible ? (
-        <div className="fixed inset-0 z-50 xl:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-[var(--shell-overlay)]"
-            aria-label="Close catalog assistant"
-            onClick={() => setAssistantVisible(false)}
-          />
-          <aside className="absolute inset-y-0 right-0 flex w-full max-w-[430px] flex-col border-l border-[var(--shell-border-strong)] bg-[var(--shell-bg)] p-3">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-semibold text-[var(--shell-text-primary)]">Catalog assistant</p>
-              <button
-                type="button"
-                onClick={() => setAssistantVisible(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--shell-surface-soft)]"
-                aria-label="Close catalog assistant"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <DashboardAiAssistant
-              initialPrompt={assistantPrompt}
-              autoRunInitialPrompt={assistantOpen && Boolean(assistantPrompt)}
-              className="h-full min-h-0 max-h-full"
-            />
-          </aside>
-        </div>
-      ) : null}
+      <DragonCatalogAssistant
+        initialPrompt={assistantPrompt}
+        autoRunInitialPrompt={assistantOpen}
+      />
 
       {selectedItem ? <MouseDetailModal item={selectedItem} onClose={handleMouseClose} /> : null}
     </>

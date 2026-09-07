@@ -43,8 +43,8 @@ export default function Navbar() {
           <a href="/database" className="nav-link">
             Mouse Database
           </a>
-          <a href="/dashboard?assistant=open" className="nav-link special-link">
-            Dashboard AI
+          <a href="/database?assistant=open" className="nav-link special-link">
+            Database AI
           </a>
         </div>
 

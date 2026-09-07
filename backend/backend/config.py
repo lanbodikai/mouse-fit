@@ -17,9 +17,26 @@ RAG_COLLECTION = "mousefit_docs"
 EMBED_MODEL_NAME = os.getenv("MOUSEFIT_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
+DB_POOL_MIN_SIZE = max(1, int(os.getenv("MOUSEFIT_DB_POOL_MIN_SIZE", "1")))
+DB_POOL_MAX_SIZE = max(DB_POOL_MIN_SIZE, int(os.getenv("MOUSEFIT_DB_POOL_MAX_SIZE", "10")))
+CATALOG_CACHE_TTL_SECONDS = max(5, int(os.getenv("MOUSEFIT_CATALOG_CACHE_TTL_SECONDS", "300")))
+REDIS_URL = os.getenv("REDIS_URL", "").strip()
+TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "0").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_URL = os.getenv("GROQ_URL", "https://api.groq.com/openai/v1/chat/completions")
 GROQ_DEFAULT_MODEL = os.getenv("GROQ_DEFAULT_MODEL", "llama-3.1-8b-instant")
+CHAT_USE_INTENT_LLM = os.getenv("MOUSEFIT_CHAT_USE_INTENT_LLM", "0").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
 ENABLE_AUTH = os.getenv("ENABLE_AUTH", "0").strip().lower() in {"1", "true", "yes", "on"}
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")

@@ -361,7 +361,7 @@ export default function UserPage() {
                 type="button"
                 onClick={() => {
                   signOut();
-                  router.push("/dashboard");
+                  router.push("/database");
                 }}
                 className="flex w-full items-center justify-between rounded-md border border-[rgba(187,88,104,0.24)] bg-[rgba(187,88,104,0.08)] px-4 py-4 text-left transition hover:bg-[rgba(187,88,104,0.12)]"
               >

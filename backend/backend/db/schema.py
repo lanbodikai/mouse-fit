@@ -92,6 +92,7 @@ def init_db() -> None:
                     id BIGSERIAL PRIMARY KEY,
                     session_id TEXT NOT NULL,
                     user_id TEXT,
+                    idempotency_key TEXT,
                     length_mm DOUBLE PRECISION NOT NULL,
                     width_mm DOUBLE PRECISION NOT NULL,
                     length_cm DOUBLE PRECISION NOT NULL,
@@ -106,6 +107,7 @@ def init_db() -> None:
                     id BIGSERIAL PRIMARY KEY,
                     session_id TEXT NOT NULL,
                     user_id TEXT,
+                    idempotency_key TEXT,
                     grip TEXT NOT NULL,
                     confidence DOUBLE PRECISION NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -118,6 +120,7 @@ def init_db() -> None:
                     id BIGSERIAL PRIMARY KEY,
                     session_id TEXT NOT NULL,
                     user_id TEXT,
+                    idempotency_key TEXT,
                     report_json JSONB NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
@@ -140,10 +143,19 @@ def init_db() -> None:
             cur.execute("CREATE INDEX IF NOT EXISTS mice_brand_model_idx ON mice (brand, model)")
             cur.execute("CREATE INDEX IF NOT EXISTS measurements_session_id_id_idx ON measurements (session_id, id DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS measurements_user_id_id_idx ON measurements (user_id, id DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS measurements_session_user_id_idx ON measurements (session_id, user_id, id DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS grips_session_id_id_idx ON grips (session_id, id DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS grips_user_id_id_idx ON grips (user_id, id DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS grips_session_user_id_idx ON grips (session_id, user_id, id DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS reports_session_id_id_idx ON reports (session_id, id DESC)")
             cur.execute("CREATE INDEX IF NOT EXISTS reports_user_id_id_idx ON reports (user_id, id DESC)")
+            cur.execute("CREATE INDEX IF NOT EXISTS reports_session_user_id_idx ON reports (session_id, user_id, id DESC)")
+            cur.execute("ALTER TABLE measurements ADD COLUMN IF NOT EXISTS idempotency_key TEXT")
+            cur.execute("ALTER TABLE grips ADD COLUMN IF NOT EXISTS idempotency_key TEXT")
+            cur.execute("ALTER TABLE reports ADD COLUMN IF NOT EXISTS idempotency_key TEXT")
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS measurements_idempotency_uniq ON measurements (COALESCE(user_id, ''), idempotency_key) WHERE idempotency_key IS NOT NULL")
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS grips_idempotency_uniq ON grips (COALESCE(user_id, ''), idempotency_key) WHERE idempotency_key IS NOT NULL")
+            cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS reports_idempotency_uniq ON reports (COALESCE(user_id, ''), idempotency_key) WHERE idempotency_key IS NOT NULL")
             cur.execute("CREATE INDEX IF NOT EXISTS profiles_email_idx ON profiles (email)")
 
         ensure_columns(

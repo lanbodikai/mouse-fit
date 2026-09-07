@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import re
+import threading
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -27,6 +28,9 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     chromadb = None
     Settings = None
+
+
+_BUILD_LOCK = threading.RLock()
 
 
 def _read_json_list(path: Path) -> List[Dict[str, Any]]:
@@ -462,6 +466,14 @@ def _chroma_meta(meta: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def build_embeddings(rebuild: bool = False) -> int:
+    # Index creation is a deployment/data-refresh operation. Keep the lock in
+    # this process so concurrent cold requests cannot reset the same Chroma
+    # directory or overwrite embeddings.json at the same time.
+    with _BUILD_LOCK:
+        return _build_embeddings(rebuild=rebuild)
+
+
+def _build_embeddings(rebuild: bool = False) -> int:
     config.RAG_DIR.mkdir(parents=True, exist_ok=True)
     config.RAG_SOURCES_DIR.mkdir(parents=True, exist_ok=True)
 

@@ -19,7 +19,7 @@ def get_mouse(mouse_id: str) -> Mouse:
     return mouse
 
 
-def save_measurement(payload: MeasurementIn, request: Request) -> MeasurementOut:
+def save_measurement(payload: MeasurementIn, request: Request, idempotency_key: str | None = None) -> MeasurementOut:
     user_id = request_user_id(request)
     if user_id:
         seed_display_name, seed_avatar_url = request_profile_seed(request)
@@ -29,12 +29,14 @@ def save_measurement(payload: MeasurementIn, request: Request) -> MeasurementOut
             seed_display_name,
             seed_avatar_url,
         )
-    result = measurement_service.save_measurement(payload.session_id, user_id, payload.length_mm, payload.width_mm)
+    result = measurement_service.save_measurement(
+        payload.session_id, user_id, payload.length_mm, payload.width_mm, idempotency_key
+    )
     result.request_id = request_id(request)
     return result
 
 
-def save_grip(payload: GripIn, request: Request) -> GripOut:
+def save_grip(payload: GripIn, request: Request, idempotency_key: str | None = None) -> GripOut:
     user_id = request_user_id(request)
     if user_id:
         seed_display_name, seed_avatar_url = request_profile_seed(request)
@@ -44,6 +46,8 @@ def save_grip(payload: GripIn, request: Request) -> GripOut:
             seed_display_name,
             seed_avatar_url,
         )
-    result = grip_service.save_grip(payload.session_id, user_id, payload.grip, payload.confidence or 0.0)
+    result = grip_service.save_grip(
+        payload.session_id, user_id, payload.grip, payload.confidence or 0.0, idempotency_key
+    )
     result.request_id = request_id(request)
     return result

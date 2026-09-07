@@ -2,7 +2,12 @@
 
 import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
-import { buildCardTags, formatDimension, formatMatchDisplay } from "../catalog.utils";
+import {
+  buildCardTags,
+  formatDimension,
+  formatMatchDisplay,
+  hasEloShapes3dModel,
+} from "../catalog.utils";
 import type { MouseCatalogItem } from "../catalog.types";
 import { PlaceholderImage } from "./PlaceholderImage";
 
@@ -14,6 +19,7 @@ export function MouseResultCard({
   onSelect: (item: MouseCatalogItem) => void;
 }) {
   const tags = buildCardTags(item.data).slice(0, 3);
+  const has3dModel = hasEloShapes3dModel(item.data);
 
   return (
     <motion.button
@@ -31,6 +37,11 @@ export function MouseResultCard({
           {item.data.availability_status ? (
             <span className="text-xs text-[var(--shell-text-tertiary)]">
               {item.data.availability_status}
+            </span>
+          ) : null}
+          {has3dModel ? (
+            <span className="rounded-full border border-[var(--shell-border-strong)] bg-[var(--shell-surface-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--shell-text-primary)]">
+              3D on EloShapes
             </span>
           ) : null}
         </div>

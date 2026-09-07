@@ -31,8 +31,8 @@ def init_pool(database_url: Optional[str] = None) -> None:
     conninfo = (database_url or require_database_url()).strip()
     _POOL = ConnectionPool(
         conninfo=conninfo,
-        min_size=1,
-        max_size=10,
+        min_size=config.DB_POOL_MIN_SIZE,
+        max_size=config.DB_POOL_MAX_SIZE,
         kwargs={"row_factory": dict_row},
     )
     _POOL.wait()

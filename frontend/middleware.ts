@@ -33,10 +33,10 @@ export function middleware(request: NextRequest) {
 
   // Avoid server-side redirect loops after OAuth callbacks.
   // This app's primary auth session is client-side (localStorage), which middleware cannot read.
-  // Protected pages enforce auth on the client via useRequireAuth().
+  // Shell pages enforce auth on the client via ShellAuthBoundary.
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/", "/auth", "/auth/sign-in", "/login", "/dashboard/:path*", "/survey/:path*", "/schedules/:path*", "/mousefit/:path*"],
+  matcher: ["/", "/auth", "/auth/sign-in", "/login"],
 };

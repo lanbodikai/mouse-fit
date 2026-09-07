@@ -2,7 +2,7 @@
 
 import { motion, type Variants } from "framer-motion";
 import Link from "next/link";
-import { ArrowUpRight, Scan, Hand, Database, Bot, BarChart3, LayoutDashboard } from "lucide-react";
+import { ArrowUpRight, Scan, Hand, Database, Bot, BarChart3 } from "lucide-react";
 import { PageNav } from "@/components/landing/PageNav";
 
 type ServiceItem = {
@@ -21,7 +21,7 @@ const services: ServiceItem[] = [
     description:
       "Use your camera to accurately capture hand length, width, and span. Our computer-vision pipeline extracts precise dimensions in seconds.",
     kicker: "SCAN",
-    href: "/measure",
+    href: "/survey",
     icon: <Scan className="w-5 h-5" />,
     gradient: "from-[var(--accent-gamer)] to-[var(--accent-violet)]",
     accentVar: "--accent-gamer",
@@ -65,16 +65,6 @@ const services: ServiceItem[] = [
     icon: <BarChart3 className="w-5 h-5" />,
     gradient: "from-[var(--accent-gamer)] to-[var(--accent-emerald)]",
     accentVar: "--accent-gamer",
-  },
-  {
-    title: "Dashboard",
-    description:
-      "Track your measurements, view past reports, and monitor your fitting journey — all in one unified overview.",
-    kicker: "OVERVIEW",
-    href: "/dashboard",
-    icon: <LayoutDashboard className="w-5 h-5" />,
-    gradient: "from-[var(--accent-violet)] to-[var(--accent-amber)]",
-    accentVar: "--accent-violet",
   },
 ];
 

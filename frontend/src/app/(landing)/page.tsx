@@ -248,7 +248,7 @@ export default function LandingPage() {
             <Link href="/database" className={styles.textAction}>
               Explore mice
             </Link>
-            <Link href="/measure" className={styles.primaryAction}>
+          <Link href="/survey" className={styles.primaryAction}>
               Scan my hand
               <ArrowUpRight size={16} strokeWidth={2} />
             </Link>
@@ -280,7 +280,7 @@ export default function LandingPage() {
               shortlist, with clear reasons behind every recommendation.
             </motion.p>
             <motion.div variants={staggerItem} className={styles.ctaRow}>
-              <Link href="/measure" className={styles.primaryActionLarge}>
+              <Link href="/survey" className={styles.primaryActionLarge}>
                 Start the scan
                 <ArrowRight size={18} strokeWidth={2} />
               </Link>
@@ -574,7 +574,7 @@ export default function LandingPage() {
               context.
             </p>
           </div>
-          <Link href="/measure" className={styles.primaryActionLarge}>
+          <Link href="/survey" className={styles.primaryActionLarge}>
             Scan my hand
             <ArrowUpRight size={18} strokeWidth={2} />
           </Link>

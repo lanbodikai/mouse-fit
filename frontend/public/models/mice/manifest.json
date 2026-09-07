@@ -1,0 +1,4360 @@
+{
+  "version": 2,
+  "source": "Authorized community and official mouse models",
+  "generatedAt": "2026-07-27T10:14:25.493149+00:00",
+  "models": [
+    {
+      "id": "asus-rog-harpe-ace-extreme",
+      "sourceHandle": null,
+      "brand": "ASUS ROG",
+      "name": "Harpe Ace Extreme",
+      "dimensionsMm": {
+        "lengthMm": 126.0,
+        "widthMm": 63.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/rog-harpe-ace-extreme.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/asus-rog-harpe-ace-extreme",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "asus-rog-rog-harpe-ace-extreme",
+      "sourceHandle": null,
+      "brand": "ASUS ROG",
+      "name": "ROG Harpe Ace Extreme",
+      "dimensionsMm": {
+        "lengthMm": 126.0,
+        "widthMm": 63.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/rog-harpe-ace-extreme.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/asus-rog-harpe-ace-extreme",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "benq-zowie-ec2-c",
+      "sourceHandle": null,
+      "brand": "BenQ ZOWIE",
+      "name": "EC2-C",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/ec2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-ec2-c",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "benq-zowie-fk2",
+      "sourceHandle": null,
+      "brand": "BenQ ZOWIE",
+      "name": "FK2",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/fk2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-fk2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "benq-zowie-fk2-dw",
+      "sourceHandle": null,
+      "brand": "BenQ ZOWIE",
+      "name": "FK2-DW",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/fk2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-fk2-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "benq-zowie-s2",
+      "sourceHandle": null,
+      "brand": "BenQ ZOWIE",
+      "name": "S2",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 64.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/s2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-s2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "benq-zowie-s2-dw",
+      "sourceHandle": null,
+      "brand": "BenQ ZOWIE",
+      "name": "S2-DW",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 64.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/s2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-s2-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "benq-zowie-u2",
+      "sourceHandle": null,
+      "brand": "BenQ ZOWIE",
+      "name": "U2",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 64.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/u2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-u2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "benq-zowie-u2-dw",
+      "sourceHandle": null,
+      "brand": "BenQ ZOWIE",
+      "name": "U2-DW",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 64.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/u2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-u2-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "benq-zowie-za13",
+      "sourceHandle": null,
+      "brand": "BenQ ZOWIE",
+      "name": "ZA13",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 62.0,
+        "heightMm": 41.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/za13-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-za13",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "benq-zowie-za13-dw",
+      "sourceHandle": null,
+      "brand": "BenQ ZOWIE",
+      "name": "ZA13-DW",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 62.0,
+        "heightMm": 41.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/za13-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-za13-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cooler-master-mm710",
+      "sourceHandle": null,
+      "brand": "Cooler",
+      "name": "Master MM710",
+      "dimensionsMm": {
+        "lengthMm": 116.0,
+        "widthMm": 63.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Cooler%20Master/Cooler%20Master%20MM710.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467657",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "corsair-katar-pro-wireless",
+      "sourceHandle": null,
+      "brand": "Corsair",
+      "name": "Katar Pro Wireless",
+      "dimensionsMm": {
+        "lengthMm": 107.6,
+        "widthMm": 56.3,
+        "heightMm": 37.5
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Corsair/Corsair%20KATAR%20PRO%20Wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467602",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "corsair-sabre-pro",
+      "sourceHandle": null,
+      "brand": "Corsair",
+      "name": "Sabre Pro",
+      "dimensionsMm": {
+        "lengthMm": 122.3,
+        "widthMm": 62.3,
+        "heightMm": 42.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Corsair/Corsair%20Sabre%20Pro.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-1835148",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-op1-8k-v2",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "OP1 8k v2",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 61.0,
+        "heightMm": 37.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/endgame-gear-op1-8k-v2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/endgame-gear-op1-8k-v2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-op1-8k-v2-wired",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "OP1 8K V2 Wired",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 61.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/endgame-gear-op1-8k-v2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/endgame-gear-op1-8k-v2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-op1we",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "OP1we",
+      "dimensionsMm": {
+        "lengthMm": 118.2,
+        "widthMm": 60.5,
+        "heightMm": 37.2
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Endgame%20Gear/endgame-gear-op1we.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-endgame-gear-op1we.stl",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-xm1r",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "XM1r",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 59.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Endgame%20Gear/Endgame%20Gear%20XM1R.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-633943",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-xm2-8k-v2",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "XM2 8k v2",
+      "dimensionsMm": {
+        "lengthMm": 122.0,
+        "widthMm": 66.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/xm2w-4k.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/endgame-gear-xm2-8k-v2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-xm2-8k-v2-wired",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "XM2 8K V2 Wired",
+      "dimensionsMm": {
+        "lengthMm": 122.0,
+        "widthMm": 66.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/xm2w-4k.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/endgame-gear-xm2-8k-v2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-xm2w",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "XM2w",
+      "dimensionsMm": {
+        "lengthMm": 122.0,
+        "widthMm": 66.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/xm2w-4k.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/endgame-gear-xm2w-4k",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-xm2w-4k-v2",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "XM2w 4k v2",
+      "dimensionsMm": {
+        "lengthMm": 122.0,
+        "widthMm": 66.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/xm2w-4k.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/endgame-gear-xm2w-4k",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-xm2w-white",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "XM2w White",
+      "dimensionsMm": {
+        "lengthMm": 122.0,
+        "widthMm": 66.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/xm2w-4k.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/endgame-gear-xm2w-4k",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-xm2we",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "XM2we",
+      "dimensionsMm": {
+        "lengthMm": 122.0,
+        "widthMm": 66.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/xm2w-4k.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/endgame-gear-xm2we",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "endgame-gear-xm2we-white",
+      "sourceHandle": null,
+      "brand": "Endgame Gear",
+      "name": "XM2we White",
+      "dimensionsMm": {
+        "lengthMm": 122.0,
+        "widthMm": 66.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/xm2w-4k.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/endgame-gear-xm2we",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "finalmouse-starlight-12-medium",
+      "sourceHandle": null,
+      "brand": "Finalmouse",
+      "name": "Starlight-12 Medium",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 63.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/starlight-12-pegasus-m.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/finalmouse-starlight-12-pegasus-m",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "finalmouse-starlight-12-small",
+      "sourceHandle": null,
+      "brand": "Finalmouse",
+      "name": "Starlight-12 Small",
+      "dimensionsMm": {
+        "lengthMm": 115.0,
+        "widthMm": 60.0,
+        "heightMm": 36.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Finalmouse/Finalmouse%20Starlight%2012%20Small.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467654",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "fnatic-bolt",
+      "sourceHandle": null,
+      "brand": "Fnatic",
+      "name": "Bolt",
+      "dimensionsMm": {
+        "lengthMm": 117.0,
+        "widthMm": 56.5,
+        "heightMm": 37.9
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Fnatic/Fnatic%20BOLT.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-868900",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "fnatic-flick-2",
+      "sourceHandle": null,
+      "brand": "Fnatic",
+      "name": "Flick 2",
+      "dimensionsMm": {
+        "lengthMm": 130.0,
+        "widthMm": 70.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Fnatic/Fnatic%20FLICK%202.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-868902",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "glorious-model-d",
+      "sourceHandle": null,
+      "brand": "Glorious",
+      "name": "Model D",
+      "dimensionsMm": {
+        "lengthMm": 131.0,
+        "widthMm": 59.8,
+        "heightMm": 41.7
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Glorious/Glorious%20Model%20D.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467656",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "glorious-model-i",
+      "sourceHandle": null,
+      "brand": "Glorious",
+      "name": "Model I",
+      "dimensionsMm": {
+        "lengthMm": 125.6,
+        "widthMm": 61.1,
+        "heightMm": 41.5
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Glorious/Glorious%20Model%20I.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-868903",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "glorious-model-o",
+      "sourceHandle": null,
+      "brand": "Glorious",
+      "name": "Model O",
+      "dimensionsMm": {
+        "lengthMm": 128.0,
+        "widthMm": 63.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Glorious/Glorious%20Model%20O.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467637",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "glorious-model-o-minus",
+      "sourceHandle": null,
+      "brand": "Glorious",
+      "name": "Model O Minus",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 63.0,
+        "heightMm": 36.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Glorious/Glorious%20Model%20O%20Minus.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467609",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "hitscan-hyperlight",
+      "sourceHandle": null,
+      "brand": "HITSCAN",
+      "name": "Hyperlight",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 61.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/hyperlight.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/hitscan-hyperlight",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "hyperx-pulsefire-dart",
+      "sourceHandle": null,
+      "brand": "HyperX",
+      "name": "Pulsefire Dart",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 74.0,
+        "heightMm": 44.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/HyperX/HyperX%20Pulsefire%20Dart.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467636",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "hyperx-pulsefire-haste",
+      "sourceHandle": null,
+      "brand": "HyperX",
+      "name": "Pulsefire Haste",
+      "dimensionsMm": {
+        "lengthMm": 122.5,
+        "widthMm": 59.9,
+        "heightMm": 37.5
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/HyperX/HyperX%20Pulsefire%20Haste.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467625",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-aimlabs-maya-x",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "AIMLABS | Maya X",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/lamzu-maya-x.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-maya-x",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-atlantis",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Atlantis",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/atlantis-og.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-atlantis-og",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-atlantis-4k",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Atlantis 4K",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/atlantis-og.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-atlantis-og",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-atlantis-black",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Atlantis Black",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/atlantis-og.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-atlantis-og",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-atlantis-mini",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Atlantis Mini",
+      "dimensionsMm": {
+        "lengthMm": 117.0,
+        "widthMm": 63.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Lamzu/lamzu-atlantis-mini.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-lamzu-atlantis-mini.stl",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-atlantis-og-v2",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Atlantis OG V2",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/atlantis-og.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-atlantis-og",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-atlantis-og-v2-4k",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Atlantis OG V2 4K",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/atlantis-og.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-atlantis-og",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-atlantis-og-v2-pro",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Atlantis OG V2 Pro",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/atlantis-og.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-atlantis-og",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-atlantis-og-v2-pro-wireless",
+      "sourceHandle": null,
+      "brand": "Lamzu",
+      "name": "Atlantis OG V2 Pro Wireless",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/atlantis-og.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-atlantis-og",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-atlantis-og-v2-pro-polar-white",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Atlantis OG V2 Pro Polar White",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/atlantis-og.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-atlantis-og",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-inca",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Inca",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 63.0,
+        "heightMm": 41.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/inca.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-inca",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-maya",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Maya",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 62.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/maya-champion-edition.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-maya",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-maya-4k",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Maya 4K",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 62.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/maya-champion-edition.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-maya",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-maya-black",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Maya Black",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 62.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/maya-champion-edition.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-maya",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-maya-cloud-grey",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Maya Cloud Grey",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 62.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/maya-champion-edition.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-maya",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-maya-doodle",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Maya Doodle",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 62.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/maya-champion-edition.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-maya",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-maya-red",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Maya Red",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 62.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/maya-champion-edition.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-maya",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-maya-white",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Maya White",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 62.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/maya-champion-edition.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-maya",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-maya-x",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Maya X",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/lamzu-maya-x.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/lamzu-maya-x",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lamzu-thorn",
+      "sourceHandle": null,
+      "brand": "LAMZU",
+      "name": "Thorn",
+      "dimensionsMm": {
+        "lengthMm": 119.0,
+        "widthMm": 65.0,
+        "heightMm": 42.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Lamzu/lamzu-thorn.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-lamzu-thorn.stl",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g-pro-wireless",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G Pro Wireless",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 63.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/g-pro-x-superlight-2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g-pro-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g-pro-wireless-shroud-edition",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G Pro Wireless Shroud Edition",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 63.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/g-pro-x-superlight-2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g-pro-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g-pro-x-superlight",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G Pro X Superlight",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 63.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/g-pro-x-superlight-2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g-pro-x-superlight",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g-pro-x-superlight-2",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G Pro X Superlight 2",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 63.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/g-pro-x-superlight-2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g-pro-x-superlight-2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g-pro-x-superlight-2-wireless",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G Pro X Superlight 2 Wireless",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 63.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/g-pro-x-superlight-2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g-pro-x-superlight-2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g-pro-x-superlight-2-dex",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G Pro X Superlight 2 DEX",
+      "dimensionsMm": {
+        "lengthMm": 126.0,
+        "widthMm": 67.0,
+        "heightMm": 44.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/g-pro-x-superlight-2-dex.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g-pro-x-superlight-2-dex",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g-pro-x-superlight-2-se",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G Pro X Superlight 2 SE",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 63.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/g-pro-x-superlight-2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g-pro-x-superlight-2-se",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g-pro-x-superlight-2c",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G Pro X Superlight 2c",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 61.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/gpx2c.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g-pro-x-superlight-2c",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g-pro-x2-superstrike-unreleased",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G Pro X2 SUPERSTRIKE (Unreleased)",
+      "dimensionsMm": {
+        "lengthMm": 126.0,
+        "widthMm": 63.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/gpx2-superstrike.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g-pro-x2-superstrike",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g303-shroud-edition",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G303 Shroud Edition",
+      "dimensionsMm": {
+        "lengthMm": 117.0,
+        "widthMm": 69.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/g303-shroud-edition.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g303-shroud-edition",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g305",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G305",
+      "dimensionsMm": {
+        "lengthMm": 116.0,
+        "widthMm": 63.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/g305.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g305",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g403-hero",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G403 HERO",
+      "dimensionsMm": {
+        "lengthMm": 124.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/g403-hero.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g403-hero",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g403-wireless",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G403 Wireless",
+      "dimensionsMm": {
+        "lengthMm": 124.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/g403-hero.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g403-hero",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g600",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G600",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 75.0,
+        "heightMm": 41.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Logitech/Logitech%20G600.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467641",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g703",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G703",
+      "dimensionsMm": {
+        "lengthMm": 124.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/g703.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g703",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g703-white",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G703 White",
+      "dimensionsMm": {
+        "lengthMm": 124.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/g703.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/logitech-g703",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "logitech-g903",
+      "sourceHandle": null,
+      "brand": "Logitech",
+      "name": "G903",
+      "dimensionsMm": {
+        "lengthMm": 130.0,
+        "widthMm": 66.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Logitech/logitech-g903.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-logitech-g903.stl",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ninjutso-origin-one-x",
+      "sourceHandle": null,
+      "brand": "Ninjutso",
+      "name": "Origin One X",
+      "dimensionsMm": {
+        "lengthMm": 121.4,
+        "widthMm": 58.0,
+        "heightMm": 39.9
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Ninjutso/Ninjutso%20Origin%20One%20X.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467620",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pulsar-susanto-x",
+      "sourceHandle": null,
+      "brand": "Pulsar",
+      "name": "Susanto-X",
+      "dimensionsMm": {
+        "lengthMm": 119.0,
+        "widthMm": 62.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/susanto-x-medium.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/pulsar-susanto-x-medium",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pulsar-tenz-signature-edition",
+      "sourceHandle": null,
+      "brand": "Pulsar",
+      "name": "TenZ Signature Edition",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 64.0,
+        "heightMm": 41.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/tenz-signature-edition.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/pulsar-tenz-signature-edition",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pulsar-x2-mini",
+      "sourceHandle": null,
+      "brand": "Pulsar",
+      "name": "X2 Mini",
+      "dimensionsMm": {
+        "lengthMm": 116.0,
+        "widthMm": 61.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/pulsar-x2-crazylight-mini.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/pulsar-x2-mini",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pulsar-x2-v2-mini",
+      "sourceHandle": null,
+      "brand": "Pulsar",
+      "name": "X2 V2 Mini",
+      "dimensionsMm": {
+        "lengthMm": 116.0,
+        "widthMm": 61.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/pulsar-x2-crazylight-mini.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/pulsar-x2v2-mini",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pulsar-x2-v3-mini",
+      "sourceHandle": null,
+      "brand": "Pulsar",
+      "name": "X2 v3 Mini",
+      "dimensionsMm": {
+        "lengthMm": 116.0,
+        "widthMm": 61.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/pulsar-x2-crazylight-mini.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/pulsar-x2-v3-es-mini",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pulsar-zywoo-the-chosen-mouse",
+      "sourceHandle": null,
+      "brand": "Pulsar",
+      "name": "ZywOo The Chosen Mouse",
+      "dimensionsMm": {
+        "lengthMm": 119.0,
+        "widthMm": 68.0,
+        "heightMm": 44.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/zywoo-the-chosen-medium.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/pulsar-zywoo-the-chosen-medium",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pwnage-ultra-custom-ergo",
+      "sourceHandle": null,
+      "brand": "Pwnage",
+      "name": "Ultra Custom Ergo",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 66.0,
+        "heightMm": 58.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/PWNAGE/PWNAGE%20Ultra%20Custom%20Ergo.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-709782",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-deathadder-v2",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "DeathAdder V2",
+      "dimensionsMm": {
+        "lengthMm": 127.6,
+        "widthMm": 62.7,
+        "heightMm": 41.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Razer/Razer%20Deathadder%20V2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467638",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-deathadder-v3",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "DeathAdder V3",
+      "dimensionsMm": {
+        "lengthMm": 127.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/deathadder-v4-pro.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/razer-deathadder-v3",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-deathadder-v3-pro",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "DeathAdder V3 Pro",
+      "dimensionsMm": {
+        "lengthMm": 127.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/deathadder-v4-pro.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/razer-deathadder-v3-pro",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-deathadder-v4-pro",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "DeathAdder V4 Pro",
+      "dimensionsMm": {
+        "lengthMm": 127.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/deathadder-v4-pro.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/razer-deathadder-v4-pro",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-deathadder-v4-pro-wireless",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "DeathAdder V4 Pro Wireless",
+      "dimensionsMm": {
+        "lengthMm": 127.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/deathadder-v4-pro.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/razer-deathadder-v4-pro",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-orochi-v2",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "Orochi V2",
+      "dimensionsMm": {
+        "lengthMm": 108.0,
+        "widthMm": 63.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/orochi-v2.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/razer-orochi-v2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-viper-mini",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "Viper Mini",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 62.0,
+        "heightMm": 38.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/viper-mini.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/razer-viper-mini",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-viper-ultimate",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "Viper Ultimate",
+      "dimensionsMm": {
+        "lengthMm": 129.3,
+        "widthMm": 58.5,
+        "heightMm": 37.5
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Razer/Razer%20Viper%20Ultimate.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467627",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-viper-v3-pro",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "Viper V3 Pro",
+      "dimensionsMm": {
+        "lengthMm": 127.0,
+        "widthMm": 64.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/razer-viper-v3-pro.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/razer-viper-v3-pro",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "razer-viper-v3-pro-wireless",
+      "sourceHandle": null,
+      "brand": "Razer",
+      "name": "Viper V3 Pro Wireless",
+      "dimensionsMm": {
+        "lengthMm": 127.0,
+        "widthMm": 64.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/razer-viper-v3-pro.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/razer-viper-v3-pro",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "steelseries-prime-mini-wireless",
+      "sourceHandle": null,
+      "brand": "SteelSeries",
+      "name": "Prime Mini Wireless",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 66.0,
+        "heightMm": 40.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Steelseries/Steelseries%20Prime%20Mini%20Wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-469050",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "steelseries-prime-wireless",
+      "sourceHandle": null,
+      "brand": "SteelSeries",
+      "name": "Prime Wireless",
+      "dimensionsMm": {
+        "lengthMm": 124.3,
+        "widthMm": 67.9,
+        "heightMm": 42.4
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Steelseries/Steelseries%20Prime%20Wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467606",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "steelseries-rival-310",
+      "sourceHandle": null,
+      "brand": "SteelSeries",
+      "name": "Rival 310",
+      "dimensionsMm": {
+        "lengthMm": 127.6,
+        "widthMm": 70.0,
+        "heightMm": 42.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Steelseries/Steelseries%20Rival%20310%20%28supports%29.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467607",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "steelseries-sensei-ten",
+      "sourceHandle": null,
+      "brand": "SteelSeries",
+      "name": "Sensei Ten",
+      "dimensionsMm": {
+        "lengthMm": 126.0,
+        "widthMm": 63.0,
+        "heightMm": 21.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Steelseries/Steelseries%20Sensei%20Ten.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-1835145",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-e1-wireless",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "E1 Wireless",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/e1-wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-e1-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-e1-wireless-4k",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "E1 Wireless (4K)",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/e1-wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-e1-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-outset-ax",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "Outset AX",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/outset-ax-wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-outset-ax-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-outset-ax-funspark",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "OUTSET AX Funspark",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/outset-ax-wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-outset-ax-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-outset-ax-glossy",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "OUTSET AX Glossy",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/outset-ax-wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-outset-ax-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-outset-ax-wireless",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "OUTSET AX Wireless",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/outset-ax-wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-outset-ax-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-outset-ax-wireless-4k",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "Outset AX Wireless (4K)",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/outset-ax-wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-outset-ax-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-outset-ax-yellow",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "OUTSET AX Yellow",
+      "dimensionsMm": {
+        "lengthMm": 118.0,
+        "widthMm": 67.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/outset-ax-wireless.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-outset-ax-wireless",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-xe",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "XE",
+      "dimensionsMm": {
+        "lengthMm": 121.4,
+        "widthMm": 61.1,
+        "heightMm": 37.8
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/Vaxee/vaxee-xe.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-vaxee-xe.stl",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-zygen-np-01",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "Zygen NP-01",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 67.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/zygen-np-01.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-zygen-np-01",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-zygen-np-01-white",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "ZYGEN NP-01 White",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 67.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/zygen-np-01.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-zygen-np-01",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-zygen-np-01-wireless",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "ZYGEN NP-01 Wireless",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 67.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/zygen-np-01.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-zygen-np-01",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vaxee-zygen-np-01-wireless-4k",
+      "sourceHandle": null,
+      "brand": "VAXEE",
+      "name": "Zygen NP-01 Wireless (4K)",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 67.0,
+        "heightMm": 39.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/zygen-np-01.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/vaxee-zygen-np-01",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "wlmouse-beast-x-max-black",
+      "sourceHandle": null,
+      "brand": "WLMouse",
+      "name": "Beast X Max Black",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/beast-x-max.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/wlmouse-beast-x-max",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "wlmouse-beast-x-max-purple",
+      "sourceHandle": null,
+      "brand": "WLMouse",
+      "name": "Beast X Max Purple",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/beast-x-max.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/wlmouse-beast-x-max",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "wlmouse-beast-x-max-tempered",
+      "sourceHandle": null,
+      "brand": "WLMouse",
+      "name": "Beast X Max Tempered",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/beast-x-max.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/wlmouse-beast-x-max",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "wlmouse-x-drg-beast-x-max-green",
+      "sourceHandle": null,
+      "brand": "WLMouse",
+      "name": "x DRG Beast X Max Green",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/beast-x-max.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/wlmouse-beast-x-max",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "xtrfy-m4",
+      "sourceHandle": null,
+      "brand": "Xtrfy",
+      "name": "M4",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 68.0,
+        "heightMm": 39.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/XTRFY/XTRFY%20M4.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467651",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "xtrfy-m42",
+      "sourceHandle": null,
+      "brand": "Xtrfy",
+      "name": "M42",
+      "dimensionsMm": {
+        "lengthMm": 116.0,
+        "widthMm": 55.2,
+        "heightMm": 37.8
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/XTRFY/XTRFY%20M42.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467653",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-ec1",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "EC1",
+      "dimensionsMm": {
+        "lengthMm": 128.0,
+        "widthMm": 64.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/%28BenQ%29%20Zowie/Zowie%20EC1.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467659",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-ec1-dw",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "EC1-DW",
+      "dimensionsMm": {
+        "lengthMm": 129.0,
+        "widthMm": 70.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/ec1-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-ec1-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-ec2-a",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "EC2-A",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/ec2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-ec2-a",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-ec2-c",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "EC2-C",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/ec2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-ec2-c",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-ec2-cw",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "EC2-CW",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/ec2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-ec2-cw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-ec2-dw",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "EC2-DW",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 66.0,
+        "heightMm": 43.0
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/findmymouse/ec2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-ec2-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-ec3-c",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "EC3-C",
+      "dimensionsMm": {
+        "lengthMm": 119.2,
+        "widthMm": 59.6,
+        "heightMm": 40.3
+      },
+      "shape": "ergo",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/%28BenQ%29%20Zowie/Zowie%20EC3-C.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467622",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-fk2",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "FK2",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/fk2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-fk2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-fk2-b",
+      "sourceHandle": null,
+      "brand": "Zowie",
+      "name": "FK2-B",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/fk2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-fk2-b",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-fk2-c",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "FK2-C",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 37.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/fk2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-fk2-c",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-fk2-dw",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "FK2-DW",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 65.0,
+        "heightMm": 37.0
+      },
+      "shape": null,
+      "assetUrl": "/models/mice/sources/findmymouse/fk2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-fk2-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-s1",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "S1",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 61.0,
+        "heightMm": 40.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/%28BenQ%29%20Zowie/Zowie%20S1.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-467667",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-s2",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "S2",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 64.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/s2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-s2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-s2-c",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "S2-C",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 64.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/s2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-s2-c",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-s2-dw",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "S2-DW",
+      "dimensionsMm": {
+        "lengthMm": 120.0,
+        "widthMm": 64.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/s2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-s2-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-u2",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "U2",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 64.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/u2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-u2",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-u2-dw",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "U2-DW",
+      "dimensionsMm": {
+        "lengthMm": 123.0,
+        "widthMm": 64.0,
+        "heightMm": 39.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/u2-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-u2-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-za11-b",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "ZA11-B",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 59.0,
+        "heightMm": 41.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/%28BenQ%29%20Zowie/Zowie%20ZA11-B.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-469051",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-za12-b",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "ZA12-B",
+      "dimensionsMm": {
+        "lengthMm": 125.0,
+        "widthMm": 59.0,
+        "heightMm": 41.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/printables-113133-mouse-shape-tester-megapack/raw/%28BenQ%29%20Zowie/Zowie%20ZA12-B.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://www.printables.com/model/113133-mouse-shape-tester-megapack#file-469053",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-za13-b",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "ZA13-B",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 62.0,
+        "heightMm": 41.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/za13-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-za13-b",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-za13-c",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "ZA13-C",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 62.0,
+        "heightMm": 41.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/za13-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-za13-c",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "zowie-za13-dw",
+      "sourceHandle": null,
+      "brand": "ZOWIE",
+      "name": "ZA13-DW",
+      "dimensionsMm": {
+        "lengthMm": 121.0,
+        "widthMm": 62.0,
+        "heightMm": 41.0
+      },
+      "shape": "sym",
+      "assetUrl": "/models/mice/sources/findmymouse/za13-dw.stl",
+      "assetFormat": "stl",
+      "sourceUrl": "https://findmymouse.com/mouse/zowie-za13-dw",
+      "transform": {
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "failures": []
+}

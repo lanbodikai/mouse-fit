@@ -18,7 +18,7 @@ def on_startup() -> None:
     if auto_schema_init:
         init_db()
     seed_mice_from_json_if_empty()
-    warm = os.getenv("MOUSEFIT_WARMUP_RAG", "0").strip().lower() in {"1", "true", "yes", "on"}
+    warm = os.getenv("MOUSEFIT_WARMUP_RAG", "1").strip().lower() in {"1", "true", "yes", "on"}
     if warm:
         try:
             from backend.rag.retriever import warmup

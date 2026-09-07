@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from requests.adapters import HTTPAdapter
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -28,6 +29,8 @@ from backend.rag.schemas import (
 
 router = APIRouter()
 _SESSION = requests.Session()
+_SESSION.mount("https://", HTTPAdapter(pool_connections=20, pool_maxsize=20, max_retries=0))
+_SESSION.mount("http://", HTTPAdapter(pool_connections=20, pool_maxsize=20, max_retries=0))
 CHAT_LIMIT = RateLimitSpec(max_requests=20, window_seconds=60)
 DEPRECATED_RAG_MESSAGE = (
     "This RAG endpoint is deprecated. Use the survey matcher + /api/chat rerank flow instead."
@@ -45,7 +48,11 @@ def _client_key(request: Request) -> str:
     user_id = getattr(request.state, "user_id", None)
     if isinstance(user_id, str) and user_id:
         return f"user:{user_id}"
-    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    forwarded = (
+        request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        if config.TRUST_PROXY_HEADERS
+        else ""
+    )
     ip = forwarded or (request.client.host if request.client else "unknown")
     return f"ip:{ip}"
 
@@ -232,7 +239,7 @@ def _call_groq(messages: List[Dict[str, Any]], model: Optional[str] = None, temp
         config.GROQ_URL,
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {config.GROQ_API_KEY}"},
         json=payload,
-        timeout=60,
+        timeout=(5, 30),
     )
     if not resp.ok:
         raise HTTPException(status_code=resp.status_code, detail=resp.text)

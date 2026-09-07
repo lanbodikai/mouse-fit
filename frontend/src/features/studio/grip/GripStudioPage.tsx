@@ -45,20 +45,19 @@ const styles = `
 }
 
 .wrap {
-  --capture-shell-height: clamp(520px, calc(100dvh - 190px), 820px);
   flex: 1 1 auto;
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 336px);
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(288px, 320px);
+  align-items: stretch;
   justify-content: center;
   padding: 0;
   gap: 16px;
   width: 100%;
-  max-width: 1560px;
+  max-width: 1320px;
   margin: 0 auto;
   overflow: visible;
-  min-height: 100%;
+  min-height: 0;
 }
 
 .stage {
@@ -66,7 +65,7 @@ const styles = `
   width: 100%;
   max-width: 100%;
   min-height: 0;
-  height: var(--capture-shell-height);
+  height: auto;
   max-height: none;
   aspect-ratio: 16/9;
   border-radius: 8px;
@@ -178,7 +177,9 @@ canvas#overlay { z-index: 3; pointer-events: none; }
   flex-shrink: 1;
   width: 100%;
   min-width: 0;
-  height: var(--capture-shell-height);
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .panel {
@@ -375,7 +376,7 @@ label { font-size: 13px; color: var(--sub); }
   flex: 1;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 960px) {
   .tool-shell { display: block; }
   .wrap {
     display: flex;
@@ -393,42 +394,32 @@ label { font-size: 13px; color: var(--sub); }
   .panel { max-height: none; }
 }
 
-@media (min-width: 900px) and (min-aspect-ratio: 159/100) and (max-aspect-ratio: 161/100) {
-  .wrap {
-    --capture-shell-height: clamp(550px, 83.6vh, 946px);
-    max-width: 1018px;
-    transform: scale(1.1);
-    transform-origin: center top;
-  }
-}
-
 @media (max-width: 700px) {
   .tool-shell {
-    height: 100%;
+    height: auto;
     min-height: 0;
     padding: 0;
-    overflow: hidden;
+    overflow: visible;
     display: block;
   }
 
   .wrap {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 60%) minmax(0, 40%);
-    height: 100%;
+    display: flex;
+    flex-direction: column;
+    height: auto;
     min-height: 0;
     max-width: none;
     padding: 0;
-    gap: 0;
-    overflow: hidden;
+    gap: 10px;
+    overflow: visible;
   }
 
   .stage {
     width: 100%;
-    height: 100%;
-    min-height: 0;
-    aspect-ratio: auto;
-    border-radius: 22px 22px 12px 12px;
+    height: auto;
+    min-height: 220px;
+    aspect-ratio: 4/3;
+    border-radius: 14px;
   }
 
   .stage .badge {
@@ -448,22 +439,23 @@ label { font-size: 13px; color: var(--sub); }
 
   .control-dock {
     width: 100%;
-    height: 100%;
+    height: auto;
+    max-height: none;
     min-height: 0;
-    gap: 0;
-    overflow: hidden;
+    gap: 10px;
+    overflow: visible;
   }
 
   .panel {
-    height: 100%;
-    max-height: 100%;
+    height: auto;
+    max-height: none;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    padding: 9px;
-    border-radius: 12px 12px 22px 22px;
+    gap: 7px;
+    padding: 12px;
+    border-radius: 14px;
   }
 
   .panel .row {
@@ -499,8 +491,8 @@ label { font-size: 13px; color: var(--sub); }
 
   .hint {
     margin: 2px 0 4px;
-    max-height: 32px;
-    overflow: hidden;
+    max-height: none;
+    overflow: visible;
     font-size: 10.5px;
     line-height: 1.35;
   }
@@ -511,7 +503,7 @@ label { font-size: 13px; color: var(--sub); }
   }
 
   .thumb {
-    height: 34px;
+    height: 44px;
     border-radius: 10px;
     font-size: 10px;
   }
@@ -525,8 +517,8 @@ label { font-size: 13px; color: var(--sub); }
     flex: 1 1 auto;
     min-height: 0;
     margin-top: 2px;
-    padding: 8px;
-    gap: 6px;
+    padding: 10px;
+    gap: 8px;
     justify-content: end;
   }
 
@@ -544,16 +536,14 @@ label { font-size: 13px; color: var(--sub); }
   }
 
   .coach {
-    position: fixed;
-    left: clamp(88px, 24vw, 104px);
-    right: 16px;
-    width: auto;
-    top: 18px;
-    max-height: calc(100dvh - 36px);
-    overflow: auto;
-    padding: 16px;
-    border-radius: 20px;
-    z-index: 150;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding: 12px;
+    border-radius: 14px;
+    z-index: 60;
   }
 
   .coach-bar {
@@ -705,9 +695,9 @@ export default function GripPage() {
     <>
       <ShellNav currentPage="grip" />
       <div className="studio-tool-page mx-auto min-h-0 w-full max-w-[1560px]">
-        <header className="shell-content-header shell-tool-header mb-5 border-b border-[var(--shell-border-strong)] pb-5">
+        <header className="shell-content-header shell-tool-header mb-4 flex flex-col border-b border-[var(--shell-border-strong)] pb-4 sm:mb-5 sm:pb-5">
           <p className="text-xs font-medium text-[var(--shell-accent-strong)]">Camera tool</p>
-          <h1 className="mt-2 text-[2rem] font-semibold text-[var(--shell-text-primary)] sm:text-[2.55rem]">Grip scan</h1>
+          <h1 className="mt-2 text-[1.75rem] font-semibold leading-tight text-[var(--shell-text-primary)] sm:text-[2.25rem] lg:text-[2.5rem]">Grip scan</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--shell-text-secondary)]">
             Capture top, bottom, and side views while holding your mouse to classify your grip.
           </p>

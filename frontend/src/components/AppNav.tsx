@@ -17,7 +17,7 @@ const navItems = [
   { href: "/grip", label: "Grip", icon: Hand },
   { href: "/database", label: "Database", icon: Database },
   { href: "/report", label: "Report", icon: FileText },
-  { href: "/dashboard?assistant=open", label: "Dashboard AI", icon: Bot },
+  { href: "/database?assistant=open", label: "Database AI", icon: Bot },
   { href: "/user", label: "User", icon: User },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

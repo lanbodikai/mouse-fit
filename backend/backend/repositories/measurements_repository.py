@@ -13,20 +13,26 @@ def insert_measurement(
     length_cm: float,
     width_cm: float,
     created_at: str,
+    idempotency_key: Optional[str] = None,
 ) -> None:
     with get_conn() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO measurements (session_id, user_id, length_mm, width_mm, length_cm, width_cm, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO measurements (session_id, user_id, idempotency_key, length_mm, width_mm, length_cm, width_cm, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT DO NOTHING
                 """,
-                (session_id, user_id, length_mm, width_mm, length_cm, width_cm, created_at),
+                (session_id, user_id, idempotency_key, length_mm, width_mm, length_cm, width_cm, created_at),
             )
         conn.commit()
 
 
-def latest_measurement_row(session_id: str, user_id: Optional[str]) -> Optional[Dict[str, Any]]:
+def latest_measurement_row(
+    session_id: str,
+    user_id: Optional[str],
+    allow_guest_fallback: bool = True,
+) -> Optional[Dict[str, Any]]:
     with get_conn() as conn:
         with conn.cursor() as cur:
             row = None
@@ -42,6 +48,8 @@ def latest_measurement_row(session_id: str, user_id: Optional[str]) -> Optional[
                     (session_id, user_id),
                 )
                 row = cur.fetchone()
+                if not allow_guest_fallback:
+                    return row
             if row is None:
                 cur.execute(
                     """

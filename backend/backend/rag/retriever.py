@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import re
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -27,6 +28,7 @@ except Exception:  # pragma: no cover - optional dependency
 
 _embedder: Optional[SentenceTransformer] = None
 _collection = None
+_COLLECTION_LOCK = threading.Lock()
 
 
 def _get_embedder() -> Optional[SentenceTransformer]:
@@ -47,9 +49,12 @@ def _get_collection():
         return _collection
     if chromadb is None:
         return None
-    settings = Settings(allow_reset=True) if Settings is not None else None
-    client = chromadb.PersistentClient(path=str(config.RAG_CHROMA_PATH), settings=settings)
-    _collection = client.get_or_create_collection(config.RAG_COLLECTION)
+    with _COLLECTION_LOCK:
+        if _collection is not None:
+            return _collection
+        settings = Settings(allow_reset=True) if Settings is not None else None
+        client = chromadb.PersistentClient(path=str(config.RAG_CHROMA_PATH), settings=settings)
+        _collection = client.get_or_create_collection(config.RAG_COLLECTION)
     return _collection
 
 
@@ -115,14 +120,6 @@ def retrieve(query: str, prefs: Optional[RagPreferences] = None, k: int = 8) -> 
     global _collection
     prefs = prefs or RagPreferences()
     query = query or ""
-    try:
-        rebuilt_count = build_embeddings(rebuild=False)
-    except Exception:
-        rebuilt_count = 0
-    if rebuilt_count > 0:
-        # Re-open collection after index rebuild so queries use latest dataset files.
-        _collection = None
-
     collection = _get_collection()
     if collection is not None:
         try:
@@ -160,12 +157,6 @@ def retrieve(query: str, prefs: Optional[RagPreferences] = None, k: int = 8) -> 
             return docs
 
     docs = _load_docs(config.RAG_EMBEDDINGS_PATH)
-    if not docs:
-        try:
-            if build_embeddings(rebuild=False) > 0:
-                docs = _load_docs(config.RAG_EMBEDDINGS_PATH)
-        except Exception:
-            docs = []
     if not docs:
         return []
 

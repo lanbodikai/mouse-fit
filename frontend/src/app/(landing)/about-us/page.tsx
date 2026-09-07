@@ -73,7 +73,7 @@ export default function AboutUsPage() {
 
           <div className="mt-8 flex flex-wrap items-center gap-5">
             <Link
-              href="/measure"
+              href="/survey"
               className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium text-white transition-colors mf-neon-btn"
             >
               Start Scan

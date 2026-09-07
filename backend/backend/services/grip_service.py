@@ -7,9 +7,15 @@ from backend.schemas.api import GripOut
 from backend.utils.common import iso_ts, utc_now
 
 
-def save_grip(session_id: str, user_id: Optional[str], grip: str, confidence: float) -> GripOut:
+def save_grip(
+    session_id: str,
+    user_id: Optional[str],
+    grip: str,
+    confidence: float,
+    idempotency_key: Optional[str] = None,
+) -> GripOut:
     created_at = utc_now()
-    grips_repository.insert_grip(session_id, user_id, grip, confidence, created_at)
+    grips_repository.insert_grip(session_id, user_id, grip, confidence, created_at, idempotency_key)
     return GripOut(
         session_id=session_id,
         grip=grip,
@@ -19,8 +25,12 @@ def save_grip(session_id: str, user_id: Optional[str], grip: str, confidence: fl
     )
 
 
-def latest_grip(session_id: str, user_id: Optional[str]) -> Optional[GripOut]:
-    row = grips_repository.latest_grip_row(session_id, user_id)
+def latest_grip(
+    session_id: str,
+    user_id: Optional[str],
+    allow_guest_fallback: bool = True,
+) -> Optional[GripOut]:
+    row = grips_repository.latest_grip_row(session_id, user_id, allow_guest_fallback)
     if not row:
         return None
     return GripOut(

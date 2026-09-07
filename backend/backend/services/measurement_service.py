@@ -7,11 +7,19 @@ from backend.schemas.api import MeasurementOut
 from backend.utils.common import iso_ts, utc_now
 
 
-def save_measurement(session_id: str, user_id: Optional[str], length_mm: float, width_mm: float) -> MeasurementOut:
+def save_measurement(
+    session_id: str,
+    user_id: Optional[str],
+    length_mm: float,
+    width_mm: float,
+    idempotency_key: Optional[str] = None,
+) -> MeasurementOut:
     created_at = utc_now()
     length_cm = round(length_mm / 10, 2)
     width_cm = round(width_mm / 10, 2)
-    measurements_repository.insert_measurement(session_id, user_id, length_mm, width_mm, length_cm, width_cm, created_at)
+    measurements_repository.insert_measurement(
+        session_id, user_id, length_mm, width_mm, length_cm, width_cm, created_at, idempotency_key
+    )
     return MeasurementOut(
         session_id=session_id,
         length_mm=length_mm,
@@ -23,8 +31,12 @@ def save_measurement(session_id: str, user_id: Optional[str], length_mm: float, 
     )
 
 
-def latest_measurement(session_id: str, user_id: Optional[str]) -> Optional[MeasurementOut]:
-    row = measurements_repository.latest_measurement_row(session_id, user_id)
+def latest_measurement(
+    session_id: str,
+    user_id: Optional[str],
+    allow_guest_fallback: bool = True,
+) -> Optional[MeasurementOut]:
+    row = measurements_repository.latest_measurement_row(session_id, user_id, allow_guest_fallback)
     if not row:
         return None
     return MeasurementOut(

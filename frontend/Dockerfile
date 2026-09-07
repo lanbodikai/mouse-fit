@@ -17,6 +17,8 @@ RUN --mount=type=cache,target=/root/.npm \
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+ARG BACKEND_INTERNAL_URL=http://backend:8000
+ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 

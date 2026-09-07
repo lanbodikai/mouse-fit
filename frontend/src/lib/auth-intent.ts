@@ -1,7 +1,7 @@
 export const LOGIN_PATH = "/login";
 export const SIGN_UP_PATH = "/auth/sign-up";
-export const DEFAULT_POST_LOGIN_PATH = "/dashboard";
-export const TRY_NOW_DESTINATION = "/dashboard";
+export const DEFAULT_POST_LOGIN_PATH = "/database";
+export const TRY_NOW_DESTINATION = "/database";
 
 export const AUTH_INTENT_COOKIE = "mousefit_auth_intent";
 export const AUTH_STATE_COOKIE = "mousefit_auth_state";

@@ -66,12 +66,19 @@ def build_report(
     )
 
 
-def save_report(report: Report) -> None:
-    reports_repository.insert_report(report.session_id, report.user_id, report.model_dump(), report.created_at)
+def save_report(report: Report, idempotency_key: Optional[str] = None) -> None:
+    reports_repository.insert_report(
+        report.session_id, report.user_id, report.model_dump(), report.created_at, idempotency_key
+    )
 
 
-def read_latest_report(session_id: str, user_id: Optional[str], correlation_id: str) -> Report | None:
-    row = reports_repository.latest_report_row(session_id, user_id)
+def read_latest_report(
+    session_id: str,
+    user_id: Optional[str],
+    correlation_id: str,
+    allow_guest_fallback: bool = True,
+) -> Report | None:
+    row = reports_repository.latest_report_row(session_id, user_id, allow_guest_fallback)
     if not row:
         return None
 

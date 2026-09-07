@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import re
+import threading
+import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from backend import config
+from backend.db.pool import get_conn
 
 try:
     import psycopg
@@ -15,6 +18,10 @@ except Exception:  # pragma: no cover - optional in limited environments
     dict_row = None  # type: ignore[assignment]
 
 ChatLlmFn = Callable[[List[Dict[str, Any]], float, Optional[Dict[str, Any]]], str]
+
+_CATALOG_CACHE_LOCK = threading.Lock()
+_CATALOG_CACHE: List[Dict[str, Any]] | None = None
+_CATALOG_CACHE_EXPIRES_AT = 0.0
 
 _STOPWORDS = {
     "a",
@@ -135,7 +142,7 @@ def _load_catalog_from_db() -> List[Dict[str, Any]]:
     if psycopg is None or dict_row is None or not config.DATABASE_URL:
         return []
     try:
-        with psycopg.connect(config.DATABASE_URL, row_factory=dict_row) as conn:
+        with get_conn() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -188,10 +195,18 @@ def _load_catalog_from_json() -> List[Dict[str, Any]]:
 
 
 def load_catalog_mice() -> List[Dict[str, Any]]:
-    rows = _load_catalog_from_db()
-    if rows:
+    global _CATALOG_CACHE, _CATALOG_CACHE_EXPIRES_AT
+    now = time.monotonic()
+    if _CATALOG_CACHE is not None and now < _CATALOG_CACHE_EXPIRES_AT:
+        return _CATALOG_CACHE
+    with _CATALOG_CACHE_LOCK:
+        now = time.monotonic()
+        if _CATALOG_CACHE is not None and now < _CATALOG_CACHE_EXPIRES_AT:
+            return _CATALOG_CACHE
+        rows = _load_catalog_from_db() or _load_catalog_from_json()
+        _CATALOG_CACHE = rows
+        _CATALOG_CACHE_EXPIRES_AT = time.monotonic() + config.CATALOG_CACHE_TTL_SECONDS
         return rows
-    return _load_catalog_from_json()
 
 
 def _parse_hand_measurements(text: str) -> tuple[Optional[float], Optional[float]]:
@@ -765,7 +780,14 @@ def generate_catalog_chat_reply(messages: List[Dict[str, Any]], llm_call: Option
     recent_conversation = "\n".join(user_messages[-4:])
     intent = _parse_preferences_from_text(recent_conversation)
     intent.latest_user = user_messages[-1]
-    llm_intent = _extract_intent_with_llm(recent_conversation, llm_call)
+    # Intent extraction is deliberately deterministic by default. A chat turn
+    # should not require two paid upstream requests before a response can be
+    # rendered. The optional second pass remains available for experiments.
+    llm_intent = (
+        _extract_intent_with_llm(recent_conversation, llm_call)
+        if config.CHAT_USE_INTENT_LLM
+        else {}
+    )
     intent = _merge_intent(intent, llm_intent)
 
     catalog = load_catalog_mice()

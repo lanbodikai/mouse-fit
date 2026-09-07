@@ -12,6 +12,11 @@ def health(request: Request) -> dict:
     return health_controller.get_health(request)
 
 
+@router.get("/api/ready")
+def ready(request: Request):
+    return health_controller.get_ready(request)
+
+
 @router.get("/api/metrics")
 def metrics(request: Request) -> dict:
     return health_controller.get_metrics(request)

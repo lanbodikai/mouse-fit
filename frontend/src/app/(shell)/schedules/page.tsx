@@ -21,8 +21,8 @@ export default function SchedulesPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/dashboard" className="inline-flex h-10 items-center gap-2 rounded-md border border-[var(--shell-border-strong)] px-4 text-sm font-semibold text-[var(--shell-text-primary)]">
-              Dashboard
+            <Link href="/database" className="inline-flex h-10 items-center gap-2 rounded-md border border-[var(--shell-border-strong)] px-4 text-sm font-semibold text-[var(--shell-text-primary)]">
+              Database
             </Link>
             <Link href="/survey" className="inline-flex h-10 items-center gap-2 rounded-md bg-[var(--shell-accent)] px-4 text-sm font-semibold text-[var(--shell-text-inverse)]">
               Start survey

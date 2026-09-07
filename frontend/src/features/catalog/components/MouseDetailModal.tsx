@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
+import Link from "next/link";
 import type { MouseCatalogItem } from "../catalog.types";
 import { buildSpecEntries, formatMatchDisplay } from "../catalog.utils";
 import { PlaceholderImage } from "./PlaceholderImage";
@@ -79,6 +80,13 @@ export function MouseDetailModal({
             <div className="space-y-5 p-5 sm:p-6">
               <section>
                 <h3 className="text-sm font-semibold text-[var(--shell-text-primary)]">Geometry and fit</h3>
+                <Link
+                  href={`/mouse-fit/simulator?mouse=${encodeURIComponent(item.data.id)}`}
+                  className="mf-glass-button mt-4 inline-flex items-center gap-2 rounded-md px-4 py-3 text-sm font-semibold text-[var(--shell-text-primary)]"
+                >
+                  Open 3D model in Mouse Fit Simulator
+                  <ExternalLink className="h-4 w-4 text-[var(--shell-text-secondary)]" />
+                </Link>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {core.map((entry) =>
                     entry.label === "Product Link" ? (
