@@ -35,6 +35,12 @@ def _json_list(value: object) -> str:
     return "[]"
 
 
+def _optional_bool(value: object) -> bool | None:
+    if value is None:
+        return None
+    return bool(value)
+
+
 def upgrade() -> None:
     """Load the catalog that was manually approved on 2026-07-26.
 
@@ -72,8 +78,8 @@ def upgrade() -> None:
             "width_mm": row["width_mm"],
             "height_mm": row["height_mm"],
             "weight_g": row["weight_g"],
-            "ergo": row["ergo"],
-            "wired": row["wired"],
+            "ergo": _optional_bool(row["ergo"]),
+            "wired": _optional_bool(row["wired"]),
             "shape": row["shape"],
             "hump": row["hump"],
             "grips": _json_list(row["grips"]),
