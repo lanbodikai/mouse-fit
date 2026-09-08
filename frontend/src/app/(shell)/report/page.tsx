@@ -16,6 +16,7 @@ import { useAuthState } from "@/hooks/useAuthState";
 import { ShellPage, ShellPanel } from "@/components/layout/ShellPage";
 import { buildBestMouseFromStorage, reportStore } from "@/lib/reportStore";
 import { getOrCreateSessionId } from "@/lib/session";
+import { getStoredReportPreferences } from "@/lib/report-preferences";
 import type { Grip, Measurement, Report } from "@/lib/types";
 
 const REPORT_STORAGE_KEY = "mousefit:latest_report";
@@ -184,7 +185,7 @@ export default function ReportPage() {
     setError(null);
 
     try {
-      const nextReport = await generateReport(getOrCreateSessionId());
+      const nextReport = await generateReport(getOrCreateSessionId(), getStoredReportPreferences());
       writeLatestReport(nextReport);
       setReport(nextReport);
       setLocalMeasurement({

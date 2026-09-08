@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { completeSurvey, generateReport, saveGrip, saveMeasurement } from "@/lib/api";
 import { useAuthState } from "@/hooks/useAuthState";
 import { getOrCreateSessionId } from "@/lib/session";
+import { getStoredReportPreferences } from "@/lib/report-preferences";
 
 type Grip = "claw" | "palm" | "fingertip";
 type ClawStyle = "relaxed" | "aggressive";
@@ -587,7 +588,7 @@ export default function MousefitSurveyPage() {
           });
         }
         await completeSurvey();
-        await generateReport(sessionId);
+        await generateReport(sessionId, getStoredReportPreferences());
         router.push("/report");
       } catch (e) {
         setSubmitting(false);

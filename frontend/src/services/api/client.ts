@@ -1,5 +1,6 @@
 import type { CurrentUser, Grip, Measurement, Mouse, Report, ThemeMode, UserProfile } from "@/types/api";
 import { getAccessToken, handleUnauthorizedSession } from "@/lib/auth";
+import type { ReportPreferences } from "@/lib/report-preferences";
 
 declare global {
   interface Window {
@@ -170,9 +171,11 @@ export function saveGrip(payload: {
   });
 }
 
-export function generateReport(sessionId: string): Promise<Report> {
-  const encoded = encodeURIComponent(sessionId);
-  return apiJson(`/api/report/generate?session_id=${encoded}`, { method: "POST" });
+export function generateReport(sessionId: string, preferences?: ReportPreferences): Promise<Report> {
+  return apiJson("/api/report/generate", {
+    method: "POST",
+    body: JSON.stringify({ session_id: sessionId, preferences }),
+  });
 }
 
 export function getLatestReport(sessionId: string): Promise<Report> {

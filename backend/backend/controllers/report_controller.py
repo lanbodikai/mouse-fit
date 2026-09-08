@@ -5,9 +5,10 @@ from fastapi.responses import JSONResponse
 
 from backend.middleware.request_context import request_id, request_profile_seed, request_user_email, request_user_id
 from backend.services import grip_service, measurement_service, mice_service, profile_service, report_service
+from backend.schemas.api import ReportPreferences
 
 
-def generate_report(request: Request, session_id: str = Query(...)):
+def generate_report(request: Request, session_id: str = Query(...), preferences: ReportPreferences | None = None):
     user_id = request_user_id(request)
     if user_id:
         seed_display_name, seed_avatar_url = request_profile_seed(request)
@@ -37,6 +38,7 @@ def generate_report(request: Request, session_id: str = Query(...)):
         grip=grip,
         mice=mice_service.list_scoreable_mice(),
         correlation_id=correlation_id,
+        preferences=preferences,
     )
     report_key = f"{session_id}:{measurement.length_mm}:{measurement.width_mm}:{grip.grip if grip else ''}"
     report_service.save_report(report, report_key)

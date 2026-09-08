@@ -3,32 +3,9 @@ from __future__ import annotations
 from typing import Optional
 
 from backend.repositories import reports_repository
-from backend.schemas.api import GripOut, MeasurementOut, Mouse, MouseRecommendation, Report
+from backend.schemas.api import GripOut, MeasurementOut, Mouse, MouseRecommendation, Report, ReportPreferences
+from backend.services import legacy_matcher
 from backend.utils.common import utc_now
-
-
-def score_mouse(mouse: Mouse, measurement: MeasurementOut, grip: Optional[GripOut]) -> MouseRecommendation:
-    length_diff = abs((mouse.length_mm or 0) - measurement.length_mm)
-    width_diff = abs((mouse.width_mm or 0) - measurement.width_mm)
-    base_score = max(0.0, 100 - (length_diff * 1.2 + width_diff * 1.4))
-    reason_parts = [
-        f"Length off by {length_diff:.1f} mm",
-        f"width off by {width_diff:.1f} mm",
-    ]
-    if grip and mouse.grips:
-        if grip.grip.lower() in [saved_grip.lower() for saved_grip in mouse.grips]:
-            base_score += 8
-            reason_parts.append("matches grip preference")
-        else:
-            base_score -= 6
-            reason_parts.append("different grip profile")
-    return MouseRecommendation(
-        id=mouse.id,
-        brand=mouse.brand,
-        model=mouse.model,
-        score=round(base_score, 2),
-        reason="; ".join(reason_parts),
-    )
 
 
 def build_report(
@@ -38,15 +15,29 @@ def build_report(
     grip: Optional[GripOut],
     mice: list[Mouse],
     correlation_id: str,
+    preferences: Optional[ReportPreferences] = None,
 ) -> Report:
-    scored = [score_mouse(mouse, measurement, grip) for mouse in mice if mouse.length_mm and mouse.width_mm]
-    scored.sort(key=lambda item: item.score, reverse=True)
-    recommendations = scored[:5]
+    preferences = preferences or ReportPreferences()
+    matched = legacy_matcher.match(mice, measurement, preferences, grip.grip if grip else None)
+    recommendations = [
+        MouseRecommendation(
+            id=candidate.mouse.id,
+            brand=candidate.mouse.brand,
+            model=candidate.mouse.model,
+            score=round(score, 2),
+            reason=(
+                f"Legacy fit match: {candidate.length:.1f} mm body, "
+                f"{candidate.grip_width:.1f} mm estimated grip width, "
+                f"{candidate.shape} shell and {candidate.hump} hump."
+            ),
+        )
+        for candidate, score in matched
+    ]
 
     if grip:
         summary = (
-            f"Based on a {measurement.length_mm:.1f} x {measurement.width_mm:.1f} mm hand and "
-            f"{grip.grip} grip, these mice fit your profile best."
+            f"Legacy matcher results for a {measurement.length_mm:.1f} x {measurement.width_mm:.1f} mm hand and "
+            f"{preferences.primaryGrip or grip.grip} grip."
         )
     else:
         summary = (

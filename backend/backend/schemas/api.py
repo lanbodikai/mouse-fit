@@ -65,6 +65,28 @@ class GripIn(BaseModel):
     confidence: Optional[float] = 0.0
 
 
+class ReportPreferences(BaseModel):
+    """Canonical selections consumed by the legacy report matcher."""
+
+    primaryGrip: Optional[str] = None
+    shellShape: Optional[str] = None
+    humpPosition: Optional[str] = None
+    sideShape: Optional[str] = None
+    fingerDirection: Optional[str] = None
+    thumbPosition: Optional[str] = None
+    dominantFinger: Optional[str] = None
+    palmFingerCurved: Optional[str] = None
+    clawRelaxed: Optional[str] = None
+    clawBackHandTouch: Optional[str] = None
+    budgetMin: Optional[float] = None
+    budgetMax: Optional[float] = None
+
+
+class ReportGenerateIn(BaseModel):
+    session_id: str
+    preferences: ReportPreferences = Field(default_factory=ReportPreferences)
+
+
 class GripOut(BaseModel):
     session_id: str
     grip: str
