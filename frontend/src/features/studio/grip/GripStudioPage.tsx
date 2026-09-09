@@ -1,8 +1,6 @@
 "use client";
 
-import Script from "next/script";
-import { useEffect } from "react";
-import { ShellNav } from "@/components/shell/ShellNav";
+import CaptureStudio from "../CaptureStudio";
 
 const styles = `
 .tool-shell {
@@ -571,24 +569,24 @@ const bodyHtml = `
       <canvas id="frame"></canvas>
       <div class="gripGuide"><span class="label" id="guideLabel">Step 1/3 — TOP view</span></div>
       <canvas id="overlay"></canvas>
-      <div id="status" class="badge">Live</div>
-      <div id="toast" class="toast"></div>
+      <div id="status" class="badge" role="status">Starting camera</div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
       <div id="countdown" class="countdown">5</div>
     </div>
 
     <div class="control-dock">
-      <div class="coach" id="coach" data-key="mf:coach:grip" role="dialog">
+      <div class="coach" id="coach" data-key="mf:coach:grip">
         <div class="coach-bar"><strong>Quick Guide</strong><button type="button" class="coach-close" aria-label="Close instructions" onclick="try{window.sessionStorage?.setItem('mf:coach:grip:dismissed','1')}catch(e){};this.closest('.coach').classList.add('hidden')">Close</button></div>
         <div class="coach-content">
           <p>1. Position hand (holding mouse) inside box</p>
           <p>2. Capture <b>Top</b>, <b>Bottom</b>, then <b>Side</b> views</p>
-          <p>3. We classify <b>palm</b> vs <b>claw</b> from index and middle finger bend</p>
+          <p>3. Review the suggested grip. You can correct it before saving.</p>
         </div>
       </div>
 
       <div class="panel">
         <div class="row" style="gap:10px; margin-bottom:8px;">
-          <label>Camera:</label>
+          <label for="cameraSelect">Camera:</label>
           <select id="cameraSelect"></select>
           <button id="refreshCams">Refresh</button>
         </div>
@@ -608,8 +606,8 @@ const bodyHtml = `
 
         <div class="toolbar capture-bar" id="liveBtns">
           <div class="btn-group">
-            <button id="timer" class="primary">Capture</button>
-            <button id="retakeAll">Reset</button>
+            <button id="timer" class="primary">Capture in 5 seconds</button>
+            <button id="retakeAll">Start over</button>
           </div>
           <button id="snap" style="display:none;">Capture now</button>
           <button id="toggleSkel" style="display:none;">Toggle skeleton</button>
@@ -617,8 +615,8 @@ const bodyHtml = `
 
         <div class="toolbar capture-bar" id="frozenBtns" style="display:none;">
           <div class="btn-group">
-            <button id="accept" class="primary">Capture</button>
-            <button id="retake">Reset</button>
+            <button id="accept" class="primary">Use this photo</button>
+            <button id="retake">Retake this view</button>
           </div>
           <button id="classify" disabled style="display:none;">Classify Grip</button>
           <a id="gotoReport" class="btn-link" href="/report" style="display:none;">Report</a>
@@ -644,137 +642,5 @@ const bodyHtml = `
 `;
 
 export default function GripPage() {
-  useEffect(() => {
-    const ensureCoachVisible = () => {
-      const coach = document.getElementById('coach');
-      if (coach) {
-        const dismissKey = `${coach.dataset.key || 'mf:coach:grip'}:dismissed`;
-        const isMobile = window.matchMedia('(max-width: 700px)').matches;
-        let dismissed = false;
-        try {
-          dismissed = window.sessionStorage?.getItem(dismissKey) === '1';
-        } catch {}
-        const closeButton = coach.querySelector<HTMLButtonElement>('.coach-close');
-        if (closeButton && !closeButton.dataset.bound) {
-          closeButton.dataset.bound = '1';
-          closeButton.addEventListener('click', () => {
-            try {
-              window.sessionStorage?.setItem(dismissKey, '1');
-            } catch {}
-            coach.classList.add('hidden');
-          });
-        }
-        if (isMobile && dismissed) {
-          coach.classList.add('hidden');
-        } else {
-          coach.classList.remove('hidden');
-        }
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('grip-page-ready'));
-        }
-      }
-    };
-
-    const timeoutId = setTimeout(ensureCoachVisible, 100);
-    ensureCoachVisible();
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (typeof window !== 'undefined') {
-        const windowWithGripStop = window as Window & { stopCamGrip?: () => void };
-        if (windowWithGripStop.stopCamGrip) {
-          try {
-            windowWithGripStop.stopCamGrip();
-          } catch {}
-        }
-      }
-    };
-  }, []);
-
-  return (
-    <>
-      <ShellNav currentPage="grip" />
-      <div className="studio-tool-page mx-auto min-h-0 w-full max-w-[1560px]">
-        <header className="shell-content-header shell-tool-header mb-4 flex flex-col border-b border-[var(--shell-border-strong)] pb-4 sm:mb-5 sm:pb-5">
-          <p className="text-xs font-medium text-[var(--shell-accent-strong)]">Camera tool</p>
-          <h1 className="mt-2 text-[1.75rem] font-semibold leading-tight text-[var(--shell-text-primary)] sm:text-[2.25rem] lg:text-[2.5rem]">Grip scan</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--shell-text-secondary)]">
-            Capture top, bottom, and side views while holding your mouse to classify your grip.
-          </p>
-        </header>
-        <style dangerouslySetInnerHTML={{ __html: styles }} />
-        <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-        <Script
-          id="grip-thumbs"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `['thumbTop','thumbBottom','thumbSide'].forEach(id => {\n  const img = document.getElementById(id);\n  const box = img?.closest('.thumb');\n  if (!img || !box) return;\n  const showIfLoaded = () => { if (img.currentSrc && img.naturalWidth > 0) box.classList.add('has-img'); };\n  img.addEventListener('load', showIfLoaded);\n  if (img.complete) showIfLoaded();\n});`,
-          }}
-        />
-        <Script type="module" src="/src/js/grip.js?v=2" strategy="afterInteractive" key="grip-js" />
-        <Script
-          id="grip-finish"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `window.finishGrip = async (grip) => {
-  var g = String(grip || '').toLowerCase();
-  sessionStorage.setItem('mf:grip', g);
-
-  // Update wizard state with detected grip so survey picks it up
-  var wKeys = ['mousefit:survey_wizard_state', 'mf:survey_wizard_state'];
-  wKeys.forEach(function(k) {
-    try {
-      var raw = localStorage.getItem(k) || sessionStorage.getItem(k);
-      if (raw) {
-        var obj = JSON.parse(raw);
-        obj.primaryGrip = g;
-        obj.gripSkipped = false;
-        var s = JSON.stringify(obj);
-        localStorage.setItem(k, s);
-        sessionStorage.setItem(k, s);
-      }
-    } catch {}
-  });
-
-  var sessionKey = 'mousefit:v2:session_id';
-  var sessionId = localStorage.getItem(sessionKey);
-  if (!sessionId) {
-    sessionId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('session-' + Date.now());
-    localStorage.setItem(sessionKey, sessionId);
-  }
-
-  var apiBase = String(window.__MOUSEFIT_API_BASE__ || 'http://127.0.0.1:8000').replace(/\\/+$/, '');
-  var headers = { 'Content-Type': 'application/json' };
-  try {
-    var authRaw = localStorage.getItem('mousefit:auth:session');
-    if (authRaw) {
-      var parsed = JSON.parse(authRaw);
-      if (parsed && parsed.access_token) headers.Authorization = 'Bearer ' + parsed.access_token;
-    }
-  } catch {}
-
-  try {
-    await fetch(apiBase + '/api/grip', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({ session_id: sessionId, grip: g }),
-    });
-  } catch {}
-
-  var params = new URLSearchParams(window.location.search);
-  if (params.get('from') === 'survey') {
-    location.href = '/survey';
-  } else {
-    var el = document.getElementById('resultPopupValue');
-    if (el) el.textContent = g.charAt(0).toUpperCase() + g.slice(1) + ' Grip';
-    var popup = document.getElementById('resultPopup');
-    if (popup) popup.style.display = 'flex';
-  }
-};`,
-          }}
-        />
-      </div>
-    </>
-  );
+  return <CaptureStudio kind="grip" cameraStyles={styles} cameraHtml={bodyHtml} />;
 }
-

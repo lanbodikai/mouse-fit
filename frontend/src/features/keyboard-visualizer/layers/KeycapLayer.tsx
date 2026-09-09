@@ -8,6 +8,10 @@ import {
   CanvasTexture,
   LinearFilter,
   Mesh,
+  MeshBasicMaterial,
+  DoubleSide,
+  PlaneGeometry,
+  Raycaster,
   SRGBColorSpace,
   Vector3,
 } from "three";
@@ -101,22 +105,26 @@ function KeyLegend({
   color,
   opacity,
   top,
+  glowColor,
+  profile,
 }: {
   keycap: ProceduralKey;
   color: string;
   opacity: number;
   top: number;
+  glowColor: string;
+  profile?: PreparedProfile;
 }) {
   const texture = useMemo(() => {
     const canvas = document.createElement("canvas");
-    canvas.width = 384;
+    canvas.width = 256;
     canvas.height = 128;
     const context = canvas.getContext("2d");
     if (context) {
       const fontSize =
-        keycap.legend.length > 7 ? 42 : keycap.legend.length > 4 ? 48 : 58;
+        keycap.legend.length > 7 ? 36 : keycap.legend.length > 3 ? 48 : keycap.legend.length > 1 ? 64 : 88;
       context.clearRect(0, 0, canvas.width, canvas.height);
-      context.fillStyle = legendColorFor(color);
+      context.fillStyle = "#ffffff";
       context.font = `600 ${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
       context.textAlign = "center";
       context.textBaseline = "middle";
@@ -132,26 +140,54 @@ function KeyLegend({
     legendTexture.colorSpace = SRGBColorSpace;
     legendTexture.minFilter = LinearFilter;
     legendTexture.magFilter = LinearFilter;
+    legendTexture.anisotropy = 8;
     return legendTexture;
-  }, [color, keycap.legend]);
+  }, [keycap.legend]);
 
   useDeferredDispose(texture, (legendTexture) => legendTexture.dispose());
 
   const keyWidth = keycap.widthUnits * KEY_UNIT - KEY_GAP;
   const legendWidth = Math.min(Math.max(0.32, keyWidth - 0.16), 0.72);
-  const legendHeight = legendWidth / 3;
+  const legendHeight = legendWidth / 2;
+  const legendGeometry = useMemo(() => {
+    const geometry = new PlaneGeometry(legendWidth, legendHeight, 16, 6);
+    geometry.rotateX(-Math.PI / 2);
+    if (profile) {
+      const material = new MeshBasicMaterial({ side: DoubleSide });
+      const shell = new Mesh(profile.geometry, material);
+      shell.scale.set(keyWidth / profile.width, 1, (KEY_UNIT - KEY_GAP) / profile.depth);
+      shell.updateMatrixWorld(true);
+      const ray = new Raycaster();
+      const positions = geometry.getAttribute("position");
+      for (let i = 0; i < positions.count; i++) {
+        ray.set(new Vector3(positions.getX(i), top + 1, positions.getZ(i)), new Vector3(0, -1, 0));
+        const hit = ray.intersectObject(shell, false)[0];
+        positions.setY(i, (hit?.point.y ?? top) + 0.018);
+      }
+      material.dispose();
+    } else geometry.translate(0, top + 0.018, 0);
+    geometry.computeVertexNormals();
+    return geometry;
+  }, [legendWidth, legendHeight, profile, keyWidth, top]);
+  useDeferredDispose(legendGeometry, (geometry) => geometry.dispose());
 
   return (
     <mesh
       name={`key-legend-${keycap.id}`}
       visible={opacity > 0.001}
-      position={[0, top + 0.012, 0]}
-      rotation={[-Math.PI / 2, 0, 0]}
-      renderOrder={4}
+      geometry={legendGeometry}
+      dispose={null}
     >
-      <planeGeometry args={[legendWidth, legendHeight]} />
-      <meshBasicMaterial
+      <meshStandardMaterial
         map={texture}
+        color={legendColorFor(color)}
+        emissive={glowColor}
+        emissiveMap={texture}
+        emissiveIntensity={1.4}
+        roughness={0.48}
+        metalness={0}
+        polygonOffset
+        polygonOffsetFactor={-1}
         transparent
         opacity={opacity}
         depthWrite={false}
@@ -199,8 +235,8 @@ function KeycapShell({
         transparent={opacity < 1}
         opacity={opacity}
         depthWrite={opacity > 0.001}
-        roughness={0.25}
-        clearcoat={0.16}
+        roughness={0.62}
+        clearcoat={0.035}
         clearcoatRoughness={0.4}
         userData={{
           keyboardBaseOpacity: opacity,
@@ -275,7 +311,7 @@ function IndividualKeycaps({
           color={shellColor}
           opacity={shellOpacity}
         />
-        <KeyLegend keycap={key} color={shellColor} opacity={shellOpacity} top={profile.top} />
+        <KeyLegend keycap={key} color={shellColor} glowColor={glowColor} opacity={shellOpacity} top={profile.top} profile={profile} />
       </KeyEntrance>
     );
   });
@@ -387,8 +423,8 @@ function KeycapFallback({
                 transparent={shellOpacity < 1}
                 opacity={shellOpacity}
                 depthWrite={shellOpacity > 0.001}
-                roughness={0.28}
-                clearcoat={0.2}
+                roughness={0.62}
+                clearcoat={0.035}
                 clearcoatRoughness={0.45}
                 userData={{
                   keyboardBaseOpacity: shellOpacity,
@@ -402,6 +438,7 @@ function KeycapFallback({
                 }}
               />
             </RoundedBox>
+            <KeyLegend keycap={key} color={shellColor} glowColor={glowColor} opacity={shellOpacity} top={0.18} />
           </KeyEntrance>
         );
       })}

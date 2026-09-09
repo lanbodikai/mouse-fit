@@ -37,12 +37,13 @@ function UrlStateSync() {
     if (mouseId) params.set("mouse", mouseId);
     else params.delete("mouse");
     params.set("hand", String(hand.lengthCm));
+    params.set("width", String(hand.widthCm));
     params.set("grip", gripStyle);
     params.set("side", hand.handedness);
     const nextSearch = params.toString();
     if (window.location.search.slice(1) === nextSearch) return;
     router.replace(`${pathname}?${nextSearch}`, { scroll: false });
-  }, [gripStyle, hand.handedness, hand.lengthCm, mouseId, pathname, router]);
+  }, [gripStyle, hand.handedness, hand.lengthCm, hand.widthCm, mouseId, pathname, router]);
 
   return null;
 }
@@ -111,7 +112,7 @@ function Viewport() {
       </div>
 
       <div className={styles.canvasStage} data-interacting={isInteracting || undefined}>
-        <SimulatorErrorBoundary>
+        <SimulatorErrorBoundary key={selectedMouse?.id}>
           <MouseFitScene />
         </SimulatorErrorBoundary>
         <AssetProgress />
@@ -143,6 +144,8 @@ function Viewport() {
 
 function SimulatorContent() {
   const { setMouseModels } = useMouseFitSimulator();
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,15 +154,16 @@ function SimulatorContent() {
         if (!cancelled) setMouseModels(manifest.models);
       })
       .catch(() => {
-        if (!cancelled) setMouseModels([]);
+        if (!cancelled) { setMouseModels([]); setLoadError(true); }
       });
     return () => {
       cancelled = true;
     };
-  }, [setMouseModels]);
+  }, [setMouseModels, retry]);
 
   return (
     <main className={styles.simulatorRoot}>
+      {loadError ? <div className={styles.catalogError} role="alert">The current mouse catalog could not be loaded. <button type="button" onClick={() => { setLoadError(false); setRetry((value) => value + 1); }}>Retry</button></div> : null}
       <UrlStateSync />
       <MouseFitSidebar />
       <Viewport />
@@ -169,40 +173,9 @@ function SimulatorContent() {
 }
 
 export default function MouseFitSimulatorPage() {
-  const [demoEntered, setDemoEntered] = useState(false);
-
   return (
     <MouseFitSimulatorProvider>
-      <div className={styles.demoGate}>
-        <div
-          className={styles.demoGateBackground}
-          aria-hidden={!demoEntered || undefined}
-          inert={!demoEntered ? true : undefined}
-        >
-          <SimulatorContent />
-        </div>
-
-        {!demoEntered ? (
-          <div className={styles.demoGateOverlay}>
-            <section
-              className={styles.demoGateDialog}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="simulator-construction-title"
-              aria-describedby="simulator-construction-description"
-            >
-              <span className={styles.demoGateEyebrow}>Mouse Fit Simulator</span>
-              <h1 id="simulator-construction-title">Area under construction</h1>
-              <p id="simulator-construction-description">
-                We’re still refining the simulator. You can explore the current interactive demo while we finish it.
-              </p>
-              <button type="button" autoFocus onClick={() => setDemoEntered(true)}>
-                Proceed to demo
-              </button>
-            </section>
-          </div>
-        ) : null}
-      </div>
+      <SimulatorContent />
     </MouseFitSimulatorProvider>
   );
 }

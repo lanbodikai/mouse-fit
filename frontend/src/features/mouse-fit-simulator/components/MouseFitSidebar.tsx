@@ -99,7 +99,7 @@ export default function MouseFitSidebar() {
               id="mouse-model-search"
               type="button"
               className={styles.modelSearch}
-              aria-labelledby="mouse-model-label mouse-model-search"
+              aria-label="Mouse model"
               aria-haspopup="listbox"
               aria-expanded={modelPickerOpen}
               aria-controls="mouse-model-options"

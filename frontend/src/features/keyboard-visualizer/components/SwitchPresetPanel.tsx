@@ -102,7 +102,7 @@ export default function SwitchPresetPanel() {
             }}
           >
             <Palette aria-hidden="true" />
-            <span><strong>Edit key glow</strong><small>Paint under-key lighting</small></span>
+            <span><strong>Edit key glow</strong><small>Light legends and key edges</small></span>
           </button>
         </section>
 

@@ -50,7 +50,7 @@ export function parseSimulatorQuery(
   return {
     mouseId: params.get("mouse")?.trim() || null,
     handSizeCm: parseHandSize(params.get("hand")),
-    gripStyle: gripParam && VALID_GRIPS.has(gripParam) ? gripParam : "claw",
+    gripStyle: gripParam && VALID_GRIPS.has(gripParam) ? gripParam : "palm",
     handedness: sideParam && VALID_SIDES.has(sideParam) ? sideParam : "right",
   };
 }
@@ -61,17 +61,34 @@ function createInitialState(): MouseFitState {
       ? {
           mouseId: null,
           handSizeCm: DEFAULT_HAND_SIZE_CM,
-          gripStyle: "claw" as const,
+          gripStyle: "palm" as const,
           handedness: "right" as const,
         }
       : parseSimulatorQuery(new URLSearchParams(window.location.search));
+
+  let savedWidth: number | undefined;
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    try {
+      const length = Number(sessionStorage.getItem("mf:length_mm")) / 10;
+      const width = Number(sessionStorage.getItem("mf:width_mm")) / 10;
+      const grip = sessionStorage.getItem("mf:grip") as GripStyle | null;
+      if (!params.has("hand") && Number.isFinite(length) && length >= 12 && length <= 25) {
+        query.handSizeCm = length;
+        if (Number.isFinite(width) && width >= 5 && width <= 13) savedWidth = width;
+      }
+      if (!params.has("grip") && grip && VALID_GRIPS.has(grip)) query.gripStyle = grip;
+    } catch { /* Preview remains usable when browser storage is unavailable. */ }
+    const width = Number(params.get("width"));
+    if (params.has("width") && Number.isFinite(width) && width >= 5 && width <= 13 && width < query.handSizeCm) savedWidth = width;
+  }
 
   return {
     mouseId: query.mouseId,
     mouseModels: [],
     mouseModelsLoaded: false,
     hand: {
-      ...deriveHandMeasurements(query.handSizeCm),
+      ...deriveHandMeasurements(query.handSizeCm, savedWidth ? { widthCm: savedWidth } : {}),
       handedness: query.handedness,
     },
     gripStyle: query.gripStyle,

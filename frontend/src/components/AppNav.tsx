@@ -24,7 +24,7 @@ const navItems = [
 
 export default function AppNav() {
   return (
-    <header className="border border-transparent bg-transparent">
+    <header className="nav border border-transparent bg-transparent">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-white">
           <MousePointer2 className="h-5 w-5" />

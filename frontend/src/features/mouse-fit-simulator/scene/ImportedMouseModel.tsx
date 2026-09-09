@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useGLTF } from "@react-three/drei";
+import { Html, useGLTF } from "@react-three/drei";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import {
   Box3,
   BufferAttribute,
   BufferGeometry,
+  DoubleSide,
   Matrix4,
   Mesh,
   MeshStandardMaterial,
   Object3D,
+  Raycaster,
   Vector3,
 } from "three";
 import type { MouseModelManifestEntry } from "../types";
@@ -279,6 +281,29 @@ function orientStlGeometry(
     0, 0, 0, 1,
   );
   geometry.applyMatrix4(transform);
+  // Resolve the PCA sign ambiguity from the shell itself. The button deck is
+  // lower than the rear hump. All posed hands reach toward scene +Z.
+  geometry.computeBoundingBox();
+  const orientedBounds = geometry.boundingBox!;
+  const extent = orientedBounds.getSize(new Vector3());
+  const midpoint = orientedBounds.getCenter(new Vector3());
+  const probeMaterial = new MeshStandardMaterial({ side: DoubleSide });
+  const probe = new Mesh(geometry, probeMaterial);
+  probe.updateMatrixWorld(true);
+  const ray = new Raycaster();
+  const heights = [0, 0];
+  const counts = [0, 0];
+  for (const [index, sign] of [-1, 1].entries()) {
+    for (const z of [0.18, 0.27, 0.36]) for (const x of [-0.18, 0.18]) {
+      ray.set(new Vector3(midpoint.x + extent.x * x, orientedBounds.max.y + extent.y, midpoint.z + sign * extent.z * z), new Vector3(0, -1, 0));
+      const hit = ray.intersectObject(probe, false)[0];
+      if (hit) { heights[index] += hit.point.y; counts[index]++; }
+    }
+  }
+  probeMaterial.dispose();
+  if (counts.every((count) => count >= 4) && heights[1] / counts[1] > heights[0] / counts[0] + extent.y * 0.025) {
+    geometry.rotateY(Math.PI);
+  }
   geometry.computeVertexNormals();
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
@@ -296,33 +321,40 @@ function loadStlGeometry(assetUrl: string): Promise<BufferGeometry> {
       }
       const buffer = await response.arrayBuffer();
       return new STLLoader().parse(buffer);
-    });
+    }).catch((error: unknown) => { stlGeometryCache.delete(assetUrl); throw error; });
   stlGeometryCache.set(assetUrl, request);
   return request;
 }
 
 function fitModel(source: Object3D, mouse: MouseModelManifestEntry): Object3D {
   const clone = source.clone(true);
+  const transform = mouse.transform;
+  // Orient before measuring: rotating after fitting swaps dimensions on models
+  // whose source axes need a quarter turn.
+  clone.rotation.set(...transform.rotation);
+  clone.updateMatrixWorld(true);
   const bounds = new Box3().setFromObject(clone);
   const size = bounds.getSize(new Vector3());
   const targetWidth = (mouse.dimensionsMm.widthMm ?? 60) * CENTIMETERS_PER_MILLIMETER;
   const targetHeight = (mouse.dimensionsMm.heightMm ?? 38) * CENTIMETERS_PER_MILLIMETER;
   const targetLength = (mouse.dimensionsMm.lengthMm ?? 120) * CENTIMETERS_PER_MILLIMETER;
-  const transform = mouse.transform;
 
   // Manifest transforms are intentionally data-driven: a model with a different
   // source axis convention only needs one manifest edit, never a component branch.
-  clone.scale.set(
+  // Apply scene-axis scale outside the source rotation.
+  const container = new Object3D();
+  container.add(clone);
+  container.scale.set(
     (targetWidth / Math.max(size.x, 0.001)) * transform.scale[0],
     (targetHeight / Math.max(size.y, 0.001)) * transform.scale[1],
     (targetLength / Math.max(size.z, 0.001)) * transform.scale[2],
   );
-  clone.rotation.set(...transform.rotation);
+  container.updateMatrixWorld(true);
   clone.updateMatrixWorld(true);
 
-  const fittedBounds = new Box3().setFromObject(clone);
+  const fittedBounds = new Box3().setFromObject(container);
   const fittedCenter = fittedBounds.getCenter(new Vector3());
-  clone.position.set(
+  container.position.set(
     transform.position[0] - fittedCenter.x,
     transform.position[1] - fittedBounds.min.y + 0.03,
     transform.position[2] - fittedCenter.z,
@@ -334,7 +366,7 @@ function fitModel(source: Object3D, mouse: MouseModelManifestEntry): Object3D {
     object.receiveShadow = true;
     if (!object.material) object.material = new MeshStandardMaterial({ color: "#15191f", roughness: 0.38 });
   });
-  return clone;
+  return container;
 }
 
 type MouseProps = {
@@ -356,6 +388,8 @@ function LoadedMouse({ mouse, onSurfaceReady }: MouseProps) {
 
 function LoadedStlMouse({ mouse, onSurfaceReady }: MouseProps) {
   const [geometry, setGeometry] = useState<BufferGeometry | null>(null);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -367,11 +401,12 @@ function LoadedStlMouse({ mouse, onSurfaceReady }: MouseProps) {
         // A single source file must not trip the scene-wide error boundary.
         // The model can be reselected after its asset is repaired.
         console.error(`Unable to load STL mouse model: ${mouse.id}`, error);
+        if (!cancelled) setError(true);
       });
     return () => {
       cancelled = true;
     };
-  }, [mouse.assetUrl, mouse.id]);
+  }, [mouse.assetUrl, mouse.id, attempt]);
 
   const fittedModel = useMemo(() => {
     if (!geometry) return null;
@@ -389,7 +424,17 @@ function LoadedStlMouse({ mouse, onSurfaceReady }: MouseProps) {
     return () => onSurfaceReady?.(null);
   }, [fittedModel, onSurfaceReady]);
 
-  return fittedModel ? <primitive object={fittedModel} /> : null;
+  useEffect(() => () => {
+    fittedModel?.traverse((node) => {
+      if (!(node instanceof Mesh)) return;
+      node.geometry.dispose();
+      const materials = Array.isArray(node.material) ? node.material : [node.material];
+      materials.forEach((material) => material.dispose());
+    });
+  }, [fittedModel]);
+
+  if (error) return <Html center><div role="alert" style={{ width: 240, padding: 16, background: "#191d23", color: "#fff", borderRadius: 8 }}>This mouse model could not be loaded.<button type="button" style={{ display: "block", padding: 8, marginTop: 8, border: "1px solid currentColor" }} onClick={() => { setError(false); setAttempt((value) => value + 1); }}>Retry model</button></div></Html>;
+  return fittedModel ? <primitive object={fittedModel} /> : <Html center><span role="status" style={{ color: "#fff", whiteSpace: "nowrap" }}>Loading mouse model…</span></Html>;
 }
 
 export default function ImportedMouseModel({ mouse, onSurfaceReady }: MouseProps) {

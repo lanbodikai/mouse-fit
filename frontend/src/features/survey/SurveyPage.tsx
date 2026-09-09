@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, DollarSign, Hand, Loader2, MousePointer2, Ruler, SkipForward, Target } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -403,7 +403,8 @@ export default function MousefitSurveyPage() {
   const { ready: authReady } = useAuthState();
 
   const [answers, setAnswers] = useState<Answers>(() => loadInitial());
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState<number | null>(null);
+  const returnStep = useSearchParams().get("step");
   const [dir, setDir] = useState(1);
   const [pulse, setPulse] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -521,13 +522,13 @@ export default function MousefitSurveyPage() {
     );
   }
 
-  const safeStepIndex = Math.min(stepIndex, Math.max(0, steps.length - 1));
+  const safeStepIndex = Math.min(stepIndex ?? Math.max(0, steps.findIndex((step) => step.id === returnStep)), Math.max(0, steps.length - 1));
   const current = steps[safeStepIndex];
   const progress = Math.round(((safeStepIndex + 1) / steps.length) * 100);
 
   const next = () => {
     setDir(1);
-    setStepIndex((p) => Math.min(Math.min(p, steps.length - 1) + 1, steps.length - 1));
+    setStepIndex(Math.min(safeStepIndex + 1, steps.length - 1));
   };
 
   const choose = (step: OptionStep, value: string) => {
@@ -549,7 +550,7 @@ export default function MousefitSurveyPage() {
     if (safeStepIndex === 0) return;
     setDir(-1);
     setError("");
-    setStepIndex((p) => Math.max(Math.min(p, steps.length - 1) - 1, 0));
+    setStepIndex(Math.max(safeStepIndex - 1, 0));
   };
 
   const preset = (name: HandPreset) => {

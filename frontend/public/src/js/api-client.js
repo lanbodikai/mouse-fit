@@ -43,7 +43,7 @@ export async function apiFetch(path, options = {}) {
   try {
     res = await fetch(url, { ...options, headers });
   } catch {
-    throw new Error("MouseFit cannot reach the app server. Start the backend server first, then try again.");
+    throw new Error("Could not connect to MouseFit. Check your connection and try again.");
   }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -56,7 +56,7 @@ export async function apiFetch(path, options = {}) {
     } catch {}
     if (res.status === 401) throw new Error("Please sign in again to continue.");
     if (res.status === 404) throw new Error("We could not find that item. Refresh the page and try again.");
-    if (res.status >= 500) throw new Error("MouseFit could not reach the server correctly. Start or restart the backend server, then try again.");
+    if (res.status >= 500) throw new Error("MouseFit is temporarily unavailable. Please try again shortly.");
     throw new Error(message && message !== "(empty response body)" ? message : "Something went wrong. Try again.");
   }
 

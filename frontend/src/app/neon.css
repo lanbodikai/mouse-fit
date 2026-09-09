@@ -33,7 +33,7 @@ body {
 /* Note: If you use nav2.js, ensure it generates a <nav> or <header> with class .nav or similar. 
    Below targets specific classes often used in your setup. */
 
-header, .nav, .navbar {
+.nav, .navbar {
   position: sticky;
   top: 0;
   z-index: 100;
@@ -52,7 +52,7 @@ header, .nav, .navbar {
 }
 
 /* Links in Navbar */
-header a, .nav a {
+.nav a, .navbar a {
   color: var(--text-mute);
   text-decoration: none;
   font-weight: 600;
@@ -61,7 +61,7 @@ header a, .nav a {
   position: relative;
 }
 
-header a:hover, .nav a:hover {
+.nav a:hover, .navbar a:hover {
   color: var(--neon-cyan);
   text-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
 }

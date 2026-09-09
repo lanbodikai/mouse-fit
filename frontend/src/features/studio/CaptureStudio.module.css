@@ -1,0 +1,227 @@
+.studio {
+  max-width: 1240px;
+  margin: auto;
+  color: var(--shell-text-primary);
+  padding-bottom: 32px;
+}
+.studio header {
+  display: block;
+  position: static;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: none;
+  max-width: 760px;
+  margin: 28px 0;
+}
+.studio h1 {
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.15;
+  font-weight: 650;
+  margin: 10px 0 16px;
+}
+.studio h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.studio p {
+  line-height: 1.65;
+  color: var(--shell-text-secondary);
+}
+.studio .eyebrow {
+  color: var(--shell-accent-strong);
+  font-size: 13px;
+}
+.steps {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  border-bottom: 1px solid var(--shell-border-strong);
+  padding-bottom: 20px;
+}
+.steps a {
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.steps a[aria-current] {
+  background: var(--shell-accent-soft);
+  color: var(--shell-accent-strong);
+}
+.methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.method,
+.panel {
+  background: var(--shell-surface-raised);
+  border: 1px solid var(--shell-border-strong);
+  border-radius: 14px;
+  padding: 28px;
+}
+.method {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: flex-start;
+  text-align: left;
+  cursor: pointer;
+}
+.method svg {
+  color: var(--shell-accent-strong);
+  width: 28px;
+  height: 28px;
+}
+.method strong {
+  font-size: 21px;
+}
+.method span {
+  color: var(--shell-text-secondary);
+  line-height: 1.6;
+}
+.method b {
+  font-size: 14px;
+  color: var(--shell-accent-strong);
+  margin-top: auto;
+}
+.method:hover {
+  border-color: var(--shell-accent);
+}
+.actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.actions button,
+.actions a {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--shell-border-strong);
+  border-radius: 7px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.actions .primary {
+  background: var(--shell-accent);
+  color: var(--shell-text-inverse);
+  font-weight: 600;
+}
+.actions button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.camera {
+  border: 0;
+  width: 100%;
+  display: block;
+}
+.measureGrid {
+  display: grid;
+  grid-template-columns: minmax(200px, 0.7fr) 1fr;
+  gap: 32px;
+  align-items: center;
+  max-width: 850px;
+}
+.measureGrid svg {
+  width: 100%;
+  max-height: 330px;
+}
+.measureGrid label {
+  display: block;
+  margin-top: 18px;
+  font-weight: 600;
+}
+.measureGrid input {
+  margin-top: 8px;
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  background: var(--shell-surface-soft);
+  border: 1px solid var(--shell-border-strong);
+  border-radius: 7px;
+  padding: 12px;
+  color: var(--shell-text-primary);
+  font-size: 18px;
+}
+.help {
+  font-size: 13px;
+  color: var(--shell-text-secondary);
+}
+.grips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  border: 0;
+  padding: 0;
+}
+.grips legend {
+  margin-bottom: 16px;
+  color: var(--shell-text-secondary);
+}
+.grip {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  border: 1px solid var(--shell-border-strong);
+  border-radius: 10px;
+  padding: 20px;
+  cursor: pointer;
+}
+.grip span {
+  grid-column: 1/-1;
+  font-size: 14px;
+  color: var(--shell-text-secondary);
+  line-height: 1.6;
+}
+.grip[data-selected="true"] {
+  border-color: var(--shell-accent);
+  background: var(--shell-accent-soft);
+}
+.grip input {
+  accent-color: var(--shell-accent);
+}
+.studio .error {
+  color: var(--shell-text-primary);
+  background: var(--shell-surface-soft);
+  border-left: 3px solid #e99c74;
+  padding: 12px;
+  margin: 16px 0;
+}
+.studio :is(button, a, input):focus-visible {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 4px;
+}
+@media (max-width: 700px) {
+  .methods,
+  .measureGrid,
+  .grips {
+    grid-template-columns: 1fr;
+  }
+  .method,
+  .panel {
+    padding: 20px;
+  }
+  .measureGrid svg {
+    max-height: 210px;
+  }
+  .steps {
+    gap: 4px;
+  }
+  .steps a {
+    padding: 6px;
+    font-size: 12px;
+  }
+  .studio header {
+    margin: 20px 0;
+  }
+  .actions {
+    gap: 10px;
+  }
+}

@@ -71,7 +71,7 @@ export function createHandPose(surface: Object3D, hand: HandConfiguration, grip:
     throw new Error("Mouse side contact could not be found.");
   }
 
-  const radius = hand.fingerThicknessCm * 0.43;
+  const radius = hand.fingerThicknessCm * 0.52;
   const middleLength = hand.middleFingerLengthCm;
   const palmLength = hand.lengthCm - middleLength;
   const thickness = hand.lengthCm * 0.115;
@@ -87,9 +87,16 @@ export function createHandPose(surface: Object3D, hand: HandConfiguration, grip:
     ),
     tipZ - middleLength * (grip === "claw" ? 0.58 : grip === "palm" ? 0.78 : 0.70),
   );
+  // Move the whole hand when a small hand meets a tall or wide shell. Moving
+  // only the middle MCP in the fallback silently changes the measured palm.
+  const middleEnd = middleContact.clone().addScaledVector(UP, radius);
+  const middleReach = (middleLength - radius) * 0.94;
+  if (knuckle.distanceTo(middleEnd) > middleReach) {
+    knuckle.copy(middleEnd.clone().add(knuckle.clone().sub(middleEnd).setLength(middleReach)));
+  }
   // Place the wrist behind the mouse. Find a palm pitch that clears the shell
   // using several cross-sections, rather than guessing from catalog height.
-  let wristY = knuckle.y - (grip === "claw" ? 1.5 : 0.3);
+  let wristY = thickness * 0.6;
   for (const q of [0.45, 0.6, 0.72, 0.84]) {
     const z = knuckle.z - palmLength * (1 - q);
     const hit = deck(knuckle.x, z);
@@ -103,10 +110,10 @@ export function createHandPose(surface: Object3D, hand: HandConfiguration, grip:
     knuckle.z - Math.sqrt(palmLength * palmLength - wristDeltaY * wristDeltaY));
 
   const definitions = [
-    { name: "index", x: 0.29, length: 0.91, r: 0.96, point: indexContact, normal: UP, z: -0.10 },
+    { name: "index", x: 0.23, length: 0.91, r: 0.96, point: indexContact, normal: UP, z: -0.18 },
     { name: "middle", x: 0, length: 1, r: 1, point: middleContact, normal: UP, z: 0 },
-    { name: "ring", x: -0.18, length: 0.93, r: 0.91, point: flank(-side, center.z + size.z * 0.12), normal: new Vector3(-side, 0, 0), z: -0.2 },
-    { name: "pinky", x: -0.37, length: 0.72, r: 0.75, point: flank(-side, center.z - size.z * 0.09), normal: new Vector3(-side, 0, 0), z: -0.7 },
+    { name: "ring", x: -0.23, length: 0.93, r: 0.91, point: flank(-side, center.z + size.z * 0.12), normal: new Vector3(-side, 0, 0), z: -0.28 },
+    { name: "pinky", x: -0.43, length: 0.72, r: 0.75, point: flank(-side, center.z - size.z * 0.09), normal: new Vector3(-side, 0, 0), z: -0.95 },
   ];
   const digits: Digit[] = [];
   for (const def of definitions) {
@@ -121,7 +128,8 @@ export function createHandPose(surface: Object3D, hand: HandConfiguration, grip:
       const horizontal = end.clone().sub(root).setY(0).normalize();
       const terminal = horizontal.multiplyScalar(Math.cos(angle)).addScaledVector(UP, -Math.sin(angle));
       const dip = end.clone().addScaledVector(terminal, -lengths[2]);
-      const pip = solveTwoBones(root, dip, lengths[0], lengths[1], UP);
+      const pole = def.name === "ring" || def.name === "pinky" ? new Vector3(-side * 0.65, 1, 0) : UP;
+      const pip = solveTwoBones(root, dip, lengths[0], lengths[1], pole);
       if (pip) { joints = [root, pip, dip, end]; break; }
     }
     if (!joints) {

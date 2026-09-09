@@ -22,7 +22,8 @@ export default class SimulatorErrorBoundary extends Component<Props, State> {
       return (
         <div className={styles.errorFallback} role="alert">
           <p>3D preview unavailable.</p>
-          <span>Your fit controls are still available. Try reloading the page.</span>
+          <span>Select another mouse or retry the preview.</span>
+          <button type="button" onClick={() => this.setState({ failed: false })}>Retry preview</button>
         </div>
       );
     }

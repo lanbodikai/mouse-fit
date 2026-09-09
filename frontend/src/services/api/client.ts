@@ -53,7 +53,7 @@ function customerFacingApiError(status: number, message: string): string {
   if (status === 409) return "This was already updated. Refresh the page and try again.";
   if (status === 422) return message && message !== "(empty response body)" ? message : "Check the information and try again.";
   if (status === 429) return "Too many tries at once. Wait a moment, then try again.";
-  if (status >= 500) return "MouseFit could not reach the server correctly. Start or restart the backend server, then try again.";
+  if (status >= 500) return "MouseFit is temporarily unavailable. Please try again shortly.";
   return "Something went wrong. Try again.";
 }
 
@@ -74,7 +74,7 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   try {
     res = await fetch(url, { ...options, headers });
   } catch {
-    throw new Error("MouseFit cannot reach the app server. Start the backend server first, then try again.");
+    throw new Error("Could not connect to MouseFit. Check your connection and try again.");
   }
   if (!res.ok) {
     const text = await res.text().catch(() => "");

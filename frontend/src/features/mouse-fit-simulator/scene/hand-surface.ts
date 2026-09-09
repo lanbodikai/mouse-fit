@@ -1,4 +1,4 @@
-import { Box3, BufferAttribute, BufferGeometry, MeshBasicMaterial, Vector3 } from "three";
+import { Box3, BufferAttribute, BufferGeometry, CatmullRomCurve3, MeshBasicMaterial, Vector3 } from "three";
 import { MarchingCubes } from "three/examples/jsm/objects/MarchingCubes.js";
 import type { HandPose } from "./articulated-hand";
 
@@ -11,8 +11,13 @@ export function createHandSurface(pose: HandPose): BufferGeometry {
   const capsules: { a: Vector3; b: Vector3; r: number; taper: number }[] = [];
   const bounds = new Box3().setFromPoints([pose.wrist, pose.knuckle]);
   for (const digit of pose.digits) {
-    for (let i = 0; i < digit.joints.length - 1; i++) {
-      capsules.push({ a: digit.joints[i], b: digit.joints[i + 1], r: digit.radius, taper: i === 0 ? 0.12 : 0 });
+    // Smooth the skin over the articulated bones; tapered phalanges retain
+    // distinct fingers without the elbows and uniform tubes of the old surface.
+    const curve = new CatmullRomCurve3(digit.joints, false, "centripetal");
+    const samples = curve.getPoints(12);
+    for (let i = 0; i < samples.length - 1; i++) {
+      const progress = i / (samples.length - 2);
+      capsules.push({ a: samples[i], b: samples[i + 1], r: digit.radius * (1.10 - 0.10 * progress), taper: 0 });
     }
     const anchor = pose.wrist.clone().lerp(pose.knuckle, digit.name === "thumb" ? 0.38 : 0.72);
     anchor.x += (digit.joints[0].x - pose.knuckle.x) * 0.78;
@@ -21,6 +26,8 @@ export function createHandSurface(pose: HandPose): BufferGeometry {
   }
   bounds.expandByPoint(palmCenter.clone().add(new Vector3(pose.palmWidth / 2, pose.palmThickness, 0)));
   bounds.expandByPoint(palmCenter.clone().add(new Vector3(-pose.palmWidth / 2, -pose.palmThickness, 0)));
+  const forearmEnd = pose.wrist.clone().addScaledVector(direction, -pose.handLength * 0.25);
+  bounds.expandByPoint(forearmEnd).expandByScalar(pose.palmWidth * 0.38);
   bounds.expandByScalar(1.5);
   const span = bounds.getSize(new Vector3());
   const center = bounds.getCenter(new Vector3());
@@ -50,14 +57,24 @@ export function createHandSurface(pose: HandPose): BufferGeometry {
         // Broad knuckles taper into a rounded wrist, rather than an ellipsoid
         // that pinches both ends into a flat paddle.
         const q = Math.max(0, Math.min(1, lz / palmLength + 0.5));
-        const rx = pose.palmWidth * (0.27 + 0.21 * Math.sin(Math.PI * q * 0.85));
-        const ry = pose.palmThickness * 0.5 * (0.8 + 0.2 * Math.sin(Math.PI * q));
+        const rx = pose.palmWidth * (0.29 + 0.18 * Math.sin(Math.PI * q * 0.85));
+        const ry = pose.palmThickness * 0.5 * (0.82 + 0.24 * Math.sin(Math.PI * q));
         const k0 = Math.hypot(cx / rx, ly / ry);
         const k1 = Math.hypot(cx / (rx * rx), ly / (ry * ry));
         const crossDistance = k1 > 1e-9 ? k0 * (k0 - 1) / k1 : -ry;
         const endDistance = Math.abs(lz) - palmLength / 2 + 0.15;
         let distance = Math.min(Math.max(crossDistance, endDistance), 0)
           + Math.hypot(Math.max(crossDistance, 0), Math.max(endDistance, 0)) - 0.15;
+        // A tapered wrist/forearm gives the palm a natural continuation.
+        const armLength = pose.handLength * 0.25;
+        const armZ = lz + palmLength / 2;
+        const armQ = Math.max(0, Math.min(1, -armZ / armLength));
+        const armWidth = pose.palmWidth * (0.29 + armQ * 0.055);
+        const armThickness = pose.palmThickness * (0.41 + armQ * 0.14);
+        const armCross = (Math.hypot(cx / armWidth, ly / armThickness) - 1) * armThickness;
+        const armEnd = Math.abs(armZ + armLength / 2) - armLength / 2;
+        const armDistance = Math.min(Math.max(armCross, armEnd), 0) + Math.hypot(Math.max(armCross, 0), Math.max(armEnd, 0));
+        distance = smoothMin(distance, armDistance);
         for (const c of packed) {
           const dx = px - c.x, dy = py - c.y, dz = pz - c.z;
           const t = Math.max(0, Math.min(1, (dx * c.dx + dy * c.dy + dz * c.dz) / Math.max(1e-9, c.len2)));

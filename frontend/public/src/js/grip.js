@@ -114,15 +114,19 @@ function setThumbImage(imgEl, dataUrl) {
 }
 
 /* ================== storage helpers ================== */
+const captureDraft = new Map();
 function saveGripKV(key, value){
+  if (window.__MOUSEFIT_CAPTURE_REVIEW__) { captureDraft.set(key, value); return; }
   sessionStorage.setItem(key, value);
   localStorage.setItem(key.replace(/^mf:/, "mousefit:"), value);
 }
 function getGripKV(key){
+  if (window.__MOUSEFIT_CAPTURE_REVIEW__) return captureDraft.get(key) || null;
   return sessionStorage.getItem(key) ||
          localStorage.getItem(key.replace(/^mf:/, "mousefit:")) || null;
 }
 function clearGripK(keys){
+  if (window.__MOUSEFIT_CAPTURE_REVIEW__) { keys.forEach(key => captureDraft.delete(key)); return; }
   keys.forEach(k => {
     sessionStorage.removeItem(k);
     localStorage.removeItem(k.replace(/^mf:/, "mousefit:"));
@@ -372,6 +376,7 @@ async function populateCams(force=false) {
 }
 async function startCam(deviceId) {
   stopCam();
+  if (timerBtn) timerBtn.disabled = true;
   cameraBlocked = false;
   // Keep first request lightweight for faster camera warm-up.
   const constraints = deviceId
@@ -381,6 +386,10 @@ async function startCam(deviceId) {
   catch { try { stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false }); }
           catch (e3) { cameraBlocked = true; return handleGUMError(e3); } }
   video.srcObject = stream;
+  video.addEventListener("loadeddata", () => {
+    if (statusBadge) statusBadge.textContent = "Live camera";
+    if (timerBtn) timerBtn.disabled = false;
+  }, { once: true });
   try { await video.play(); if (startCamBtn) startCamBtn.style.display="none"; }
   catch {
     if (startCamBtn) {
@@ -449,13 +458,19 @@ function requireCameraForCapture() {
 if (typeof window !== 'undefined') {
   window.stopCamGrip = stopCam;
 }
-function handleGUMError(e){ showToast("Camera error: " + (e?.message || e)); }
+function handleGUMError(e){
+  if (statusBadge) statusBadge.textContent = "Camera unavailable";
+  if (timerBtn) timerBtn.disabled = true;
+  const hint = document.getElementById("hint");
+  if (hint) hint.textContent = "Camera access is unavailable. Connect a camera and allow access, then press Refresh, or choose your grip instead.";
+  showToast("Camera access is unavailable. You can choose your grip without a camera.");
+}
 async function initCameraLayer() {
-  if (!/\/grip\/?$/.test(location.pathname)) {
+  if (!window.__MOUSEFIT_CAPTURE_REVIEW__ && !/\/grip\/?$/.test(location.pathname)) {
     stopCam();
     return;
   }
-  if (!(location.protocol==="https:" || location.hostname==="localhost")) {
+  if (!window.isSecureContext) {
     showToast("Use HTTPS or localhost (not file://) for camera."); return;
   }
   video.setAttribute("playsinline",""); video.playsInline = true; video.muted = true;
@@ -464,7 +479,7 @@ async function initCameraLayer() {
     populateCams(false).catch(() => {});
   }
   cameraSelect.onchange = async () => startCam(cameraSelect.value);
-  refreshCams.onclick   = () => populateCams(false);
+  refreshCams.onclick   = async () => { await startCam(cameraSelect.value || currentDeviceId); if (stream) await populateCams(false); };
 }
 
 /* ================== UI ================== */
@@ -487,6 +502,7 @@ function wireUI(){
   if (retakeAllBtn) retakeAllBtn.onclick = () => clearAllShots();
 
   document.addEventListener("keydown", (e) => {
+    if (e.target?.matches("input, select, textarea, button, [contenteditable]")) return;
     if (e.key === " ") { e.preventDefault(); if (!countdownTimer && !isFrozen) startCountdown(5); }
     if (e.key === "Escape") { retakeBtn?.click(); }
   });
@@ -498,6 +514,14 @@ function updateSkeletonUI(){
 }
 function updateViewUI(){
   const name = VIEWS[currentView];
+  if (timerBtn) timerBtn.textContent = `Capture ${name.toLowerCase()} in 5 seconds`;
+  if (acceptBtn) acceptBtn.textContent = currentView === 2 ? "Use photo & review grip" : `Use photo & continue`;
+  const hint = document.getElementById("hint");
+  if (hint && !cameraBlocked) hint.textContent = [
+    "1 of 3 · Top: show the back of your hand and both mouse buttons. Keep your usual grip.",
+    "2 of 3 · Bottom: move the camera below your hand so the contact points are visible. Keep your grip unchanged.",
+    "3 of 3 · Side: show the bend of your index and middle fingers. Review the suggestion after this photo.",
+  ][currentView];
   if (viewPill) viewPill.textContent = "View: " + name;
   if (guideLabel) guideLabel.textContent = `Step ${currentView+1}/3 — ${name.toUpperCase()} view`;
 }
@@ -1341,7 +1365,20 @@ async function classifyFrom3Views() {
   });
 }
 
+let classifying = false;
 async function classifyGrip(){
+  if (classifying) return;
+  classifying = true;
+  if (acceptBtn) acceptBtn.disabled = true;
+  if (retakeBtn) retakeBtn.disabled = true;
+  try { await runGripClassification(); }
+  finally {
+    classifying = false;
+    if (acceptBtn) acceptBtn.disabled = false;
+    if (retakeBtn) retakeBtn.disabled = false;
+  }
+}
+async function runGripClassification(){
   const t0 = getGripKV("mf:grip_view_top");
   const b0 = getGripKV("mf:grip_view_bottom");
   const s0 = getGripKV("mf:grip_view_side");

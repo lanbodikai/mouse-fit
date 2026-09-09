@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import ts from "typescript";
-import { Mesh, MeshStandardMaterial, Box3, Vector3 } from "three";
+import { Mesh, MeshStandardMaterial, Box3, BoxGeometry, Vector3 } from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 
 const require = createRequire(import.meta.url);
@@ -18,15 +18,27 @@ const { createHandPose } = loadTs("../src/features/mouse-fit-simulator/scene/art
 const { deriveHandMeasurements } = loadTs("../src/features/mouse-fit-simulator/data/hand-presets.ts");
 const { createHandSurface } = loadTs("../src/features/mouse-fit-simulator/scene/hand-surface.ts");
 const { orientStlGeometry, fitModel } = loadTs("../src/features/mouse-fit-simulator/scene/ImportedMouseModel.tsx", (s) =>
-  'import { Box3, BufferAttribute, BufferGeometry, Matrix4, Mesh, MeshStandardMaterial, Object3D, Vector3 } from "three";\n'
+  'import { Box3, BufferAttribute, BufferGeometry, Matrix4, Mesh, MeshStandardMaterial, Object3D, Vector3, DoubleSide, Raycaster } from "three";\n'
   + s.slice(s.indexOf("const CENTIMETERS"), s.indexOf("function loadStlGeometry"))
   + s.slice(s.indexOf("function fitModel"), s.indexOf("type MouseProps"))
   + '\nexport { orientStlGeometry, fitModel };');
 const manifest = JSON.parse(readFileSync(new URL("../public/models/mice/manifest.json", import.meta.url), "utf8"));
 
+test("quarter-turn model transforms preserve catalog dimensions and floor alignment", () => {
+  const mouse = { ...manifest.models[0], dimensionsMm: { lengthMm: 120, widthMm: 60, heightMm: 40 }, transform: { scale: [1, 1, 1], rotation: [0, Math.PI / 2, 0], position: [0, 0, 0] } };
+  const source = new Mesh(new BoxGeometry(2, 4, 8), new MeshStandardMaterial());
+  const fitted = fitModel(source, mouse);
+  const bounds = new Box3().setFromObject(fitted);
+  const size = bounds.getSize(new Vector3());
+  [6, 4, 12].forEach((expected, index) => assert.ok(Math.abs(size.toArray()[index] - expected) < 1e-6));
+  assert.ok(Math.abs(bounds.min.y - 0.03) < 1e-6);
+  assert.ok(Math.abs(bounds.getCenter(new Vector3()).z) < 1e-6);
+  source.geometry.dispose(); source.material.dispose();
+});
+
 const ids = process.env.HAND_FULL_CATALOG
   ? [...new Map(manifest.models.map((m) => [m.assetUrl, m.id])).values()]
-  : ["benq-zowie-ec2-c", "asus-rog-harpe-ace-extreme", "cooler-master-mm710"];
+  : ["benq-zowie-ec2-c", "asus-rog-harpe-ace-extreme", "cooler-master-mm710", "pwnage-ultra-custom-ergo", "wlmouse-x-drg-beast-x-max-green"];
 for (const id of ids) {
   const mouse = manifest.models.find((m) => m.id === id);
   const bytes = readFileSync(new URL("../public" + decodeURIComponent(mouse.assetUrl), import.meta.url));
@@ -55,7 +67,7 @@ for (const id of ids) {
     assert.equal([...edges.values()].filter((count) => count === 1).length, 0, "skin has an open seam");
     skin.dispose();
   });
-  for (const length of [15, 17, 21]) for (const handedness of ["right", "left"]) for (const grip of ["palm", "claw", "fingertip"]) {
+  for (const length of (process.env.HAND_FULL_CATALOG ? [15, 17, 21] : [12, 15, 17, 21, 25])) for (const handedness of ["right", "left"]) for (const grip of ["palm", "claw", "fingertip"]) {
     test(`${id} / ${length} cm / ${handedness} / ${grip}: fixed anatomy and five surface contacts`, () => {
       const hand = { ...deriveHandMeasurements(length), handedness };
       const pose = createHandPose(surface, hand, grip);

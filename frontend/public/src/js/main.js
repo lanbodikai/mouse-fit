@@ -222,6 +222,7 @@ async function populateCams(force=false) {
 
 async function startCam(deviceId) {
   stopCam();
+  if (timerBtn) timerBtn.disabled = true;
   cameraBlocked = false;
 
   // Keep first request lightweight for faster camera warm-up.
@@ -242,6 +243,10 @@ async function startCam(deviceId) {
   }
 
   video.srcObject = stream;
+  video.addEventListener("loadeddata", () => {
+    if (statusBadge) statusBadge.textContent = "Live camera";
+    if (timerBtn) timerBtn.disabled = false;
+  }, { once: true });
 
   try {
     await video.play();
@@ -334,6 +339,10 @@ if (typeof window !== 'undefined') {
 }
 
 function handleGUMError(e) {
+  if (statusBadge) statusBadge.textContent = "Camera unavailable";
+  if (timerBtn) timerBtn.disabled = true;
+  const hint = document.getElementById("hint");
+  if (hint) hint.textContent = "Camera access is unavailable. Connect a camera and allow access, then press Refresh, or enter measurements instead.";
   const name = e?.name || "Error", msg = e?.message || String(e);
   console.warn("getUserMedia error:", name, msg);
   if (name === "NotAllowedError") showToast("Permission denied. Click the camera icon in the address bar and allow.");
@@ -345,11 +354,11 @@ function handleGUMError(e) {
 }
 
 async function initCameraLayer() {
-  if (!/\/measure\/?$/.test(location.pathname)) {
+  if (!window.__MOUSEFIT_CAPTURE_REVIEW__ && !/\/measure\/?$/.test(location.pathname)) {
     stopCam();
     return;
   }
-  if (!(location.protocol === "https:" || location.hostname === "localhost")) {
+  if (!window.isSecureContext) {
     showToast("Use HTTPS or localhost (not file://) for camera.");
     return;
   }
@@ -362,7 +371,7 @@ async function initCameraLayer() {
   }
 
   cameraSelect.onchange = async () => startCam(cameraSelect.value);
-  refreshCams.onclick   = () => populateCams(false);
+  refreshCams.onclick   = async () => { await startCam(cameraSelect.value || currentDeviceId); if (stream) await populateCams(false); };
 }
 
 /* ================== UI ================== */
@@ -424,6 +433,7 @@ function wireUI() {
   }
 
   document.addEventListener("keydown", (e) => {
+    if (e.target?.matches("input, select, textarea, button, [contenteditable]")) return;
     if (e.key === " ") { e.preventDefault(); if (!H && !countdownTimer) startCountdown(5); }
     if (e.key === "Enter") { if (!H) confirmCard(); }
     if (e.key === "Escape") { resetBtn.click(); }
@@ -708,7 +718,7 @@ async function confirmCard() {
       return;
     }
   } catch {}
-  window.location.href = "/report";
+  showToast("The measurement could not be calculated. Adjust the card corners and try again.");
 }
 
 function resetAll() {
@@ -936,6 +946,8 @@ async function computeAndStore() {
   const rightW = applyH(palmR);
   const lengthMm = distance(wristW, tipW) / PX_PER_MM;
   const widthMm  = distance(leftW, rightW) / PX_PER_MM;
+
+  if (window.__MOUSEFIT_CAPTURE_REVIEW__) return { lengthMm, widthMm };
 
   localStorage.setItem("mousefit:measure", JSON.stringify({
     len_mm: lengthMm,

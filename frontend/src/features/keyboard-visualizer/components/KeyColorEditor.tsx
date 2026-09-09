@@ -20,7 +20,7 @@ export default function KeyColorEditor() {
   } = useKeyboardVisualizer();
   const [brushColor, setBrushColor] = useState(keyGlowColor);
   const isPaintingRef = useRef(false);
-  const lastPaintedKeyRef = useRef<string | null>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const [lastPaintedKey, setLastPaintedKey] = useState<string | null>(null);
   const rows = useMemo(
     () => Array.from({ length: 5 }, (_, rowIndex) => KEY_LAYOUT.filter((key) => key.rowIndex === rowIndex)),
@@ -28,11 +28,23 @@ export default function KeyColorEditor() {
   );
 
   useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    dialogRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => previousFocus?.focus();
+  }, []);
+
+  useEffect(() => {
     const stopPainting = () => {
       isPaintingRef.current = false;
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setKeyColorEditorOpen(false);
+      if (event.key === "Tab") {
+        const controls = dialogRef.current?.querySelectorAll<HTMLElement>("button:not(:disabled), input:not(:disabled), [tabindex='0']");
+        const first = controls?.[0], last = controls?.[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
     };
     window.addEventListener("pointerup", stopPainting);
     window.addEventListener("pointercancel", stopPainting);
@@ -45,8 +57,7 @@ export default function KeyColorEditor() {
   }, [setKeyColorEditorOpen]);
 
   const paintKey = (keyId: string) => {
-    if (lastPaintedKeyRef.current === keyId) return;
-    lastPaintedKeyRef.current = keyId;
+    if ((keyGlowColorsById[keyId] ?? keyGlowColor) === brushColor) return;
     setKeyGlow(keyId, brushColor);
     setLastPaintedKey(keyId);
   };
@@ -69,10 +80,10 @@ export default function KeyColorEditor() {
         if (event.target === event.currentTarget) setKeyColorEditorOpen(false);
       }}
     >
-      <section className={styles.keyEditorDialog} role="dialog" aria-modal="true" aria-labelledby="key-color-editor-title">
+      <section ref={dialogRef} className={styles.keyEditorDialog} role="dialog" aria-modal="true" aria-labelledby="key-color-editor-title">
         <header className={styles.keyEditorHeader}>
           <div>
-            <span className={styles.keyEditorEyebrow}><Palette aria-hidden="true" /> Under-key RGB</span>
+            <span className={styles.keyEditorEyebrow}><Palette aria-hidden="true" /> Key & legend RGB</span>
             <h2 id="key-color-editor-title">Paint key glow</h2>
             <p>Choose a glow colour, then click or drag across the keyboard.</p>
           </div>
@@ -181,7 +192,7 @@ export default function KeyColorEditor() {
               <button type="button" onClick={() => setKeyGlowColor(brushColor)}>Fill all glows</button>
               <button type="button" onClick={resetKeyGlows}><RotateCcw aria-hidden="true" /> Reset</button>
             </div>
-            <p>{lastKey ? `${lastKey.legend} glow set to ${brushColor.toUpperCase()}` : "Select a key or drag to paint its glow."}</p>
+            <p>{lastKey ? `${lastKey.legend} glow: ${(keyGlowColorsById[lastKey.id] ?? keyGlowColor).toUpperCase()}` : "Select a key or drag to paint its glow."}</p>
           </section>
         </div>
 

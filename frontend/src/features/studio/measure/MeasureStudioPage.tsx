@@ -1,8 +1,6 @@
 "use client";
 
-import Script from "next/script";
-import { useEffect } from "react";
-import { ShellNav } from "@/components/shell/ShellNav";
+import CaptureStudio from "../CaptureStudio";
 
 const styles = `
 .tool-shell {
@@ -582,29 +580,29 @@ const bodyHtml = `
       <div class="guides">
         <div id="handGuide" class="guide"><span class="label">Hand here</span></div>
         <div id="cardGuide" class="guide" style="display:none; width:22vmin; height:14vmin;">
-          <span class="label">Card here (optional)</span>
+          <span class="label">Standard card here</span>
         </div>
       </div>
 
-      <div id="status" class="badge">Live</div>
-      <div id="toast" class="toast"></div>
+      <div id="status" class="badge" role="status">Starting camera</div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
       <div id="countdown" class="countdown">5</div>
     </div>
 
       <div class="control-dock">
-      <div class="coach" id="coach" data-key="mf:coach:measure" role="dialog">
+      <div class="coach" id="coach" data-key="mf:coach:measure">
         <div class="coach-bar"><strong>Quick Guide</strong><button type="button" class="coach-close" aria-label="Close instructions" onclick="try{window.sessionStorage?.setItem('mf:coach:measure:dismissed','1')}catch(e){};this.closest('.coach').classList.add('hidden')">Close</button></div>
         <div class="coach-content">
-          <p>1. Position hand & card inside the box</p>
+          <p>1. Lay your hand flat beside a standard card (85.6 × 54 mm), on the same surface. Keep the camera directly overhead.</p>
           <p>2. Press <b>Space</b> to capture</p>
           <p>3. Drag across the card to place its box</p>
-          <p>4. Use <b>Auto snap hand</b>, then adjust corners if needed</p>
+          <p>4. Use <b>Auto snap hand</b>, then adjust the wrist, middle fingertip and palm edges</p>
         </div>
       </div>
 
       <div class="panel">
         <div class="row" style="gap:10px; margin-bottom:8px;">
-          <label>Camera:</label>
+          <label for="cameraSelect">Camera:</label>
           <select id="cameraSelect"></select>
           <button id="refreshCams">Refresh</button>
         </div>
@@ -618,8 +616,8 @@ const bodyHtml = `
 
         <div class="toolbar capture-bar" id="liveBtns">
           <div class="btn-group">
-            <button id="timer" class="primary">Capture</button>
-            <button id="reset">Reset</button>
+            <button id="timer" class="primary">Capture in 5 seconds</button>
+            <button id="reset">Retake photo</button>
           </div>
           <button id="snap" style="display:none;">Capture now</button>
           <button id="toggleSkel" style="display:none;">Toggle skeleton</button>
@@ -630,8 +628,8 @@ const bodyHtml = `
 
         <div class="toolbar capture-bar" id="refineRow" style="display:none;">
           <div class="btn-group">
-            <button id="confirm" class="primary">Confirm</button>
-            <button id="reset2">Reset</button>
+            <button id="confirm" class="primary">Review measurements</button>
+            <button id="reset2">Retake photo</button>
           </div>
           <div class="refine-tools">
             <button id="snapMeasure">Auto snap hand</button>
@@ -667,164 +665,5 @@ const bodyHtml = `
 `;
 
 export default function MeasurePage() {
-  useEffect(() => {
-    const ensureCoachVisible = () => {
-      const coach = document.getElementById('coach');
-      if (coach) {
-        const dismissKey = `${coach.dataset.key || 'mf:coach:measure'}:dismissed`;
-        const isMobile = window.matchMedia('(max-width: 700px)').matches;
-        let dismissed = false;
-        try {
-          dismissed = window.sessionStorage?.getItem(dismissKey) === '1';
-        } catch {}
-        const closeButton = coach.querySelector<HTMLButtonElement>('.coach-close');
-        if (closeButton && !closeButton.dataset.bound) {
-          closeButton.dataset.bound = '1';
-          closeButton.addEventListener('click', () => {
-            try {
-              window.sessionStorage?.setItem(dismissKey, '1');
-            } catch {}
-            coach.classList.add('hidden');
-          });
-        }
-        if (isMobile && dismissed) {
-          coach.classList.add('hidden');
-        } else {
-          coach.classList.remove('hidden');
-        }
-        coach.style.display = '';
-        coach.style.visibility = 'visible';
-        coach.style.opacity = '1';
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('measure-page-ready'));
-        }
-        return true;
-      }
-      return false;
-    };
-
-    let attempts = 0;
-    const maxAttempts = 20;
-    const trySetup = () => {
-      attempts++;
-      const found = ensureCoachVisible();
-      if (!found && attempts < maxAttempts) {
-        setTimeout(trySetup, 50);
-      }
-    };
-    
-    const observer = new MutationObserver(() => {
-      const coach = document.getElementById('coach');
-      if (coach) {
-        ensureCoachVisible();
-        observer.disconnect();
-      }
-    });
-    
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    trySetup();
-    const timeoutId1 = setTimeout(trySetup, 100);
-    const timeoutId2 = setTimeout(trySetup, 300);
-    const timeoutId3 = setTimeout(trySetup, 500);
-
-    return () => {
-      observer.disconnect();
-      clearTimeout(timeoutId1);
-      clearTimeout(timeoutId2);
-      clearTimeout(timeoutId3);
-      if (typeof window !== 'undefined') {
-        const windowWithStop = window as Window & { stopCam?: () => void };
-        if (windowWithStop.stopCam) {
-          try {
-            windowWithStop.stopCam();
-          } catch {}
-        }
-      }
-    };
-  }, []);
-
-  return (
-    <>
-      <ShellNav currentPage="measure" />
-      <div className="studio-tool-page mx-auto min-h-0 w-full max-w-[1560px]">
-        <header className="shell-content-header shell-tool-header mb-4 flex flex-col border-b border-[var(--shell-border-strong)] pb-4 sm:mb-5 sm:pb-5">
-          <p className="text-xs font-medium text-[var(--shell-accent-strong)]">Camera tool</p>
-          <h1 className="mt-2 text-[1.75rem] font-semibold leading-tight text-[var(--shell-text-primary)] sm:text-[2.25rem] lg:text-[2.5rem]">Hand measurement</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--shell-text-secondary)]">
-            Capture your hand beside a reference card, then refine the detected length and width.
-          </p>
-        </header>
-        <style dangerouslySetInnerHTML={{ __html: styles }} />
-        <div className="tool-shell" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-        <Script type="module" src="/src/js/main.js?v=2" strategy="afterInteractive" key="main-js" />
-        <Script
-          id="measure-finish"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `window.finishMeasurement = async (l, w) => {
-  var lenMm = Number(l);
-  var widMm = Number(w);
-  sessionStorage.setItem('mf:length_mm', String(lenMm));
-  sessionStorage.setItem('mf:width_mm', String(widMm));
-
-  // Update wizard state so survey picks up measurements
-  var wKeys = ['mousefit:survey_wizard_state', 'mf:survey_wizard_state'];
-  wKeys.forEach(function(k) {
-    try {
-      var raw = localStorage.getItem(k) || sessionStorage.getItem(k);
-      if (raw) {
-        var obj = JSON.parse(raw);
-        obj.lengthMm = lenMm;
-        obj.widthMm = widMm;
-        var s = JSON.stringify(obj);
-        localStorage.setItem(k, s);
-        sessionStorage.setItem(k, s);
-      }
-    } catch {}
-  });
-
-  var sessionKey = 'mousefit:v2:session_id';
-  var sessionId = localStorage.getItem(sessionKey);
-  if (!sessionId) {
-    sessionId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('session-' + Date.now());
-    localStorage.setItem(sessionKey, sessionId);
-  }
-
-  var apiBase = String(window.__MOUSEFIT_API_BASE__ || 'http://127.0.0.1:8000').replace(/\\/+$/, '');
-  var headers = { 'Content-Type': 'application/json' };
-  try {
-    var authRaw = localStorage.getItem('mousefit:auth:session');
-    if (authRaw) {
-      var parsed = JSON.parse(authRaw);
-      if (parsed && parsed.access_token) headers.Authorization = 'Bearer ' + parsed.access_token;
-    }
-  } catch {}
-
-  try {
-    await fetch(apiBase + '/api/measurements', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({ session_id: sessionId, length_mm: lenMm, width_mm: widMm }),
-    });
-  } catch {}
-
-  var params = new URLSearchParams(window.location.search);
-  if (params.get('from') === 'survey') {
-    location.href = '/survey';
-  } else {
-    var elL = document.getElementById('resultLength');
-    var elW = document.getElementById('resultWidth');
-    if (elL) elL.textContent = lenMm.toFixed(1) + ' mm';
-    if (elW) elW.textContent = widMm.toFixed(1) + ' mm';
-    var popup = document.getElementById('resultPopup');
-    if (popup) popup.style.display = 'flex';
-  }
-};`,
-          }}
-        />
-      </div>
-    </>
-  );
+  return <CaptureStudio kind="measure" cameraStyles={styles} cameraHtml={bodyHtml} />;
 }
-
