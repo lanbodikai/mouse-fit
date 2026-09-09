@@ -6,11 +6,9 @@ import { usePathname } from "next/navigation";
 import {
   Database,
   FileText,
-  Hand,
   Keyboard,
   Moon,
   MousePointer2,
-  Ruler,
   Settings,
   Sun,
   Sparkles,
@@ -27,12 +25,11 @@ type NavItem = {
 };
 
 const primaryNav: NavItem[] = [
+  { href: "/survey", label: "Find my fit", icon: Sparkles, activeMatch: ["/survey", "/measure", "/grip"] },
   { href: "/database", label: "Database", icon: Database },
   { href: "/keyboard-builder", label: "Keyboard Visualizer", icon: Keyboard },
   { href: "/mouse-fit/simulator", label: "Mouse Fit Simulator", icon: MousePointer2 },
-  { href: "/survey", label: "Survey", icon: Sparkles },
-  { href: "/measure", label: "Measure", icon: Ruler },
-  { href: "/grip", label: "Grip", icon: Hand },
+
   { href: "/report", label: "Report", icon: FileText },
 ];
 

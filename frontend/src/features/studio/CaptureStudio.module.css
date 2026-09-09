@@ -52,45 +52,11 @@
   background: var(--shell-accent-soft);
   color: var(--shell-accent-strong);
 }
-.methods {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
-}
-.method,
 .panel {
   background: var(--shell-surface-raised);
   border: 1px solid var(--shell-border-strong);
   border-radius: 14px;
   padding: 28px;
-}
-.method {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  align-items: flex-start;
-  text-align: left;
-  cursor: pointer;
-}
-.method svg {
-  color: var(--shell-accent-strong);
-  width: 28px;
-  height: 28px;
-}
-.method strong {
-  font-size: 21px;
-}
-.method span {
-  color: var(--shell-text-secondary);
-  line-height: 1.6;
-}
-.method b {
-  font-size: 14px;
-  color: var(--shell-accent-strong);
-  margin-top: auto;
-}
-.method:hover {
-  border-color: var(--shell-accent);
 }
 .actions {
   display: flex;
@@ -122,70 +88,9 @@
   width: 100%;
   display: block;
 }
-.measureGrid {
-  display: grid;
-  grid-template-columns: minmax(200px, 0.7fr) 1fr;
-  gap: 32px;
-  align-items: center;
-  max-width: 850px;
-}
-.measureGrid svg {
-  width: 100%;
-  max-height: 330px;
-}
-.measureGrid label {
-  display: block;
-  margin-top: 18px;
-  font-weight: 600;
-}
-.measureGrid input {
-  margin-top: 8px;
-  display: block;
-  width: 100%;
-  max-width: 320px;
-  background: var(--shell-surface-soft);
-  border: 1px solid var(--shell-border-strong);
-  border-radius: 7px;
-  padding: 12px;
-  color: var(--shell-text-primary);
-  font-size: 18px;
-}
-.help {
-  font-size: 13px;
-  color: var(--shell-text-secondary);
-}
-.grips {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  border: 0;
-  padding: 0;
-}
-.grips legend {
-  margin-bottom: 16px;
-  color: var(--shell-text-secondary);
-}
-.grip {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px;
-  border: 1px solid var(--shell-border-strong);
-  border-radius: 10px;
-  padding: 20px;
-  cursor: pointer;
-}
-.grip span {
-  grid-column: 1/-1;
-  font-size: 14px;
-  color: var(--shell-text-secondary);
-  line-height: 1.6;
-}
-.grip[data-selected="true"] {
-  border-color: var(--shell-accent);
-  background: var(--shell-accent-soft);
-}
-.grip input {
-  accent-color: var(--shell-accent);
+.result {
+  font-size: 24px;
+  text-transform: capitalize;
 }
 .studio .error {
   color: var(--shell-text-primary);
@@ -199,24 +104,8 @@
   outline-offset: 4px;
 }
 @media (max-width: 700px) {
-  .methods,
-  .measureGrid,
-  .grips {
-    grid-template-columns: 1fr;
-  }
-  .method,
   .panel {
     padding: 20px;
-  }
-  .measureGrid svg {
-    max-height: 210px;
-  }
-  .steps {
-    gap: 4px;
-  }
-  .steps a {
-    padding: 6px;
-    font-size: 12px;
   }
   .studio header {
     margin: 20px 0;

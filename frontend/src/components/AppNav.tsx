@@ -3,18 +3,16 @@ import {
   Bot,
   Database,
   FileText,
-  Hand,
   Home,
   MousePointer2,
-  Ruler,
+  Sparkles,
   Settings,
   User,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/measure", label: "Measure", icon: Ruler },
-  { href: "/grip", label: "Grip", icon: Hand },
+  { href: "/survey", label: "Find my fit", icon: Sparkles },
   { href: "/database", label: "Database", icon: Database },
   { href: "/report", label: "Report", icon: FileText },
   { href: "/database?assistant=open", label: "Database AI", icon: Bot },

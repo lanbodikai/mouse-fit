@@ -386,52 +386,32 @@ export default function MouseFitDashboard() {
       : handData || gripData
         ? "One fit signal recorded"
         : "No fit signals recorded";
-  const nextAction: ActionTarget = !handData
-      ? {
-          label: "Measure your hand",
-          description: "Capture your length and width so the shortlist can size itself correctly.",
-          href: "/measure",
-          icon: Ruler,
-          tone: "violet",
-        }
-      : !gripData
-        ? {
-            label: "Detect your grip",
-            description: "We need your grip style before the recommendation logic can finish the stack.",
-            href: "/grip",
-            icon: Hand,
-            tone: "amber",
-          }
-        : !hasMatch
-          ? {
-              label: "Open your report",
-              description: "Your inputs are ready. Generate the recommendation and review the reasoning.",
-              href: "/report",
-              icon: Target,
-              tone: "gamer",
-            }
-          : {
-              label: "Review full report",
-              description: "Your main pick is locked. Open the report to inspect the reasoning and alternatives.",
-              href: "/report",
-              icon: Target,
-              tone: matchTone,
-            };
+  const nextAction: ActionTarget = !hasMatch ? {
+    label: handData || gripData ? "Continue fit survey" : "Find my mouse fit",
+    description: "Enter your hand size, grip and budget in one guided survey.",
+    href: "/survey",
+    icon: Target,
+    tone: "violet",
+  } : {
+    label: "Review full report",
+    description: "Review your recommendation, reasoning and alternatives.",
+    href: "/report", icon: Target, tone: matchTone,
+  };
 
   const NextActionIcon = nextAction.icon;
 
   const quickTools: QuickTool[] = [
     {
-      href: "/measure",
-      title: "Hand Measure",
-      description: "Capture width and length without leaving the shell.",
+      href: "/survey?step=measure",
+      title: "Hand measurements",
+      description: "Enter your measurements or use the survey’s camera option.",
       icon: Ruler,
       tone: "violet",
     },
     {
-      href: "/grip",
-      title: "Grip Checker",
-      description: "Classify your grip and feed the report pipeline.",
+      href: "/survey?step=grip",
+      title: "Grip profile",
+      description: "Choose your usual grip in the fit survey.",
       icon: Hand,
       tone: "amber",
     },
@@ -463,29 +443,29 @@ export default function MouseFitDashboard() {
       label: "Measurement",
       value: handData ? handLabel : "Not captured",
       detail: handData ? "Length and width are available for sizing." : "Measure once to seed the fit engine.",
-      href: "/measure",
+      href: "/survey?step=measure",
       icon: Ruler,
       tone: handData ? "violet" : "neutral",
       ready: Boolean(handData),
-      featured: nextAction.href === "/measure",
+      featured: !hasMatch && !handData,
     },
     {
       label: "Grip",
       value: gripData
         ? `${formatGrip(gripData.grip)}${gripData.confidence > 0 ? ` ${Math.round(gripData.confidence * 100)}%` : ""}`
         : "Not detected",
-      detail: gripData ? "Grip signal is ready for recommendation logic." : "Run the grip checker to improve the recommendation.",
-      href: "/grip",
+      detail: gripData ? "Grip signal is ready for recommendation logic." : "Choose your grip in the survey.",
+      href: "/survey?step=grip",
       icon: Hand,
       tone: gripData ? "amber" : "neutral",
       ready: Boolean(gripData),
-      featured: nextAction.href === "/grip",
+      featured: !hasMatch && Boolean(handData) && !gripData,
     },
     {
       label: "Report",
       value: bestMouse ? `${fitScore}% fit` : handData && gripData ? "Ready to generate" : "Awaiting inputs",
       detail: bestMouse ? bestMouse.name : handData && gripData ? "All inputs are ready for the recommendation stage." : "Hand size and grip need to be present first.",
-      href: "/report",
+      href: hasMatch ? "/report" : "/survey?step=review",
       icon: Target,
       tone: bestMouse ? matchTone : handData && gripData ? "gamer" : "neutral",
       ready: hasMatch,
@@ -496,9 +476,9 @@ export default function MouseFitDashboard() {
   const heroSecondaryHref = bestMouse
     ? `/database?assistant=open&q=${encodeURIComponent(`Why does ${bestMouse.name} fit me?`)}`
     : handData
-      ? "/grip"
+      ? "/survey?step=grip"
       : "/database";
-  const heroSecondaryLabel = bestMouse ? "Ask AI about this fit" : handData ? "Open grip checker" : "Browse mouse database";
+  const heroSecondaryLabel = bestMouse ? "Ask AI about this fit" : handData ? "Continue fit survey" : "Browse mouse database";
   const HeroSecondaryIcon = bestMouse ? Bot : handData ? Hand : Database;
 
   const notificationTarget = hasMatch ? "/report" : nextAction.href;

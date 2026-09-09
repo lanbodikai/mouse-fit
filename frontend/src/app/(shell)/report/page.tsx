@@ -296,13 +296,10 @@ export default function ReportPage() {
       ) : !loading ? (
         <ShellPanel
           title="No report yet"
-          description="Measure your hand and capture your grip first, then generate the shortlist here."
+          description="Start the fit survey to enter your hand size, grip and budget, then generate your recommendations."
         >
           <div className="flex flex-wrap gap-2">
-            <Link href="/measure" className="inline-flex h-10 items-center gap-2 rounded-md border border-[var(--shell-border-strong)] px-4 text-sm font-semibold text-[var(--shell-text-primary)]">
-              <Ruler className="h-4 w-4" />
-              Measure hand
-            </Link>
+
             <Link href="/survey" className="inline-flex h-10 items-center gap-2 rounded-md bg-[var(--shell-accent)] px-4 text-sm font-semibold text-[var(--shell-text-inverse)]">
               <Sparkles className="h-4 w-4" />
               Start survey

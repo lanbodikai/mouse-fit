@@ -2,13 +2,31 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion, type Variants } from "framer-motion";
-import { Check, ChevronLeft, ChevronRight, DollarSign, Hand, Loader2, MousePointer2, Ruler, SkipForward, Target } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { completeSurvey, generateReport, saveGrip, saveMeasurement } from "@/lib/api";
+import {
+  Camera,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import {
+  completeSurvey,
+  generateReport,
+  saveGrip,
+  saveMeasurement,
+} from "@/lib/api";
 import { useAuthState } from "@/hooks/useAuthState";
 import { getOrCreateSessionId } from "@/lib/session";
 import { getStoredReportPreferences } from "@/lib/report-preferences";
+import { HandMeasurementGuide } from "./HandMeasurementGuide";
+import styles from "./SurveyPage.module.css";
 
 type Grip = "claw" | "palm" | "fingertip";
 type ClawStyle = "relaxed" | "aggressive";
@@ -56,10 +74,17 @@ type OptionStep = {
 };
 type BudgetStep = { id: "budget"; type: "budget"; title: string };
 type MeasureStep = { id: "measure"; type: "measure"; title: string };
-type Step = OptionStep | BudgetStep | MeasureStep;
+type Step =
+  | OptionStep
+  | BudgetStep
+  | MeasureStep
+  | { id: "review"; type: "review"; title: string };
 
 const SURVEY_KEYS = ["mousefit:survey_draft", "mf:survey_draft"] as const;
-const WIZARD_KEYS = ["mousefit:survey_wizard_state", "mf:survey_wizard_state"] as const;
+const WIZARD_KEYS = [
+  "mousefit:survey_wizard_state",
+  "mf:survey_wizard_state",
+] as const;
 const MEASURE_KEYS = ["mousefit:measure", "mf:measure"] as const;
 const GRIP_KEYS = ["mousefit:grip_result", "mf:grip_result"] as const;
 const RECS_KEYS = ["mousefit:recs", "mf:recs"] as const;
@@ -76,8 +101,8 @@ const DEFAULT: Answers = {
   budgetMin: 0,
   budgetMax: 400,
   handPreset: null,
-  lengthMm: 180,
-  widthMm: 90,
+  lengthMm: 0,
+  widthMm: 0,
 };
 
 const RANGES: Record<BudgetTier, { min: number; max: number }> = {
@@ -95,41 +120,149 @@ const PRESETS: Record<HandPreset, { lengthMm: number; widthMm: number }> = {
 
 const OPTS = {
   grip: [
-    { value: "claw", badge: "C", title: "Claw Grip", subtitle: "Arched fingers, control-focused posture" },
-    { value: "palm", badge: "P", title: "Palm Grip", subtitle: "Full-hand support and comfort-first handling" },
-    { value: "fingertip", badge: "F", title: "Fingertip Grip", subtitle: "Light touch with fast micro-adjusts" },
+    {
+      value: "claw",
+      badge: "C",
+      title: "Claw Grip",
+      subtitle:
+        "Your fingers arch over the buttons. The back of your palm helps anchor the mouse.",
+    },
+    {
+      value: "palm",
+      badge: "P",
+      title: "Palm Grip",
+      subtitle:
+        "Most of your palm rests on the mouse. Your fingers lie fairly flat on the buttons.",
+    },
+    {
+      value: "fingertip",
+      badge: "F",
+      title: "Fingertip Grip",
+      subtitle:
+        "Only your fingertips touch the mouse. Your palm stays clear of the shell.",
+    },
   ] as Opt[],
   clawStyle: [
-    { value: "relaxed", badge: "R", title: "Relaxed Claw", subtitle: "Softer curl and lower finger tension" },
-    { value: "aggressive", badge: "A", title: "Aggressive Claw", subtitle: "Sharper curl and higher tension" },
+    {
+      value: "relaxed",
+      badge: "R",
+      title: "Relaxed Claw",
+      subtitle: "Softer curl and lower finger tension",
+    },
+    {
+      value: "aggressive",
+      badge: "A",
+      title: "Aggressive Claw",
+      subtitle: "Sharper curl and higher tension",
+    },
   ] as Opt[],
   clawContact: [
-    { value: "left", badge: "L", title: "Left Side", subtitle: "Palm pressure leans left" },
-    { value: "right", badge: "R", title: "Right Side", subtitle: "Palm pressure leans right" },
-    { value: "whole", badge: "W", title: "Whole Palm", subtitle: "Wide palm support" },
-    { value: "none", badge: "N", title: "No Contact", subtitle: "Minimal palm anchor" },
+    {
+      value: "left",
+      badge: "L",
+      title: "Left Side",
+      subtitle: "Palm pressure leans left",
+    },
+    {
+      value: "right",
+      badge: "R",
+      title: "Right Side",
+      subtitle: "Palm pressure leans right",
+    },
+    {
+      value: "whole",
+      badge: "W",
+      title: "Whole Palm",
+      subtitle: "Wide palm support",
+    },
+    {
+      value: "none",
+      badge: "N",
+      title: "No Contact",
+      subtitle: "Minimal palm anchor",
+    },
   ] as Opt[],
   clawPos: [
-    { value: "back", badge: "B", title: "Back of Mouse", subtitle: "Support near rear hump" },
-    { value: "top", badge: "T", title: "Top of Mouse", subtitle: "Support near center shell" },
+    {
+      value: "back",
+      badge: "B",
+      title: "Back of Mouse",
+      subtitle: "Support near rear hump",
+    },
+    {
+      value: "top",
+      badge: "T",
+      title: "Top of Mouse",
+      subtitle: "Support near center shell",
+    },
   ] as Opt[],
   palmFinger: [
-    { value: "whole", badge: "W", title: "Whole Finger", subtitle: "Buttons under full finger" },
-    { value: "fingertip", badge: "F", title: "Fingertip", subtitle: "Front fingertip pressure" },
+    {
+      value: "whole",
+      badge: "W",
+      title: "Whole Finger",
+      subtitle: "Buttons under full finger",
+    },
+    {
+      value: "fingertip",
+      badge: "F",
+      title: "Fingertip",
+      subtitle: "Front fingertip pressure",
+    },
   ] as Opt[],
   palmThumb: [
-    { value: "inward", badge: "I", title: "Thumb Inward", subtitle: "Thumb curls toward side wall" },
-    { value: "flat", badge: "F", title: "Thumb Flat", subtitle: "Thumb rests neutral" },
+    {
+      value: "inward",
+      badge: "I",
+      title: "Thumb Inward",
+      subtitle: "Thumb curls toward side wall",
+    },
+    {
+      value: "flat",
+      badge: "F",
+      title: "Thumb Flat",
+      subtitle: "Thumb rests neutral",
+    },
   ] as Opt[],
   fingerPos: [
-    { value: "top", badge: "1", title: "Top", subtitle: "Thumb above ring/little" },
-    { value: "middle", badge: "2", title: "Middle", subtitle: "Thumb aligned in middle" },
-    { value: "bottom", badge: "3", title: "Bottom", subtitle: "Thumb below ring/little" },
+    {
+      value: "top",
+      badge: "1",
+      title: "Top",
+      subtitle: "Thumb above ring/little",
+    },
+    {
+      value: "middle",
+      badge: "2",
+      title: "Middle",
+      subtitle: "Thumb aligned in middle",
+    },
+    {
+      value: "bottom",
+      badge: "3",
+      title: "Bottom",
+      subtitle: "Thumb below ring/little",
+    },
   ] as Opt[],
   hand: [
-    { value: "small", badge: "S", title: "Small Hand", subtitle: "~165mm x 82mm" },
-    { value: "medium", badge: "M", title: "Medium Hand", subtitle: "~180mm x 90mm" },
-    { value: "large", badge: "L", title: "Large Hand", subtitle: "~195mm x 98mm" },
+    {
+      value: "small",
+      badge: "S",
+      title: "Small Hand",
+      subtitle: "~165mm x 82mm",
+    },
+    {
+      value: "medium",
+      badge: "M",
+      title: "Medium Hand",
+      subtitle: "~180mm x 90mm",
+    },
+    {
+      value: "large",
+      badge: "L",
+      title: "Large Hand",
+      subtitle: "~195mm x 98mm",
+    },
   ] as Opt[],
 };
 
@@ -137,7 +270,8 @@ function readJson<T>(keys: readonly string[]): T | null {
   if (typeof window === "undefined") return null;
   for (const key of keys) {
     try {
-      const raw = window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key);
+      const raw =
+        window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key);
       if (!raw) continue;
       return JSON.parse(raw) as T;
     } catch {
@@ -157,6 +291,7 @@ function writeJson(keys: readonly string[], value: unknown) {
 }
 
 function toNum(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
@@ -165,7 +300,9 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function sizeFromLen(lengthMm: number): "small" | "medium" | "large" | "xlarge" {
+function sizeFromLen(
+  lengthMm: number,
+): "small" | "medium" | "large" | "xlarge" {
   if (lengthMm < 170) return "small";
   if (lengthMm < 190) return "medium";
   if (lengthMm < 210) return "large";
@@ -226,21 +363,30 @@ function loadInitial(): Answers {
     budgetMin: clamp(bMin, 0, 400),
     budgetMax: clamp(bMax, 0, 400),
     handPreset: (src?.handPreset as HandPreset | null) ?? null,
-    lengthMm: clamp(l1 ?? l2 ?? l3 ?? DEFAULT.lengthMm, 100, 260),
-    widthMm: clamp(w1 ?? w2 ?? w3 ?? DEFAULT.widthMm, 50, 130),
+    lengthMm: toNum(src?.lengthMm) ?? l1 ?? l2 ?? l3 ?? DEFAULT.lengthMm,
+    widthMm: toNum(src?.widthMm) ?? w1 ?? w2 ?? w3 ?? DEFAULT.widthMm,
   };
 }
 
 function toDraft(a: Answers) {
   const grip = (a.primaryGrip ?? "palm") as Grip;
   const fingerDirection =
-    a.fingerStackPosition === "top" ? "left" : a.fingerStackPosition === "bottom" ? "right" : "center";
+    a.fingerStackPosition === "top"
+      ? "left"
+      : a.fingerStackPosition === "bottom"
+        ? "right"
+        : "center";
 
   return {
     primaryGrip: grip,
     gripSkipped: a.gripSkipped,
     shellShape: grip === "palm" ? "ergo" : "sym",
-    humpPosition: grip === "claw" ? (a.clawHandPosition === "back" ? "back" : "center") : "center",
+    humpPosition:
+      grip === "claw"
+        ? a.clawHandPosition === "back"
+          ? "back"
+          : "center"
+        : "center",
     sideShape:
       grip === "palm"
         ? a.palmThumbPlacement === "inward"
@@ -263,9 +409,16 @@ function toDraft(a: Answers) {
             : "inward"
           : "relaxed",
     dominantFinger: a.fingerStackPosition === "top" ? "index" : "ring",
-    palmFingerCurved: grip === "palm" ? (a.palmFingerContact === "fingertip" ? "yes" : "no") : "",
-    clawRelaxed: grip === "claw" ? (a.clawStyle === "relaxed" ? "yes" : "no") : "",
-    clawBackHandTouch: grip === "claw" ? (a.clawPalmContact === "none" ? "no" : "yes") : "",
+    palmFingerCurved:
+      grip === "palm"
+        ? a.palmFingerContact === "fingertip"
+          ? "yes"
+          : "no"
+        : "",
+    clawRelaxed:
+      grip === "claw" ? (a.clawStyle === "relaxed" ? "yes" : "no") : "",
+    clawBackHandTouch:
+      grip === "claw" ? (a.clawPalmContact === "none" ? "no" : "yes") : "",
     budgetTier: nearBudget(a.budgetMin, a.budgetMax),
     budgetMin: a.budgetMin,
     budgetMax: a.budgetMax,
@@ -284,21 +437,36 @@ function toDraft(a: Answers) {
 function validate(a: Answers): string {
   if (!a.gripSkipped) {
     if (!a.primaryGrip) return "Choose your preferred grip.";
-    if (a.primaryGrip === "claw" && (!a.clawStyle || !a.clawPalmContact || !a.clawHandPosition)) {
+    if (
+      a.primaryGrip === "claw" &&
+      (!a.clawStyle || !a.clawPalmContact || !a.clawHandPosition)
+    ) {
       return "Complete all claw follow-up questions.";
     }
-    if (a.primaryGrip === "palm" && (!a.palmFingerContact || !a.palmThumbPlacement)) {
+    if (
+      a.primaryGrip === "palm" &&
+      (!a.palmFingerContact || !a.palmThumbPlacement)
+    ) {
       return "Complete all palm follow-up questions.";
     }
   }
   if (!a.fingerStackPosition) return "Choose your finger positioning.";
-  if (a.budgetMin > a.budgetMax) return "Budget minimum cannot exceed maximum.";
+  if (
+    !Number.isFinite(a.budgetMin) ||
+    !Number.isFinite(a.budgetMax) ||
+    a.budgetMin < 0 ||
+    a.budgetMax > 400 ||
+    a.budgetMin > a.budgetMax
+  )
+    return "Enter a budget between $0 and $400, with the minimum no greater than the maximum.";
   if (!Number.isFinite(a.lengthMm) || a.lengthMm < 100 || a.lengthMm > 260) {
     return "Hand length must be between 100 and 260 mm.";
   }
   if (!Number.isFinite(a.widthMm) || a.widthMm < 50 || a.widthMm > 130) {
     return "Hand width must be between 50 and 130 mm.";
   }
+  if (a.widthMm >= a.lengthMm)
+    return "Palm width must be less than hand length.";
   return "";
 }
 
@@ -317,7 +485,14 @@ function persist(a: Answers) {
   });
 
   if (a.primaryGrip && !a.gripSkipped) {
-    writeJson(GRIP_KEYS, { grip: a.primaryGrip, confidence: 1 });
+    writeJson(GRIP_KEYS, { grip: a.primaryGrip });
+    window.sessionStorage.setItem("mf:grip", a.primaryGrip);
+  } else {
+    for (const key of GRIP_KEYS) {
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    }
+    window.sessionStorage.removeItem("mf:grip");
   }
 
   window.sessionStorage.setItem("mf:length_mm", String(lengthMm));
@@ -332,98 +507,51 @@ function persist(a: Answers) {
   });
 }
 
-function colsClass(cols: OptionStep["cols"]) {
-  if (cols === "four") return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
-  if (cols === "three") return "grid-cols-1 sm:grid-cols-3";
-  return "grid-cols-1 sm:grid-cols-2";
-}
-
-function maxWidthClass(cols: OptionStep["cols"]) {
-  if (cols === "four") return "max-w-4xl";
-  if (cols === "three") return "max-w-3xl";
-  return "max-w-2xl";
-}
-
-function ChoiceGrid({
-  step,
-  pulse,
-  onChoose,
-}: {
-  step: OptionStep;
-  pulse: string | null;
-  onChoose: (value: string) => void;
-}) {
+const subscribe = () => () => {};
+export default function MousefitSurveyPage() {
+  const { ready } = useAuthState();
+  const mounted = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+  const search = useSearchParams();
+  if (!ready || !mounted)
+    return (
+      <div className={styles.loading}>
+        <Loader2 aria-hidden="true" /> Loading your fit survey…
+      </div>
+    );
   return (
-    <div className={`mx-auto grid w-full gap-2.5 sm:gap-3 ${maxWidthClass(step.cols)} ${colsClass(step.cols)}`}>
-      {step.options.map((opt, index) => {
-        const selected = step.value === opt.value;
-        const active = pulse === `${step.id}:${opt.value}`;
-        return (
-          <motion.button
-            key={opt.value}
-            type="button"
-            onClick={() => onChoose(opt.value)}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.24, delay: index * 0.04 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.985 }}
-            className={`rounded-lg border p-3.5 text-left transition sm:p-4 ${
-              selected
-                ? "border-[var(--shell-accent-outline)] bg-[var(--shell-accent-soft)]"
-                : "border-[var(--shell-border-strong)] bg-[var(--shell-surface-raised)] hover:border-[var(--shell-accent-outline)]"
-            }`}
-          >
-            <motion.div
-              animate={active ? { scale: [1, 0.986, 1] } : { scale: 1 }}
-              transition={{ duration: 0.22 }}
-              className="relative min-h-[94px] sm:min-h-[118px] lg:min-h-[126px]"
-            >
-              {selected ? (
-                <div className="absolute right-0 top-0 flex h-7 w-7 items-center justify-center rounded-md bg-[var(--shell-accent)] text-[var(--shell-text-inverse)]">
-                  <Check className="h-3.5 w-3.5" />
-                </div>
-              ) : null}
-              <div className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[var(--shell-surface-inset)] text-xs font-semibold text-[var(--shell-accent-strong)]">
-                {opt.badge}
-              </div>
-              <p className="mt-4 text-base font-semibold text-[var(--shell-text-primary)] sm:mt-5">{opt.title}</p>
-              <p className="mt-1 text-sm leading-5 text-[var(--shell-text-secondary)]">{opt.subtitle}</p>
-            </motion.div>
-          </motion.button>
-        );
-      })}
-    </div>
+    <SurveyFlow
+      key={search.get("step") ?? "start"}
+      initialStep={search.get("step") ?? "measure"}
+    />
   );
 }
 
-export default function MousefitSurveyPage() {
+function SurveyFlow({ initialStep }: { initialStep: string }) {
   const router = useRouter();
-  const timerRef = useRef<number | null>(null);
-  const { ready: authReady } = useAuthState();
-
-  const [answers, setAnswers] = useState<Answers>(() => loadInitial());
-  const [stepIndex, setStepIndex] = useState<number | null>(null);
-  const returnStep = useSearchParams().get("step");
-  const [dir, setDir] = useState(1);
-  const [pulse, setPulse] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Answers>(loadInitial);
+  const [stepId, setStepId] = useState(initialStep);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
+  const heading = useRef<HTMLHeadingElement>(null);
+  const previousStep = useRef(stepId);
   useEffect(() => writeJson(WIZARD_KEYS, answers), [answers]);
-  useEffect(
-    () => () => {
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    },
-    []
-  );
-
+  useEffect(() => {
+    if (previousStep.current !== stepId) {
+      heading.current?.focus();
+      previousStep.current = stepId;
+    }
+  }, [stepId]);
   const steps = useMemo<Step[]>(() => {
     const list: Step[] = [
+      { id: "measure", type: "measure", title: "Measure your hand" },
       {
         id: "grip",
         type: "options",
-        title: "Current / Preferred Mouse Grip",
+        title: "Find your grip style",
         key: "primaryGrip",
         value: answers.primaryGrip,
         options: OPTS.grip,
@@ -502,350 +630,495 @@ export default function MousefitSurveyPage() {
         title: "Budget Range",
       },
       {
-        id: "measure",
-        type: "measure",
-        title: "Hand Measurements",
+        id: "review",
+        type: "review",
+        title: "Review your fit profile",
       },
     );
 
     return list;
-  }, [answers.primaryGrip, answers.clawStyle, answers.clawPalmContact, answers.clawHandPosition, answers.palmFingerContact, answers.palmThumbPlacement, answers.fingerStackPosition]);
+  }, [
+    answers.primaryGrip,
+    answers.clawStyle,
+    answers.clawPalmContact,
+    answers.clawHandPosition,
+    answers.palmFingerContact,
+    answers.palmThumbPlacement,
+    answers.fingerStackPosition,
+  ]);
 
-  if (!authReady) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="inline-flex items-center gap-3 text-sm text-[var(--shell-text-secondary)]">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading survey...
-        </div>
-      </div>
-    );
-  }
-
-  const safeStepIndex = Math.min(stepIndex ?? Math.max(0, steps.findIndex((step) => step.id === returnStep)), Math.max(0, steps.length - 1));
-  const current = steps[safeStepIndex];
-  const progress = Math.round(((safeStepIndex + 1) / steps.length) * 100);
-
-  const next = () => {
-    setDir(1);
-    setStepIndex(Math.min(safeStepIndex + 1, steps.length - 1));
+  const index = Math.max(
+    0,
+    steps.findIndex((step) => step.id === stepId),
+  );
+  const current = steps[index];
+  const stage =
+    current.type === "measure"
+      ? 0
+      : current.type === "options"
+        ? 1
+        : current.type === "budget"
+          ? 2
+          : 3;
+  const gripQuestions = steps.filter((step) => step.type === "options");
+  const jump = (id: string) => {
+    setError("");
+    setStepId(id);
   };
-
+  const next = () => {
+    if (
+      current.type === "budget" &&
+      (!Number.isFinite(answers.budgetMin) ||
+        !Number.isFinite(answers.budgetMax) ||
+        answers.budgetMin < 0 ||
+        answers.budgetMax > 400 ||
+        answers.budgetMin > answers.budgetMax)
+    ) {
+      setError(
+        "Enter a budget between $0 and $400, with the minimum no greater than the maximum.",
+      );
+      return;
+    }
+    if (current.type === "measure") {
+      if (
+        !Number.isFinite(answers.lengthMm) ||
+        answers.lengthMm < 100 ||
+        answers.lengthMm > 260 ||
+        !Number.isFinite(answers.widthMm) ||
+        answers.widthMm < 50 ||
+        answers.widthMm > 130 ||
+        answers.widthMm >= answers.lengthMm
+      ) {
+        setError(
+          "Enter a hand length of 100–260 mm and a palm width of 50–130 mm. Width must be less than length.",
+        );
+        return;
+      }
+    }
+    if (
+      current.type === "options" &&
+      !current.value &&
+      !(current.id === "grip" && answers.gripSkipped)
+    ) {
+      setError("Choose the description that fits you before continuing.");
+      return;
+    }
+    jump(steps[Math.min(index + 1, steps.length - 1)].id);
+  };
   const choose = (step: OptionStep, value: string) => {
     setAnswers((prev) => ({
       ...prev,
       [step.key]: value,
       ...(step.key === "primaryGrip" ? { gripSkipped: false } : {}),
     }));
-    setPulse(`${step.id}:${value}`);
-    setError("");
-    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => {
-      setPulse(null);
-      next();
-    }, 230);
-  };
-
-  const back = () => {
-    if (safeStepIndex === 0) return;
-    setDir(-1);
-    setError("");
-    setStepIndex(Math.max(safeStepIndex - 1, 0));
-  };
-
-  const preset = (name: HandPreset) => {
-    const p = PRESETS[name];
-    setAnswers((prev) => ({ ...prev, handPreset: name, lengthMm: p.lengthMm, widthMm: p.widthMm }));
     setError("");
   };
-
-  const skipGrip = () => {
-    setAnswers((prev) => ({ ...prev, gripSkipped: true, primaryGrip: null }));
+  const submit = async () => {
+    if (submitting) return;
+    const msg = validate(answers);
+    if (msg) {
+      setError(msg);
+      return;
+    }
+    setSubmitting(true);
     setError("");
-    next();
+    try {
+      const sessionId = getOrCreateSessionId();
+      await saveMeasurement({
+        session_id: sessionId,
+        length_mm: Math.round(answers.lengthMm),
+        width_mm: Math.round(answers.widthMm),
+      });
+      if (answers.primaryGrip && !answers.gripSkipped)
+        await saveGrip({ session_id: sessionId, grip: answers.primaryGrip });
+      persist(answers);
+      await completeSurvey();
+      await generateReport(sessionId, getStoredReportPreferences());
+      router.push("/report");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Your fit profile could not be saved. Please try again.",
+      );
+      setSubmitting(false);
+    }
   };
-
-  const submit = () => {
-    void (async () => {
-      const msg = validate(answers);
-      if (msg) {
-        setError(msg);
-        return;
-      }
-      try {
-        setSubmitting(true);
-        persist(answers);
-        const sessionId = getOrCreateSessionId();
-        await saveMeasurement({
-          session_id: sessionId,
-          length_mm: Math.round(answers.lengthMm),
-          width_mm: Math.round(answers.widthMm),
-        });
-        if (answers.primaryGrip && !answers.gripSkipped) {
-          await saveGrip({
-            session_id: sessionId,
-            grip: answers.primaryGrip,
-            confidence: 1,
-          });
-        }
-        await completeSurvey();
-        await generateReport(sessionId, getStoredReportPreferences());
-        router.push("/report");
-      } catch (e) {
-        setSubmitting(false);
-        setError(e instanceof Error ? e.message : "Could not save your survey. Start the backend server, then try again.");
-      }
-    })();
-  };
-
-  const panel: Variants = {
-    enter: (d: number) => ({ opacity: 0, x: d > 0 ? 36 : -36 }),
-    center: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-    },
-    exit: (d: number) => ({ opacity: 0, x: d > 0 ? -36 : 36, transition: { duration: 0.2 } }),
-  };
+  const description =
+    current.type === "measure"
+      ? "Two measurements help us compare mouse sizes with your hand. Enter them with a ruler, or use the optional camera tool."
+      : current.id === "grip"
+        ? "Hold your mouse as you normally would while playing. Choose the contact pattern closest to your usual grip."
+        : current.type === "options"
+          ? "Keep your usual hold and choose the closest description. These details help us compare mouse shapes."
+          : current.type === "budget"
+            ? "Set a price range in US dollars for your recommendations."
+            : "Check your measurements, grip and budget before generating your recommendations.";
 
   return (
-    <section className="relative mx-auto flex w-full max-w-[1200px] flex-col text-[var(--shell-text-primary)] md:min-h-[calc(100dvh-3.5rem)]">
-      <header className="shell-content-header shell-survey-header sticky top-0 z-20 border-b border-[var(--shell-border-strong)] bg-[var(--shell-bg)] pb-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-medium text-[var(--shell-accent-strong)]">Fit survey</p>
-            <p className="mt-1 text-sm text-[var(--shell-text-secondary)]">
-              Step {safeStepIndex + 1} of {steps.length}
-            </p>
-          </div>
-          <span className="text-sm font-medium tabular-nums text-[var(--shell-text-secondary)]">{progress}%</span>
-        </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--shell-surface-soft)]">
-          <motion.div
-            className="h-full rounded-full bg-[var(--shell-accent)]"
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.28, ease: "easeOut" }}
-          />
-        </div>
-      </header>
-
-      <div className="flex flex-col justify-start py-6 sm:min-h-[calc(100dvh-11rem)] sm:justify-center sm:py-8">
-        <div className="flex flex-col items-center justify-center">
-          <AnimatePresence mode="wait" custom={dir}>
-            <motion.div key={current.id} custom={dir} variants={panel} initial="enter" animate="center" exit="exit" className="w-full">
-              <h1 className="mb-5 text-center text-2xl font-semibold text-[var(--shell-text-primary)] sm:mb-7 md:text-3xl">{current.title}</h1>
-              {current.type === "options" ? (
-                <>
-                  <ChoiceGrid step={current} pulse={pulse} onChoose={(v) => choose(current, v)} />
-                  {current.id === "grip" && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.2 }}
-                      className="mx-auto mt-6 flex max-w-3xl items-center justify-center gap-3"
-                    >
-                      <Link
-                        href="/grip?from=survey"
-                        onClick={() => writeJson(WIZARD_KEYS, answers)}
-                        className="inline-flex items-center gap-2 rounded-md border border-[var(--shell-accent-outline)] bg-[var(--shell-accent-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--shell-accent-strong)]"
-                      >
-                        <Hand className="h-3.5 w-3.5" />
-                        Test your grip
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={skipGrip}
-                        className="inline-flex items-center gap-2 rounded-md border border-[var(--shell-border-strong)] bg-[var(--shell-surface-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--shell-text-secondary)]"
-                      >
-                        <SkipForward className="h-3.5 w-3.5" />
-                        Skip
-                      </button>
-                    </motion.div>
-                  )}
-                </>
-              ) : current.type === "budget" ? (
-                <div className="mx-auto w-full max-w-lg space-y-10">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--shell-accent-soft)]">
-                        <DollarSign className="h-4 w-4 text-[var(--shell-accent-strong)]" />
-                      </div>
-                      <span className="text-2xl font-semibold text-[var(--shell-text-primary)]">${answers.budgetMin}</span>
-                    </div>
-                    <span className="text-sm text-[var(--shell-text-tertiary)]">to</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-semibold text-[var(--shell-text-primary)]">${answers.budgetMax}</span>
-                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--shell-accent-soft)]">
-                        <DollarSign className="h-4 w-4 text-[var(--shell-accent-strong)]" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="relative h-2">
-                    <div className="absolute inset-0 rounded-full bg-[var(--shell-surface-soft)]" />
-                    <div
-                      className="absolute top-0 h-full rounded-full"
-                      style={{
-                        left: `${(answers.budgetMin / 400) * 100}%`,
-                        right: `${100 - (answers.budgetMax / 400) * 100}%`,
-                        background: "var(--shell-accent)",
-                      }}
-                    />
-                    <input
-                      type="range"
-                      min={0}
-                      max={400}
-                      step={10}
-                      value={answers.budgetMin}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setAnswers((p) => ({ ...p, budgetMin: Math.min(v, p.budgetMax - 10) }));
-                      }}
-                      className="budget-thumb pointer-events-none absolute inset-0 w-full appearance-none bg-transparent"
-                      style={{ zIndex: answers.budgetMin > 350 ? 5 : 3 }}
-                    />
-                    <input
-                      type="range"
-                      min={0}
-                      max={400}
-                      step={10}
-                      value={answers.budgetMax}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        setAnswers((p) => ({ ...p, budgetMax: Math.max(v, p.budgetMin + 10) }));
-                      }}
-                      className="budget-thumb pointer-events-none absolute inset-0 w-full appearance-none bg-transparent"
-                      style={{ zIndex: 4 }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-[var(--shell-text-tertiary)]">
-                    <span>$0</span>
-                    <span>$100</span>
-                    <span>$200</span>
-                    <span>$300</span>
-                    <span>$400</span>
-                  </div>
-
-                  <div className="flex justify-center">
-                    <button
-                      type="button"
-                      onClick={next}
-                      className="inline-flex items-center gap-2 rounded-md bg-[var(--shell-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--shell-text-inverse)]"
-                    >
-                      Confirm
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mx-auto w-full max-w-xl space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    {OPTS.hand.map((opt) => {
-                      const active = answers.handPreset === opt.value;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => preset(opt.value as HandPreset)}
-                          className={`rounded-lg border p-4 text-left transition ${
-                            active
-                              ? "border-[var(--shell-accent-outline)] bg-[var(--shell-accent-soft)]"
-                              : "border-[var(--shell-border-strong)] bg-[var(--shell-surface-raised)]"
-                          }`}
-                        >
-                          <div>
-                            <div className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-[var(--shell-surface-inset)] text-[11px] font-semibold text-[var(--shell-accent-strong)]">
-                              {opt.badge}
-                            </div>
-                            <p className="mt-4 text-sm font-semibold text-[var(--shell-text-primary)]">{opt.title}</p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--shell-text-secondary)]">
-                        <Ruler className="h-3.5 w-3.5 text-[var(--shell-accent-strong)]" />
-                        Hand Length (mm)
-                      </span>
-                      <input
-                        type="number"
-                        min={100}
-                        max={260}
-                        value={answers.lengthMm}
-                        onChange={(e) => {
-                          const n = clamp(Number(e.target.value || answers.lengthMm), 100, 260);
-                          setAnswers((p) => ({ ...p, lengthMm: Number.isFinite(n) ? n : p.lengthMm }));
-                        }}
-                        className="mf-glass-input w-full rounded-md px-3 py-2 text-[var(--shell-text-primary)] outline-none"
-                      />
-                    </label>
-
-                    <label className="space-y-2">
-                      <span className="inline-flex items-center gap-2 text-xs font-medium text-[var(--shell-text-secondary)]">
-                        <Ruler className="h-3.5 w-3.5 text-[var(--shell-accent-strong)]" />
-                        Hand Width (mm)
-                      </span>
-                      <input
-                        type="number"
-                        min={50}
-                        max={130}
-                        value={answers.widthMm}
-                        onChange={(e) => {
-                          const n = clamp(Number(e.target.value || answers.widthMm), 50, 130);
-                          setAnswers((p) => ({ ...p, widthMm: Number.isFinite(n) ? n : p.widthMm }));
-                        }}
-                        className="mf-glass-input w-full rounded-md px-3 py-2 text-[var(--shell-text-primary)] outline-none"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={submit}
-                      disabled={submitting}
-                      className="inline-flex items-center gap-2 rounded-md bg-[var(--shell-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--shell-text-inverse)] disabled:opacity-60"
-                    >
-                      <Target className="h-3.5 w-3.5" />
-                      {submitting ? "Generating..." : "Generate Report"}
-                    </button>
-
-                    <Link
-                      href="/measure?from=survey"
-                      onClick={() => writeJson(WIZARD_KEYS, answers)}
-                      className="inline-flex items-center gap-2 rounded-md border border-[var(--shell-border-strong)] bg-[var(--shell-surface-soft)] px-4 py-2.5 text-sm font-semibold text-[var(--shell-text-primary)]"
-                    >
-                      <MousePointer2 className="h-3.5 w-3.5" />
-                      Open Measure Tool
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-        </div>
-
-        <footer className="mt-5 flex items-center justify-start">
+    <main className={styles.survey}>
+      <nav className={styles.steps} aria-label="Fit survey stages">
+        {[
+          { id: "measure", label: "Your hand" },
+          { id: "grip", label: "Your grip" },
+          { id: "budget", label: "Your budget" },
+          { id: "review", label: "Review" },
+        ].map((item, i) => (
           <button
+            key={item.id}
             type="button"
-            onClick={back}
-            disabled={safeStepIndex === 0}
-            className="inline-flex items-center gap-2 rounded-md border border-[var(--shell-border-strong)] bg-[var(--shell-surface-soft)] px-3 py-2 text-sm font-medium text-[var(--shell-text-secondary)] transition disabled:cursor-not-allowed disabled:opacity-35"
+            aria-current={stage === i ? "step" : undefined}
+            onClick={() => jump(item.id)}
+            disabled={submitting}
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            Back
+            <span>{i + 1}</span>
+            {item.label}
           </button>
-        </footer>
-
+        ))}
+      </nav>
+      <header className={styles.header}>
+        <p className={styles.eyebrow}>Find your mouse fit · {stage + 1} of 4</p>
+        <h1 ref={heading} tabIndex={-1}>
+          {current.title}
+        </h1>
+        <p>{description}</p>
+      </header>
+      <section className={styles.panel} aria-label={current.title}>
+        {current.type === "measure" ? (
+          <>
+            <div className={styles.measureGrid}>
+              <HandMeasurementGuide />
+              <div>
+                <h2>Use a ruler</h2>
+                <p>Lay your hand flat with fingers together and relaxed.</p>
+                <label htmlFor="hand-length">Hand length (mm)</label>
+                <p id="length-help" className={styles.help}>
+                  Wrist crease to the tip of your middle finger.
+                </p>
+                <input
+                  id="hand-length"
+                  aria-describedby="length-help"
+                  type="number"
+                  inputMode="decimal"
+                  min="100"
+                  max="260"
+                  step="0.1"
+                  value={answers.lengthMm || ""}
+                  placeholder="e.g. 180"
+                  onChange={(e) =>
+                    setAnswers((p) => ({
+                      ...p,
+                      handPreset: null,
+                      lengthMm: Number(e.target.value),
+                    }))
+                  }
+                />
+                <label htmlFor="hand-width">Palm width (mm)</label>
+                <p id="width-help" className={styles.help}>
+                  Across the widest part of your palm, excluding your thumb.
+                </p>
+                <input
+                  id="hand-width"
+                  aria-describedby="width-help"
+                  type="number"
+                  inputMode="decimal"
+                  min="50"
+                  max="130"
+                  step="0.1"
+                  value={answers.widthMm || ""}
+                  placeholder="e.g. 90"
+                  onChange={(e) =>
+                    setAnswers((p) => ({
+                      ...p,
+                      handPreset: null,
+                      widthMm: Number(e.target.value),
+                    }))
+                  }
+                />
+                <p className={styles.help}>
+                  Using centimeters? Multiply by 10: 18 cm = 180 mm.
+                </p>
+              </div>
+            </div>
+            <details className={styles.estimates}>
+              <summary>No ruler? Start with an estimate</summary>
+              <p>
+                Estimates are approximate. Measured values make the size
+                comparison more useful.
+              </p>
+              <div className={styles.estimateOptions}>
+                {OPTS.hand.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    aria-pressed={answers.handPreset === opt.value}
+                    onClick={() =>
+                      setAnswers((p) => ({
+                        ...p,
+                        handPreset: opt.value as HandPreset,
+                        ...PRESETS[opt.value as HandPreset],
+                      }))
+                    }
+                  >
+                    <strong>{opt.title}</strong>
+                    <span>{opt.subtitle}</span>
+                  </button>
+                ))}
+              </div>
+            </details>
+            <div className={styles.cameraOption}>
+              <div>
+                <h2>Prefer to measure with a camera?</h2>
+                <p>
+                  You’ll need a flat surface and a standard 85.6 × 54 mm card.
+                </p>
+              </div>
+              <Link
+                href="/measure?from=survey"
+                onClick={() => writeJson(WIZARD_KEYS, answers)}
+              >
+                <Camera aria-hidden="true" /> Measure with camera
+              </Link>
+            </div>
+          </>
+        ) : current.type === "options" ? (
+          <>
+            {current.id !== "grip" ? (
+              <p className={styles.help}>
+                Grip detail{" "}
+                {gripQuestions.findIndex((step) => step.id === current.id)} of{" "}
+                {gripQuestions.length - 1}
+              </p>
+            ) : null}
+            <fieldset className={styles.choices} data-cols={current.cols}>
+              <legend>
+                {current.id === "grip"
+                  ? "Which contact pattern feels closest?"
+                  : "Choose one option"}
+              </legend>
+              {current.options.map((opt) => (
+                <label
+                  key={opt.value}
+                  data-selected={current.value === opt.value}
+                >
+                  <input
+                    type="radio"
+                    name={current.id}
+                    value={opt.value}
+                    checked={current.value === opt.value}
+                    onChange={() => choose(current, opt.value)}
+                  />
+                  <strong>{opt.title}</strong>
+                  <span>{opt.subtitle}</span>
+                </label>
+              ))}
+            </fieldset>
+            {current.id === "grip" ? (
+              <>
+                <div className={styles.cameraOption}>
+                  <div>
+                    <h2>Not sure which grip you use?</h2>
+                    <p>
+                      The camera can suggest a grip from top, bottom and side
+                      views.
+                    </p>
+                  </div>
+                  <Link
+                    href="/grip?from=survey"
+                    onClick={() => writeJson(WIZARD_KEYS, answers)}
+                  >
+                    <Camera aria-hidden="true" /> Check grip with camera
+                  </Link>
+                </div>
+                <button
+                  className={styles.textButton}
+                  type="button"
+                  onClick={() => {
+                    setAnswers((p) => ({
+                      ...p,
+                      primaryGrip: null,
+                      gripSkipped: true,
+                    }));
+                    jump("finger-pos");
+                  }}
+                >
+                  I’m not sure — skip grip identification
+                </button>
+              </>
+            ) : null}
+          </>
+        ) : current.type === "budget" ? (
+          <div className={styles.budget}>
+            <h2>Your price range</h2>
+            <div className={styles.budgetValues}>
+              <label>
+                Minimum (USD)
+                <input
+                  type="number"
+                  min={0}
+                  max={answers.budgetMax}
+                  step={10}
+                  value={answers.budgetMin}
+                  onChange={(e) =>
+                    setAnswers((p) => ({
+                      ...p,
+                      budgetMin: Number(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+              <span>to</span>
+              <label>
+                Maximum (USD)
+                <input
+                  type="number"
+                  min={answers.budgetMin}
+                  max={400}
+                  step={10}
+                  value={answers.budgetMax}
+                  onChange={(e) =>
+                    setAnswers((p) => ({
+                      ...p,
+                      budgetMax: Number(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <label className={styles.rangeLabel}>
+              Adjust maximum: ${answers.budgetMax}
+              <input
+                type="range"
+                min={answers.budgetMin}
+                max={400}
+                step={10}
+                value={answers.budgetMax}
+                onChange={(e) =>
+                  setAnswers((p) => ({
+                    ...p,
+                    budgetMax: Number(e.target.value),
+                  }))
+                }
+              />
+            </label>
+            <div className={styles.estimateOptions}>
+              {Object.entries(RANGES).map(([tier, range]) => (
+                <button
+                  key={tier}
+                  type="button"
+                  aria-pressed={
+                    answers.budgetMin === range.min &&
+                    answers.budgetMax === range.max
+                  }
+                  onClick={() =>
+                    setAnswers((p) => ({
+                      ...p,
+                      budgetMin: range.min,
+                      budgetMax: range.max,
+                    }))
+                  }
+                >
+                  <strong className={styles.capitalize}>{tier}</strong>
+                  <span>
+                    ${range.min}–${range.max}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <h2>Your fit profile</h2>
+            <dl className={styles.review}>
+              <div>
+                <dt>Hand measurements</dt>
+                <dd>
+                  {answers.lengthMm && answers.widthMm
+                    ? `${answers.lengthMm} mm long · ${answers.widthMm} mm wide${answers.handPreset ? " (estimated)" : ""}`
+                    : "Not entered"}
+                </dd>
+                <button onClick={() => jump("measure")}>
+                  Edit measurements
+                </button>
+              </div>
+              <div>
+                <dt>Grip style</dt>
+                <dd className={styles.capitalize}>
+                  {answers.gripSkipped
+                    ? "Not sure — skipped"
+                    : (answers.primaryGrip ?? "Not selected")}
+                </dd>
+                <button onClick={() => jump("grip")}>Edit grip</button>
+              </div>
+              {gripQuestions
+                .filter((step) => step.id !== "grip")
+                .map((step) =>
+                  step.type === "options" ? (
+                    <div key={step.id}>
+                      <dt>{step.title}</dt>
+                      <dd>
+                        {step.options.find((opt) => opt.value === step.value)
+                          ?.title ?? "Not selected"}
+                      </dd>
+                      <button onClick={() => jump(step.id)}>
+                        Edit {step.title.toLowerCase()}
+                      </button>
+                    </div>
+                  ) : null,
+                )}
+              <div>
+                <dt>Budget</dt>
+                <dd>
+                  ${answers.budgetMin}–${answers.budgetMax} USD
+                </dd>
+                <button onClick={() => jump("budget")}>Edit budget</button>
+              </div>
+            </dl>
+            <p className={styles.help}>
+              Your answers will be saved when you generate your recommendations.
+            </p>
+          </>
+        )}
         {error ? (
-          <p className="mt-3 rounded-xl border px-3 py-2 text-sm" style={{ borderColor: "var(--tone-warning-line)", background: "var(--tone-warning-fill)", color: "var(--tone-warning-text)" }}>{error}</p>
+          <p role="alert" className={styles.error}>
+            {error}
+          </p>
         ) : null}
-      </div>
-    </section>
+        <footer className={styles.actions}>
+          {index > 0 ? (
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => jump(steps[index - 1].id)}
+            >
+              <ChevronLeft aria-hidden="true" /> Back
+            </button>
+          ) : (
+            <span className={styles.help}>
+              Your draft is saved on this device.
+            </span>
+          )}
+          {current.type === "review" ? (
+            <button
+              type="button"
+              className={styles.primary}
+              disabled={submitting}
+              onClick={() => void submit()}
+            >
+              {submitting ? (
+                <Loader2 className={styles.spin} aria-hidden="true" />
+              ) : (
+                <Check aria-hidden="true" />
+              )}
+              {submitting ? "Finding your fit…" : "Find my mouse fit"}
+            </button>
+          ) : (
+            <button type="button" className={styles.primary} onClick={next}>
+              Continue <ChevronRight aria-hidden="true" />
+            </button>
+          )}
+        </footer>
+      </section>
+    </main>
   );
 }

@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Camera, Check, Ruler } from "lucide-react";
+import { Camera, Check } from "lucide-react";
 import { ShellNav } from "@/components/shell/ShellNav";
 import { getApiBase, saveGrip, saveMeasurement } from "@/services/api";
 import { getOrCreateSessionId } from "@/lib/session";
@@ -11,26 +10,6 @@ import styles from "./CaptureStudio.module.css";
 
 type Kind = "measure" | "grip";
 type Grip = "palm" | "claw" | "fingertip";
-const grips: { id: Grip; title: string; detail: string }[] = [
-  {
-    id: "palm",
-    title: "Palm",
-    detail:
-      "Most of your palm rests on the mouse. Your fingers lie fairly flat on the buttons.",
-  },
-  {
-    id: "claw",
-    title: "Claw",
-    detail:
-      "Your fingers arch over the buttons. The back of your palm helps anchor the mouse.",
-  },
-  {
-    id: "fingertip",
-    title: "Fingertip",
-    detail:
-      "Only your fingertips touch the mouse. Your palm stays clear of the shell.",
-  },
-];
 
 function CameraCapture({
   kind,
@@ -106,33 +85,47 @@ export default function CaptureStudio({
   cameraHtml: string;
 }) {
   const measuring = kind === "measure";
-  const [mode, setMode] = useState<"choose" | "manual" | "camera" | "review">(
-    "choose",
-  );
+  const [mode, setMode] = useState<"prepare" | "camera" | "review">("prepare");
   const [length, setLength] = useState("");
   const [width, setWidth] = useState("");
   const [grip, setGrip] = useState<Grip | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const fromSurvey = useSearchParams().get("from") === "survey";
+  const returnHref = `/survey?step=${kind}`;
   const resultRef = useRef<HTMLElement>(null);
   const receiveResult = useCallback(
     (data: Record<string, unknown>) => {
+      setError("");
       if (measuring) {
-        if (!Number.isFinite(data.length) || !Number.isFinite(data.width)) {
-          setError("The photo could not be measured reliably. Enter ruler measurements or change method to retake it.");
-          setMode("review");
-          return;
+        const l = Number(data.length),
+          w = Number(data.width);
+        if (
+          !Number.isFinite(l) ||
+          !Number.isFinite(w) ||
+          l < 100 ||
+          l > 260 ||
+          w < 50 ||
+          w > 130 ||
+          w >= l
+        ) {
+          setLength("");
+          setWidth("");
+          setError(
+            "The photo could not be measured reliably. Retake it, or enter ruler measurements in the survey.",
+          );
+        } else {
+          setLength(l.toFixed(1));
+          setWidth(w.toFixed(1));
         }
-        setLength(Number(data.length).toFixed(1));
-        setWidth(Number(data.width).toFixed(1));
-      } else if (grips.some((item) => item.id === data.grip))
+      } else if (["palm", "claw", "fingertip"].includes(String(data.grip))) {
         setGrip(data.grip as Grip);
-      else
+      } else {
+        setGrip(null);
         setError(
-          "The camera could not identify your grip. Choose the description that matches how you hold your mouse.",
+          "The camera could not identify your grip. Retake the views, or choose your grip in the survey.",
         );
+      }
       setMode("review");
     },
     [measuring],
@@ -179,7 +172,7 @@ export default function CaptureStudio({
       else await saveGrip({ session_id, grip: grip! });
       // Keep the survey draft and report inputs in sync only after API success.
       const patch = measuring
-        ? { lengthMm, widthMm }
+        ? { lengthMm, widthMm, handPreset: null }
         : { primaryGrip: grip, gripSkipped: false };
       for (const key of [
         "mousefit:survey_wizard_state",
@@ -232,24 +225,20 @@ export default function CaptureStudio({
     <>
       <ShellNav currentPage={kind} />
       <main className={styles.studio}>
-        <nav aria-label="Fitting steps" className={styles.steps}>
-          <Link href="/measure" aria-current={measuring ? "step" : undefined}>
-            1. Measure hand
-          </Link>
-          <Link href="/grip" aria-current={!measuring ? "step" : undefined}>
-            2. Identify grip
-          </Link>
-          <Link href="/survey">3. Find your fit</Link>
+        <nav className={styles.steps} aria-label="Return to fitting survey">
+          <Link href={returnHref}>← Back to fit survey</Link>
         </nav>
         <header>
-          <p className={styles.eyebrow}>
-            {measuring ? "Start with your hand" : "How you hold your mouse"}
-          </p>
-          <h1>{measuring ? "Measure your hand" : "Find your grip style"}</h1>
+          <p className={styles.eyebrow}>Optional camera capture · Fit survey</p>
+          <h1>
+            {measuring
+              ? "Measure with your camera"
+              : "Check your grip with your camera"}
+          </h1>
           <p>
             {measuring
-              ? "Two measurements help us compare mouse sizes with your hand. Use a ruler, or capture a photo with a reference card."
-              : "Hold your mouse as you normally would while playing. Choose the closest description, or use the camera for a suggestion."}
+              ? "Capture your hand with a reference card, then review the measurements and bring them back to your survey."
+              : "Capture your usual mouse grip from three views, then review the suggestion and continue your survey."}
           </p>
         </header>
         {saved ? (
@@ -269,254 +258,102 @@ export default function CaptureStudio({
                 : `${grip} grip`}
             </p>
             <p>
-              {fromSurvey
-                ? "Return to your fitting questions with this result."
-                : measuring
-                  ? "Next, identify how you hold your mouse."
-                  : "Finish your preferences to generate your mouse recommendations."}
+              Your result is ready in the survey. You can adjust it there before
+              finding your fit.
             </p>
             <div className={styles.actions}>
-              <Link
-                className={styles.primary}
-                href={
-                  fromSurvey
-                    ? `/survey?step=${kind}`
-                    : measuring
-                      ? "/grip"
-                      : "/survey"
-                }
-              >
-                {fromSurvey
-                  ? "Return to fitting questions"
-                  : measuring
-                    ? "Continue to grip"
-                    : "Find my fit"}
+              <Link className={styles.primary} href={returnHref}>
+                Continue survey
               </Link>
-              <button
-                onClick={() => {
-                  setSaved(false);
-                  setMode("manual");
-                }}
-              >
-                Edit result
-              </button>
             </div>
           </section>
-        ) : (
+        ) : mode === "prepare" ? (
+          <section className={styles.panel} aria-labelledby="prepare-title">
+            <Camera aria-hidden="true" />
+            <h2 id="prepare-title">
+              {measuring
+                ? "Set up your hand and reference card"
+                : "Hold your mouse as you normally would"}
+            </h2>
+            <p>
+              {measuring
+                ? "Place your hand flat beside a standard 85.6 × 54 mm card on the same surface. Use good lighting and keep the camera directly above both."
+                : "You’ll capture top, bottom and side views. Keep your normal grip and follow the guide for each view."}
+            </p>
+            <p>
+              Camera access starts when you open the camera. You’ll review the
+              result before saving.
+            </p>
+            <div className={styles.actions}>
+              <button
+                className={styles.primary}
+                onClick={() => setMode("camera")}
+              >
+                Open camera
+              </button>
+              <Link href={returnHref}>
+                {measuring
+                  ? "Enter measurements in survey"
+                  : "Choose grip in survey"}
+              </Link>
+            </div>
+          </section>
+        ) : mode === "camera" ? (
           <>
-            {mode === "choose" ? (
-              <div className={styles.methods}>
-                <button
-                  className={styles.method}
-                  onClick={() => setMode("manual")}
-                >
-                  <Ruler aria-hidden="true" />
-                  <strong>
-                    {measuring ? "Use a ruler" : "Choose my grip"}
-                  </strong>
-                  <span>
-                    {measuring
-                      ? "Enter length and width in millimeters. No camera needed."
-                      : "Compare three grip descriptions and choose your usual hold."}
-                  </span>
-                  <b>{measuring ? "Enter measurements" : "Compare grips"} →</b>
-                </button>
-                <button
-                  className={styles.method}
-                  onClick={() => setMode("camera")}
-                >
-                  <Camera aria-hidden="true" />
-                  <strong>
-                    {measuring
-                      ? "Measure with camera"
-                      : "Get a camera suggestion"}
-                  </strong>
-                  <span>
-                    {measuring
-                      ? "You’ll need a flat surface and a standard card, 85.6 × 54 mm."
-                      : "Capture top, bottom and side views. Review the suggestion before saving."}
-                  </span>
-                  <b>Open camera →</b>
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className={styles.actions}>
-                  <button
-                    onClick={() => {
-                      setMode("choose");
-                      setError("");
-                    }}
-                  >
-                    ← Change method
-                  </button>
-                  {mode === "camera" ? (
-                    <button onClick={() => setMode("manual")}>
-                      {measuring
-                        ? "Enter measurements instead"
-                        : "Choose grip instead"}
-                    </button>
-                  ) : null}
-                </div>
-                {mode === "camera" ? (
-                  <CameraCapture
-                    kind={kind}
-                    css={cameraStyles}
-                    html={cameraHtml}
-                    onResult={receiveResult}
-                  />
-                ) : (
-                  <section
-                    className={styles.panel}
-                    ref={resultRef}
-                    tabIndex={-1}
-                    aria-labelledby="review-title"
-                  >
-                    <h2 id="review-title">
-                      {mode === "review"
-                        ? "Review your result"
-                        : measuring
-                          ? "Measure from wrist to fingertip"
-                          : "Choose your usual grip"}
-                    </h2>
-                    <form
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void save();
-                      }}
-                    >
-                      {measuring ? (
-                        <div className={styles.measureGrid}>
-                          <svg
-                            viewBox="0 0 240 250"
-                            role="img"
-                            aria-label="Measure hand length from the wrist crease to the middle fingertip, and palm width across the knuckles, excluding the thumb."
-                          >
-                            <path
-                              d="M79 221 L78 179 Q53 163 46 135 Q39 117 49 113 Q57 111 72 136 L74 72 Q75 56 84 58 Q94 59 94 73 L95 109 L99 40 Q100 26 109 29 Q118 29 118 43 L118 104 L125 31 Q127 18 136 22 Q144 24 142 38 L139 108 L148 51 Q151 39 160 44 Q167 48 163 61 L151 149 Q148 173 143 184 L143 221 Z"
-                              fill="var(--shell-surface-soft)"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            />
-                            <path
-                              d="M78 199 L145 199 M73 142 L151 142 M184 23 L184 199 M177 23 L191 23 M177 199 L191 199"
-                              fill="none"
-                              stroke="var(--shell-accent)"
-                              strokeWidth="2"
-                            />
-                            <text
-                              x="192"
-                              y="111"
-                              fontSize="12"
-                              fill="currentColor"
-                            >
-                              Length
-                            </text>
-                            <text
-                              x="93"
-                              y="159"
-                              fontSize="12"
-                              fill="currentColor"
-                            >
-                              Width
-                            </text>
-                          </svg>
-                          <div>
-                            <p>
-                              Lay your hand flat with fingers together and
-                              relaxed.
-                            </p>
-                            <label htmlFor="hand-length">
-                              Hand length (mm)
-                            </label>
-                            <p className={styles.help}>
-                              Wrist crease to the tip of your middle finger.
-                            </p>
-                            <input
-                              id="hand-length"
-                              type="number"
-                              inputMode="decimal"
-                              min="100"
-                              max="260"
-                              step="0.1"
-                              required
-                              value={length}
-                              onChange={(e) => setLength(e.target.value)}
-                              placeholder="e.g. 180"
-                            />
-                            <label htmlFor="hand-width">Palm width (mm)</label>
-                            <p className={styles.help}>
-                              Across the widest part of your palm, excluding the
-                              thumb.
-                            </p>
-                            <input
-                              id="hand-width"
-                              type="number"
-                              inputMode="decimal"
-                              min="50"
-                              max="130"
-                              step="0.1"
-                              required
-                              value={width}
-                              onChange={(e) => setWidth(e.target.value)}
-                              placeholder="e.g. 90"
-                            />
-                            <p className={styles.help}>
-                              Using centimeters? Multiply by 10: 18 cm = 180 mm.
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <fieldset className={styles.grips}>
-                          <legend>Which contact pattern feels closest?</legend>
-                          {grips.map((item) => (
-                            <label
-                              key={item.id}
-                              className={styles.grip}
-                              data-selected={grip === item.id}
-                            >
-                              <input
-                                type="radio"
-                                name="grip"
-                                value={item.id}
-                                checked={grip === item.id}
-                                onChange={() => setGrip(item.id)}
-                              />
-                              <strong>{item.title}</strong>
-                              <span>{item.detail}</span>
-                            </label>
-                          ))}
-                        </fieldset>
-                      )}
-                      {error ? (
-                        <p role="alert" className={styles.error}>
-                          {error}
-                        </p>
-                      ) : null}
-                      <div className={styles.actions}>
-                        <button
-                          type="submit"
-                          className={styles.primary}
-                          disabled={saving}
-                        >
-                          {saving
-                            ? "Saving…"
-                            : measuring
-                              ? "Save measurements"
-                              : "Save grip"}
-                        </button>
-                        <span className={styles.help}>
-                          {mode === "review"
-                            ? "Adjust anything that doesn’t look right before saving."
-                            : "You can update this later."}
-                        </span>
-                      </div>
-                    </form>
-                  </section>
-                )}
-              </>
-            )}
+            <div className={styles.actions}>
+              <Link href={returnHref}>Continue survey without camera</Link>
+            </div>
+            <CameraCapture
+              kind={kind}
+              css={cameraStyles}
+              html={cameraHtml}
+              onResult={receiveResult}
+            />
           </>
+        ) : (
+          <section
+            ref={resultRef}
+            tabIndex={-1}
+            className={styles.panel}
+            aria-labelledby="review-title"
+          >
+            <h2 id="review-title">Review your capture</h2>
+            {measuring && length && width ? (
+              <p className={styles.result}>
+                {length} mm long · {width} mm wide
+              </p>
+            ) : !measuring && grip ? (
+              <p className={styles.result}>{grip} grip</p>
+            ) : null}
+            <p>
+              Keep this result if it looks right. You can make manual
+              adjustments in the survey.
+            </p>
+            {error ? (
+              <p role="alert" className={styles.error}>
+                {error}
+              </p>
+            ) : null}
+            <div className={styles.actions}>
+              <button
+                className={styles.primary}
+                disabled={saving || (measuring ? !length || !width : !grip)}
+                onClick={() => void save()}
+              >
+                {saving ? "Saving…" : "Use this result"}
+              </button>
+              <button
+                disabled={saving}
+                onClick={() => {
+                  setError("");
+                  setMode("camera");
+                }}
+              >
+                Retake capture
+              </button>
+              <Link href={returnHref}>Return to survey</Link>
+            </div>
+          </section>
         )}
       </main>
     </>

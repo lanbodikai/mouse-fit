@@ -462,7 +462,7 @@ function handleGUMError(e){
   if (statusBadge) statusBadge.textContent = "Camera unavailable";
   if (timerBtn) timerBtn.disabled = true;
   const hint = document.getElementById("hint");
-  if (hint) hint.textContent = "Camera access is unavailable. Connect a camera and allow access, then press Refresh, or choose your grip instead.";
+  if (hint) hint.textContent = "Camera access is unavailable. Connect a camera and allow access, then press Refresh, or return to the survey to choose your grip.";
   showToast("Camera access is unavailable. You can choose your grip without a camera.");
 }
 async function initCameraLayer() {

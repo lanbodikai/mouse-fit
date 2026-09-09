@@ -36,7 +36,7 @@ type SliderItem = {
 const sliderItems: SliderItem[] = [
   { href: "/database", label: "Database", icon: Home, activeMatch: ["/database", "/schedules"] },
   {
-    href: "/mouse-fit",
+    href: "/survey",
     label: "Mouse Fit",
     icon: MousePointer2,
     activeMatch: ["/mouse-fit", "/mousefit", "/survey", "/measure", "/grip", "/report"],

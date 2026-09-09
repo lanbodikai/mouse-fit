@@ -36,3 +36,13 @@ Base: `origin/main` at `f53e7f6`. Fix branch: `codex/product-ux-simulator-fixes`
 - The hand remains a procedural, stylized grip illustration. Bone/contact tests establish numerical consistency, not biomechanical or photorealistic accuracy.
 - Front/back inference uses shell shape. An unusual scan with an ambiguous deck/hump may still require an explicit manifest transform and visual review. All assets were checked numerically; only representative views were inspected in the browser.
 - No deployment or production database mutation was performed. Backend pytest was unavailable in the installed Python environment; this patch changes frontend code only.
+
+## Follow-up: survey owns the fitting workflow
+
+The survey is now the primary entry point in main navigation, the service switcher, dashboard actions and the empty report screen. It uses the capture studios' card layout, measurement guide and descriptive grip choices, organized into four stages: hand, grip, budget and review. Choices wait for an explicit Continue action. Conditional grip details remain available, and review links let users revisit any answer.
+
+`/measure` and `/grip` now provide camera preparation, capture and result review only. Both return to the relevant survey step, including when opened directly. Manual measurement and grip entry live exclusively in the survey. A camera result clears any previous estimated-hand label.
+
+New draft handling fixes missing measurements being interpreted as zero and clamped to a minimum-size hand, and fixes old report measurements overriding a more recent survey draft. Survey completion also updates the simulator's grip key and clears stale grip values if identification was skipped.
+
+Validation: production build, TypeScript and targeted lint; 174 frontend tests passed, including four new regression tests for empty state, draft precedence, invalid proportions and simulator synchronization; browser checks of measurement validation, both camera return links, the complete claw branch, budget/review, save-failure recovery and a 390 × 844 layout. Browser work used an isolated preview on localhost:3001, leaving the existing development server running. No physical camera capture or production write was performed in this follow-up.

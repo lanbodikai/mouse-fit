@@ -342,7 +342,7 @@ function handleGUMError(e) {
   if (statusBadge) statusBadge.textContent = "Camera unavailable";
   if (timerBtn) timerBtn.disabled = true;
   const hint = document.getElementById("hint");
-  if (hint) hint.textContent = "Camera access is unavailable. Connect a camera and allow access, then press Refresh, or enter measurements instead.";
+  if (hint) hint.textContent = "Camera access is unavailable. Connect a camera and allow access, then press Refresh, or return to the survey to enter measurements.";
   const name = e?.name || "Error", msg = e?.message || String(e);
   console.warn("getUserMedia error:", name, msg);
   if (name === "NotAllowedError") showToast("Permission denied. Click the camera icon in the address bar and allow.");
