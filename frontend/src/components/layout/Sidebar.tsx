@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTheme } from "@/lib/theme";
+import effects from "./Sidebar.module.css";
 
 type NavItem = {
   href: string;
@@ -56,7 +57,7 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       aria-current={active ? "page" : undefined}
       aria-label={item.label}
       title={item.label}
-      className={`group relative flex h-12 min-w-10 items-center justify-center gap-3 rounded-md px-2 transition sm:min-w-12 sm:px-3 md:w-12 md:px-0 xl:w-full xl:justify-start xl:px-3 ${
+      className={`${effects.navLink} group relative flex h-12 min-w-10 items-center justify-center gap-3 rounded-md px-2 transition sm:min-w-12 sm:px-3 md:w-12 md:px-0 xl:w-full xl:justify-start xl:px-3 ${
         active
           ? "bg-[var(--shell-accent)] text-[var(--shell-text-inverse)]"
           : "text-[var(--shell-text-secondary)] hover:bg-[var(--shell-surface-soft)] hover:text-[var(--shell-text-primary)]"

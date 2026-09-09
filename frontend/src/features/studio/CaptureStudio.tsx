@@ -245,7 +245,8 @@ export default function CaptureStudio({
           <section
             ref={resultRef}
             tabIndex={-1}
-            className={styles.panel}
+            key="saved"
+            className={`${styles.panel} ${styles.success}`}
             aria-labelledby="saved-title"
           >
             <Check aria-hidden="true" />
@@ -268,7 +269,11 @@ export default function CaptureStudio({
             </div>
           </section>
         ) : mode === "prepare" ? (
-          <section className={styles.panel} aria-labelledby="prepare-title">
+          <section
+            key="prepare"
+            className={styles.panel}
+            aria-labelledby="prepare-title"
+          >
             <Camera aria-hidden="true" />
             <h2 id="prepare-title">
               {measuring
@@ -314,7 +319,9 @@ export default function CaptureStudio({
           <section
             ref={resultRef}
             tabIndex={-1}
+            key="review"
             className={styles.panel}
+            aria-busy={saving}
             aria-labelledby="review-title"
           >
             <h2 id="review-title">Review your capture</h2>

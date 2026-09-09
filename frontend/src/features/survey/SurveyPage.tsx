@@ -534,6 +534,7 @@ function SurveyFlow({ initialStep }: { initialStep: string }) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Answers>(loadInitial);
   const [stepId, setStepId] = useState(initialStep);
+  const [direction, setDirection] = useState("forward");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -662,6 +663,10 @@ function SurveyFlow({ initialStep }: { initialStep: string }) {
           : 3;
   const gripQuestions = steps.filter((step) => step.type === "options");
   const jump = (id: string) => {
+    if (submitting) return;
+    setDirection(
+      steps.findIndex((step) => step.id === id) < index ? "back" : "forward",
+    );
     setError("");
     setStepId(id);
   };
@@ -756,7 +761,7 @@ function SurveyFlow({ initialStep }: { initialStep: string }) {
             : "Check your measurements, grip and budget before generating your recommendations.";
 
   return (
-    <main className={styles.survey}>
+    <main className={styles.survey} data-direction={direction}>
       <nav className={styles.steps} aria-label="Fit survey stages">
         {[
           { id: "measure", label: "Your hand" },
@@ -775,15 +780,23 @@ function SurveyFlow({ initialStep }: { initialStep: string }) {
             {item.label}
           </button>
         ))}
+        <div className={styles.progress} aria-hidden="true">
+          <div style={{ transform: `scaleX(${(stage + 1) / 4})` }} />
+        </div>
       </nav>
-      <header className={styles.header}>
+      <header key={`heading-${current.id}`} className={styles.header}>
         <p className={styles.eyebrow}>Find your mouse fit · {stage + 1} of 4</p>
         <h1 ref={heading} tabIndex={-1}>
           {current.title}
         </h1>
         <p>{description}</p>
       </header>
-      <section className={styles.panel} aria-label={current.title}>
+      <section
+        key={current.id}
+        className={styles.panel}
+        aria-label={current.title}
+        aria-busy={submitting}
+      >
         {current.type === "measure" ? (
           <>
             <div className={styles.measureGrid}>
@@ -909,6 +922,7 @@ function SurveyFlow({ initialStep }: { initialStep: string }) {
                     onChange={() => choose(current, opt.value)}
                   />
                   <strong>{opt.title}</strong>
+                  <Check className={styles.selectionCheck} aria-hidden="true" />
                   <span>{opt.subtitle}</span>
                 </label>
               ))}

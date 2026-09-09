@@ -408,3 +408,242 @@
     padding: 20px;
   }
 }
+/* Motion follows user actions; no idle animation competes with the form. */
+.steps {
+  position: relative;
+  border-bottom: 0;
+}
+.progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--shell-border-strong);
+}
+.progress > div {
+  width: 100%;
+  height: 100%;
+  transform-origin: left;
+  background: var(--shell-accent);
+  border-radius: inherit;
+}
+.choices label {
+  position: relative;
+}
+.choices label strong {
+  padding-right: 22px;
+}
+.selectionCheck {
+  position: absolute;
+  right: 15px;
+  top: 22px;
+  width: 20px;
+  height: 20px;
+  padding: 3px;
+  border-radius: 50%;
+  color: var(--shell-text-inverse);
+  background: var(--shell-accent);
+  opacity: 0;
+  pointer-events: none;
+}
+.choices label[data-selected="true"] .selectionCheck {
+  opacity: 1;
+}
+.choices label:focus-within {
+  outline: 2px solid var(--shell-accent);
+  outline-offset: 4px;
+}
+.actions .primary {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.actions .primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    #ffffff30 45%,
+    transparent 70%
+  );
+  translate: -110% 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .survey {
+    --step-offset: 14px;
+  }
+  .survey[data-direction="back"] {
+    --step-offset: -14px;
+  }
+  .header {
+    animation: stepEnter 230ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .panel {
+    animation: stepEnter 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .progress > div {
+    transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .steps button,
+  .steps button span {
+    transition:
+      background-color 180ms,
+      color 180ms,
+      box-shadow 180ms;
+  }
+  .steps button[aria-current] span {
+    animation: selectPop 260ms ease-out;
+  }
+  .choices label,
+  .estimateOptions button {
+    transition:
+      transform 180ms ease-out,
+      border-color 180ms,
+      background-color 180ms,
+      box-shadow 180ms;
+  }
+  .choices label {
+    animation: cardEnter 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .choices label:nth-of-type(2) {
+    animation-delay: 35ms;
+  }
+  .choices label:nth-of-type(3) {
+    animation-delay: 70ms;
+  }
+  .choices label:nth-of-type(4) {
+    animation-delay: 105ms;
+  }
+  .choices label[data-selected="true"] .selectionCheck {
+    animation: selectPop 260ms cubic-bezier(0.2, 1.5, 0.5, 1);
+  }
+  .actions :is(button, a),
+  .cameraOption a,
+  .review button {
+    transition:
+      transform 160ms ease-out,
+      box-shadow 180ms,
+      background-color 180ms,
+      border-color 180ms;
+  }
+  .actions button svg {
+    transition: transform 180ms ease-out;
+  }
+  .actions :is(button, a):not(:disabled):active,
+  .estimateOptions button:active {
+    transform: scale(0.98);
+  }
+  .measureGrid input,
+  .budget input[type="number"] {
+    transition:
+      box-shadow 180ms,
+      border-color 180ms;
+  }
+  .measureGrid input:focus,
+  .budget input[type="number"]:focus {
+    box-shadow: 0 0 0 4px var(--shell-accent-soft);
+    border-color: var(--shell-accent);
+  }
+  .measureGrid [data-measurement-lines] {
+    stroke-dasharray: 1;
+    animation: drawGuide 650ms ease-out both;
+  }
+  .error {
+    animation: feedbackEnter 180ms ease-out both;
+  }
+  .panel[aria-busy="true"] .primary::after {
+    animation: buttonSweep 1.8s ease-in-out infinite;
+  }
+  .estimates[open] > :not(summary) {
+    animation: feedbackEnter 200ms ease-out;
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .choices label:hover,
+  .estimateOptions button:hover {
+    transform: translateY(-3px);
+    border-color: var(--shell-accent);
+    box-shadow: 0 6px 18px #00000009;
+  }
+  .actions :is(button, a):not(:disabled):hover,
+  .cameraOption a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px var(--shell-accent-soft);
+    border-color: var(--shell-accent);
+  }
+  .actions .primary:not(:disabled):hover svg:not(.spin) {
+    transform: translateX(3px);
+  }
+  .review button:hover {
+    transform: translateX(2px);
+  }
+}
+@keyframes stepEnter {
+  from {
+    opacity: 0.35;
+    transform: translateX(var(--step-offset));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cardEnter {
+  from {
+    opacity: 0.4;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes selectPop {
+  from {
+    transform: scale(0.7);
+  }
+  65% {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes drawGuide {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes feedbackEnter {
+  from {
+    opacity: 0.4;
+    translate: 0 5px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes buttonSweep {
+  to {
+    translate: 110% 0;
+  }
+}
+:global(.shell-reduce-motion) .survey *,
+:global(.shell-reduce-motion) .survey *::after {
+  animation: none !important;
+  transition: none !important;
+}
+:global(.shell-reduce-motion) .survey :is(label, button, a) {
+  transform: none !important;
+}

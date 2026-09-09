@@ -13,6 +13,8 @@ export function HandMeasurementGuide() {
       />
       <path
         d="M78 199 L145 199 M73 142 L151 142 M184 23 L184 199 M177 23 L191 23 M177 199 L191 199"
+        pathLength="1"
+        data-measurement-lines="true"
         fill="none"
         stroke="var(--shell-accent)"
         strokeWidth="2"

@@ -46,3 +46,9 @@ The survey is now the primary entry point in main navigation, the service switch
 New draft handling fixes missing measurements being interpreted as zero and clamped to a minimum-size hand, and fixes old report measurements overriding a more recent survey draft. Survey completion also updates the simulator's grip key and clears stale grip values if identification was skipped.
 
 Validation: production build, TypeScript and targeted lint; 174 frontend tests passed, including four new regression tests for empty state, draft precedence, invalid proportions and simulator synchronization; browser checks of measurement validation, both camera return links, the complete claw branch, budget/review, save-failure recovery and a 390 × 844 layout. Browser work used an isolated preview on localhost:3001, leaving the existing development server running. No physical camera capture or production write was performed in this follow-up.
+
+## Follow-up: interactive motion
+
+Added short, directional survey transitions, staggered choice-card entrances, selection checkmarks, an animated stage-position line, a one-time measurement-guide drawing effect, input focus feedback, hover/press feedback and a pending-save button sweep. Camera review panels and saved-result checks have short entrance animations, and main navigation icons respond to pointer hover. Explicit Continue behavior and stored answers are unchanged.
+
+Motion uses CSS and existing components, with no added dependencies. The operating system’s reduced-motion preference and the app’s Reduce motion setting suppress movement while preserving selection and progress information. Hover effects apply only to devices with a fine pointer. Verified desktop/mobile survey interaction and the app setting, plus production build, TypeScript, targeted lint and the four survey regression tests.
