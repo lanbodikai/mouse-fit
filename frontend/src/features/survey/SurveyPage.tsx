@@ -753,7 +753,7 @@ function SurveyFlow({ initialStep }: { initialStep: string }) {
     current.type === "measure"
       ? "Two measurements help us compare mouse sizes with your hand. Enter them with a ruler, or use the optional camera tool."
       : current.id === "grip"
-        ? "Hold your mouse as you normally would while playing. Choose the contact pattern closest to your usual grip."
+        ? "Choose the contact pattern closest to how you normally hold your mouse."
         : current.type === "options"
           ? "Keep your usual hold and choose the closest description. These details help us compare mouse shapes."
           : current.type === "budget"
@@ -761,7 +761,11 @@ function SurveyFlow({ initialStep }: { initialStep: string }) {
             : "Check your measurements, grip and budget before generating your recommendations.";
 
   return (
-    <main className={styles.survey} data-direction={direction}>
+    <main
+      className={styles.survey}
+      data-direction={direction}
+      data-compact={current.type !== "review"}
+    >
       <nav className={styles.steps} aria-label="Fit survey stages">
         {[
           { id: "measure", label: "Your hand" },
@@ -795,6 +799,7 @@ function SurveyFlow({ initialStep }: { initialStep: string }) {
         key={current.id}
         className={styles.panel}
         aria-label={current.title}
+        data-step={current.id}
         aria-busy={submitting}
       >
         {current.type === "measure" ? (
@@ -804,50 +809,56 @@ function SurveyFlow({ initialStep }: { initialStep: string }) {
               <div>
                 <h2>Use a ruler</h2>
                 <p>Lay your hand flat with fingers together and relaxed.</p>
-                <label htmlFor="hand-length">Hand length (mm)</label>
-                <p id="length-help" className={styles.help}>
-                  Wrist crease to the tip of your middle finger.
-                </p>
-                <input
-                  id="hand-length"
-                  aria-describedby="length-help"
-                  type="number"
-                  inputMode="decimal"
-                  min="100"
-                  max="260"
-                  step="0.1"
-                  value={answers.lengthMm || ""}
-                  placeholder="e.g. 180"
-                  onChange={(e) =>
-                    setAnswers((p) => ({
-                      ...p,
-                      handPreset: null,
-                      lengthMm: Number(e.target.value),
-                    }))
-                  }
-                />
-                <label htmlFor="hand-width">Palm width (mm)</label>
-                <p id="width-help" className={styles.help}>
-                  Across the widest part of your palm, excluding your thumb.
-                </p>
-                <input
-                  id="hand-width"
-                  aria-describedby="width-help"
-                  type="number"
-                  inputMode="decimal"
-                  min="50"
-                  max="130"
-                  step="0.1"
-                  value={answers.widthMm || ""}
-                  placeholder="e.g. 90"
-                  onChange={(e) =>
-                    setAnswers((p) => ({
-                      ...p,
-                      handPreset: null,
-                      widthMm: Number(e.target.value),
-                    }))
-                  }
-                />
+                <div className={styles.measureFields}>
+                  <div>
+                    <label htmlFor="hand-length">Hand length (mm)</label>
+                    <p id="length-help" className={styles.help}>
+                      Wrist crease to the tip of your middle finger.
+                    </p>
+                    <input
+                      id="hand-length"
+                      aria-describedby="length-help"
+                      type="number"
+                      inputMode="decimal"
+                      min="100"
+                      max="260"
+                      step="0.1"
+                      value={answers.lengthMm || ""}
+                      placeholder="e.g. 180"
+                      onChange={(e) =>
+                        setAnswers((p) => ({
+                          ...p,
+                          handPreset: null,
+                          lengthMm: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="hand-width">Palm width (mm)</label>
+                    <p id="width-help" className={styles.help}>
+                      Across the widest part of your palm, excluding your thumb.
+                    </p>
+                    <input
+                      id="hand-width"
+                      aria-describedby="width-help"
+                      type="number"
+                      inputMode="decimal"
+                      min="50"
+                      max="130"
+                      step="0.1"
+                      value={answers.widthMm || ""}
+                      placeholder="e.g. 90"
+                      onChange={(e) =>
+                        setAnswers((p) => ({
+                          ...p,
+                          handPreset: null,
+                          widthMm: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
                 <p className={styles.help}>
                   Using centimeters? Multiply by 10: 18 cm = 180 mm.
                 </p>
